@@ -15,6 +15,39 @@ This phase expands the game's variety significantly. New obstacles create unique
 
 ## Deliverables Checklist
 
+---
+
+## Art & Assets (Improve placeholders)
+
+**Goal:** Replace temporary emoji/shape placeholders with a small, consistent art pipeline that produces crisp, scalable assets (SVG for icons and raster sprite sheets for runtime).
+
+Deliverables:
+- Create SVG icon set for tiles and powerups at 2x and 3x sizes for mobile (suggested base sizes: 64px, 128px, 192px)
+- Export a packed sprite sheet (PNG) with trimmed frames for Phaser runtime and a corresponding JSON atlas (TexturePacker or spritesmith)
+- Provide fallback vector icons (SVG) for the menu and UI so they look crisp at any resolution
+- Create simple animation frames for powerups (rocket trail, bomb spark, color-bomb pulse)
+- Define asset naming convention and folder layout:
+  - assets/sprites/tiles/tile_{color}.png (or .svg)
+  - assets/sprites/powerups/{powerup}_{dir?}_00.png
+  - assets/atlas/match5-atlas.png + match5-atlas.json
+
+Pipeline & tools:
+- Design icons as SVG in Figma/Illustrator or open-source Inkscape
+- Export optimized SVGs using SVGO
+- Generate sprite sheets with TexturePacker (recommended) or gulp-spritesmith
+- Add a small `scripts/asset-export.js` to automate exporting and atlas generation (optional)
+
+Priorities for Phase 3:
+- 1) Replace tile shapes with polished SVG icons (heart, diamond, clover, star)
+- 2) Create simple animated sprites for Bomb and Rocket (3-6 frames)
+- 3) Bake a 2x sprite atlas for mobile (retina) and include JSON atlas for Phaser
+
+Acceptance criteria:
+- Assets load in the Phaser scene and replace graphics-based placeholders
+- Visuals remain readable at mobile sizes (no blur)
+- Asset pipeline reproducible with a single command
+
+
 ### New Obstacles
 - [ ] **Ice** - Single layer, cleared with one match
 - [ ] **Double Ice** - Two layers, needs two matches

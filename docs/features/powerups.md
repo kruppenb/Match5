@@ -1,8 +1,8 @@
 # Feature: Powerups
 
-**Phase:** [Phase 1: POC](../phases/phase-1-poc.md) (Basic), [Phase 3: Content](../phases/phase-3-content.md) (Combinations)  
-**Priority:** Critical  
-**Status:** 🔴 Not Started
+**Phase:** [Phase 1: POC](../phases/phase-1-poc.md) (Basic), [Phase 3: Content](../phases/phase-3-content.md) (Combinations)
+**Priority:** Critical
+**Status:** 🟢 Implemented (Phase 1)
 
 ---
 
@@ -13,6 +13,64 @@ Powerups are special tiles created when matching 4+ tiles. They provide powerful
 ---
 
 ## Powerup Types
+
+### Propeller (Helicopter)
+
+**Created by:** 4 tiles in a 2x2 square
+**Effect:** Smart targeting - clears adjacent tiles on takeoff, then flies to an obstacle/objective and clears it + surrounding tiles
+**Visual:** Colored circle with 3 white propeller blades
+
+```typescript
+class PropellerPowerup implements Powerup {
+  type = 'propeller';
+
+  activate(grid: Grid, row: number, col: number): Tile[] {
+    const affected: Tile[] = [];
+
+    // 1. Clear adjacent tiles on takeoff (3x3 around propeller)
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        if (dr === 0 && dc === 0) continue;
+        const tile = grid.getTile(row + dr, col + dc);
+        if (tile) affected.push(tile);
+      }
+    }
+
+    // 2. Find target (prioritizes obstacles like grass)
+    const target = this.findSmartTarget(grid, affected);
+
+    // 3. Clear target and its neighbors (3x3 around target)
+    if (target) {
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const tile = grid.getTile(target.row + dr, target.col + dc);
+          if (tile && !affected.includes(tile)) affected.push(tile);
+        }
+      }
+    }
+
+    return affected;
+  }
+
+  private findSmartTarget(grid: Grid, alreadyAffected: Tile[]): Position | null {
+    // Priority 1: Cells with obstacles (grass, ice, etc.)
+    // Priority 2: Random tile not already affected
+  }
+}
+```
+
+**Smart Targeting Priority:**
+1. Cells with obstacles (grass, ice, chains, etc.)
+2. Random remaining tile if no obstacles exist
+
+**Animation:**
+- Propeller spins while stationary
+- On activation: clears 3x3 takeoff area
+- Flies to target position
+- Clears 3x3 landing area
+- Sound: Whoosh/helicopter whir
+
+---
 
 ### Rocket (Line Blast)
 
@@ -188,6 +246,10 @@ When two powerups are swapped together, they combine for enhanced effects:
 
 | Powerup 1 | Powerup 2 | Result Effect |
 |-----------|-----------|---------------|
+| Propeller | Propeller | 3 propellers fly to 3 different targets |
+| Propeller | Rocket | Propeller carries rocket to best target, activates there |
+| Propeller | Bomb | Propeller carries bomb to best target, activates there |
+| Propeller | Color Bomb | All tiles of most common color become propellers |
 | Rocket | Rocket | Cross blast (row + column) |
 | Bomb | Bomb | 5x5 mega explosion |
 | Rocket | Bomb | 3 parallel rows OR columns |

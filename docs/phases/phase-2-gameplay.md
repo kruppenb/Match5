@@ -1,8 +1,8 @@
 # Phase 2: Core Gameplay Loop
 
-**Status:** 🔴 Not Started  
-**Duration:** 2-3 weeks  
-**Prerequisites:** [Phase 1: POC](phase-1-poc.md)  
+**Status:** ✅ Complete
+**Duration:** 2-3 weeks
+**Prerequisites:** [Phase 1: POC](phase-1-poc.md)
 **Goal:** Complete gameplay loop with objectives, win/lose conditions, and first obstacle
 
 ---
@@ -16,46 +16,46 @@ This phase transforms the POC into an actual game with goals, challenge, and pro
 ## Deliverables Checklist
 
 ### Level System
-- [ ] Level data structure (JSON format)
-- [ ] Load level from configuration
-- [ ] Variable grid layouts (not always 8x8)
-- [ ] Pre-placed tiles and powerups
-- [ ] Level selection screen (basic)
-- [ ] Save/load progress (localStorage)
+- [x] Level data structure (JSON format)
+- [x] Load level from configuration
+- [x] Variable grid layouts (not always 8x8)
+- [x] Pre-placed tiles and powerups
+- [x] Level selection screen (basic)
+- [x] Save/load progress (localStorage)
 
 ### Objectives System
-- [ ] **Clear Grass** - Remove grass tiles under blocks
-- [ ] **Collect Items** - Gather X items of specific type
-- [ ] **Score Target** - Reach minimum score
-- [ ] Display objectives in UI
-- [ ] Track objective progress during play
-- [ ] Multiple objectives per level
+- [x] **Clear Grass** - Remove grass tiles under blocks
+- [x] **Collect Items** - Gather X items of specific type (framework ready)
+- [x] **Score Target** - Reach minimum score (framework ready)
+- [x] Display objectives in UI
+- [x] Track objective progress during play
+- [x] Multiple objectives per level (framework ready)
 
 ### Move System
-- [ ] Move counter display
-- [ ] Decrement on each swap (not on cascades)
-- [ ] Visual warning when moves are low (3 or less)
-- [ ] No moves = level failed
+- [x] Move counter display
+- [x] Decrement on each swap (not on cascades)
+- [x] Visual warning when moves are low (3 or less)
+- [x] No moves = level failed
 
 ### Win/Lose States
-- [ ] Win condition: All objectives complete
-- [ ] Lose condition: Out of moves
-- [ ] Win screen with celebration
-- [ ] Lose screen with retry option
-- [ ] Extra moves after win give bonus score
+- [x] Win condition: All objectives complete
+- [x] Lose condition: Out of moves
+- [x] Win screen with celebration
+- [x] Lose screen with retry option
+- [x] Extra moves after win give bonus score
 
 ### First Obstacle: Grass
-- [ ] Grass tile visual (under regular tiles)
-- [ ] Cleared when matched on top
-- [ ] Tracked as objective
-- [ ] Can have multiple layers (single for now)
+- [x] Grass tile visual (under regular tiles)
+- [x] Cleared when matched on top
+- [x] Tracked as objective
+- [x] Can have multiple layers (single for now)
 
 ### User Interface
-- [ ] Level number display
-- [ ] Move counter
-- [ ] Objective icons with progress
-- [ ] Pause button
-- [ ] Settings menu (volume, etc.)
+- [x] Level number display
+- [x] Move counter
+- [x] Objective icons with progress
+- [x] Pause button
+- [ ] Settings menu (volume, etc.) - deferred to Phase 4
 
 ---
 

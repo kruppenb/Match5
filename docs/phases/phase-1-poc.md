@@ -1,6 +1,6 @@
 # Phase 1: Proof of Concept
 
-**Status:** 🔴 Not Started  
+**Status:** ✅ Complete  
 **Duration:** 1-2 weeks  
 **Goal:** Playable grid with basic matching and powerup creation
 
@@ -20,46 +20,46 @@ This phase establishes the core foundation of the game. By the end, you should h
 ## Deliverables Checklist
 
 ### Grid & Rendering
-- [ ] Create responsive canvas that fills mobile screen
-- [ ] Render 8x8 grid of tiles (configurable)
-- [ ] Display 4 different tile types (colors/shapes)
-- [ ] Tiles have clear, distinct visual appearance
-- [ ] Grid is centered and properly scaled
+- [x] Create responsive canvas that fills mobile screen
+- [x] Render 8x8 grid of tiles (configurable)
+- [x] Display 4 different tile types (colors/shapes)
+- [x] Tiles have clear, distinct visual appearance (heart, diamond, club, star shapes)
+- [x] Grid is centered and properly scaled
 
 ### Input Handling
-- [ ] Detect touch start / mouse down
-- [ ] Track swipe direction (up, down, left, right)
-- [ ] Validate swipe is to adjacent tile only
-- [ ] Visual feedback during swipe (tile follows finger slightly)
-- [ ] Snap back if invalid move
+- [x] Detect touch start / mouse down
+- [x] Track swipe direction (up, down, left, right)
+- [x] Validate swipe is to adjacent tile only
+- [x] Visual feedback during swipe (tile follows finger slightly)
+- [x] Snap back if invalid move
 
 ### Match Detection
-- [ ] Detect horizontal matches (3+)
-- [ ] Detect vertical matches (3+)
-- [ ] Detect L-shaped matches
-- [ ] Detect T-shaped matches
-- [ ] Only allow moves that create matches (optional for POC)
+- [x] Detect horizontal matches (3+)
+- [x] Detect vertical matches (3+)
+- [x] Detect L-shaped matches
+- [x] Detect T-shaped matches
+- [x] Only allow moves that create matches (swaps back if no match)
 
 ### Tile Clearing & Falling
-- [ ] Clear matched tiles with simple animation
-- [ ] Remaining tiles fall to fill gaps
-- [ ] Physics-based or eased falling motion
-- [ ] Spawn new tiles from top of grid
-- [ ] Check for chain reactions (cascades)
+- [x] Clear matched tiles with simple animation
+- [x] Remaining tiles fall to fill gaps
+- [x] Physics-based or eased falling motion
+- [x] Spawn new tiles from top of grid
+- [x] Check for chain reactions (cascades)
 
 ### Powerup Creation
-- [ ] **Rocket** - Created from 4-in-a-row match
-  - Horizontal match → Horizontal Rocket
-  - Vertical match → Vertical Rocket
-- [ ] **Bomb** - Created from L or T shaped match
-- [ ] **Color Bomb** - Created from 5+ in-a-row match
-- [ ] Powerups displayed distinctly (different sprite/icon)
-- [ ] Powerups can be matched like normal tiles
+- [x] **Rocket** - Created from 4-in-a-row match
+  - Horizontal match → Horizontal Rocket (arrow shape)
+  - Vertical match → Vertical Rocket (arrow shape)
+- [x] **Bomb** - Created from L or T shaped match (5x5 explosion)
+- [x] **Color Bomb** - Created from 5+ in-a-row match (rainbow star)
+- [x] Powerups displayed distinctly (unique shapes per powerup)
+- [x] Powerups can be matched like normal tiles
 
 ### Powerup Activation
-- [ ] Tapping/matching Rocket clears row OR column
-- [ ] Tapping/matching Bomb clears 3x3 area
-- [ ] Tapping/matching Color Bomb + tile clears all of that color
+- [x] Tapping/matching Rocket clears row OR column
+- [x] Tapping/matching Bomb clears 5x5 area
+- [x] Tapping/matching Color Bomb + tile clears all of that color
 
 ---
 
@@ -259,7 +259,7 @@ Phase 1 is complete when you can:
 7. ✅ Matching 5 in a row creates a Color Bomb
 8. ✅ L/T shapes create a Bomb
 9. ✅ Activating Rocket clears a line
-10. ✅ Activating Bomb clears 3x3
+10. ✅ Activating Bomb clears 5x5 area
 11. ✅ Activating Color Bomb clears all of chosen color
 12. ✅ Tiles fall to fill gaps
 13. ✅ New tiles spawn from top
