@@ -17,23 +17,23 @@ export class LevelSelectScene extends Phaser.Scene {
       .fillRect(0, 0, CONFIG.SCREEN.WIDTH, CONFIG.SCREEN.HEIGHT);
 
     // Title
-    this.add.text(CONFIG.SCREEN.WIDTH / 2, 40, 'PRINCESS MATCH', {
-      fontSize: '48px',
+    this.add.text(CONFIG.SCREEN.WIDTH / 2, 36, 'PRINCESS MATCH', {
+      fontSize: '32px',
       fontStyle: 'bold',
       color: '#ffffff',
     }).setOrigin(0.5);
 
-    this.add.text(CONFIG.SCREEN.WIDTH / 2, 85, 'Select a Level', {
-      fontSize: '20px',
+    this.add.text(CONFIG.SCREEN.WIDTH / 2, 70, 'Select a Level', {
+      fontSize: '16px',
       color: '#888888',
     }).setOrigin(0.5);
 
     // Total stars display
     const totalStars = ProgressStorage.getTotalStars();
-    this.add.text(CONFIG.SCREEN.WIDTH - 20, 30, `Total Stars: ${totalStars}`, {
-      fontSize: '16px',
+    this.add.text(CONFIG.SCREEN.WIDTH / 2, 95, `⭐ ${totalStars}`, {
+      fontSize: '18px',
       color: '#ffff00',
-    }).setOrigin(1, 0.5);
+    }).setOrigin(0.5);
 
     // Level grid
     this.createLevelGrid();
@@ -58,34 +58,28 @@ export class LevelSelectScene extends Phaser.Scene {
     const rows = Math.ceil(totalLevels / cols);
 
     // Layout constants
-    const marginX = 20; // left/right screen margin
-    const startY = 130; // top of grid
-    const bottomPadding = 50; // space for reset button
-    const starRowHeight = 18; // space below each button for stars
+    const marginX = 15; // left/right screen margin
+    const startY = 120; // top of grid
+    const bottomPadding = 40; // space for reset button
+    const starRowHeight = 16; // space below each button for stars
 
     // Available space
     const availableWidth = CONFIG.SCREEN.WIDTH - marginX * 2;
     const availableHeight = CONFIG.SCREEN.HEIGHT - startY - bottomPadding;
 
-    // Calculate button size to fit all rows vertically
-    // Each row needs: buttonSize + starRowHeight + gapY
-    // Total: rows * (buttonSize + starRowHeight) + (rows - 1) * gapY = availableHeight
-    // Assume gapY = 10 (fixed small gap)
-    const gapY = 10;
-    const gapX = 12;
+    // Fixed gaps
+    const gapY = 8;
+    const gapX = 8;
     
-    // Solve for buttonSize from height constraint
-    // rows * buttonSize + rows * starRowHeight + (rows - 1) * gapY = availableHeight
-    // buttonSize = (availableHeight - rows * starRowHeight - (rows - 1) * gapY) / rows
-    let buttonSize = Math.floor((availableHeight - rows * starRowHeight - (rows - 1) * gapY) / rows);
+    // Calculate button size from width (primary constraint on narrow mobile)
+    let buttonSize = Math.floor((availableWidth - (cols - 1) * gapX) / cols);
     
-    // Also constrain by width
-    // cols * buttonSize + (cols - 1) * gapX = availableWidth
-    const maxButtonFromWidth = Math.floor((availableWidth - (cols - 1) * gapX) / cols);
-    buttonSize = Math.min(buttonSize, maxButtonFromWidth);
+    // Also check height constraint
+    const maxButtonFromHeight = Math.floor((availableHeight - rows * starRowHeight - (rows - 1) * gapY) / rows);
+    buttonSize = Math.min(buttonSize, maxButtonFromHeight);
 
     // Clamp button size to reasonable bounds
-    const maxButtonSize = 80;
+    const maxButtonSize = 70;
     const minButtonSize = 40;
     buttonSize = Math.min(maxButtonSize, Math.max(minButtonSize, buttonSize));
 
@@ -96,16 +90,12 @@ export class LevelSelectScene extends Phaser.Scene {
     const gridWidth = cols * buttonSize + (cols - 1) * gapX;
     const startX = (CONFIG.SCREEN.WIDTH - gridWidth) / 2 + buttonSize / 2;
 
-    // Center vertically if there's extra space
-    const totalGridHeight = rows * rowHeight + (rows - 1) * gapY;
-    const actualStartY = startY + Math.max(0, (availableHeight - totalGridHeight) / 2);
-
     for (let i = 0; i < totalLevels; i++) {
       const levelId = i + 1;
       const col = i % cols;
       const row = Math.floor(i / cols);
       const x = startX + col * (buttonSize + gapX);
-      const y = actualStartY + row * (rowHeight + gapY);
+      const y = startY + row * (rowHeight + gapY);
 
       this.createLevelButton(x, y, levelId, buttonSize);
     }

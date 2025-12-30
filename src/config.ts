@@ -3,7 +3,7 @@ export const CONFIG = {
   GRID: {
     ROWS: 8,
     COLS: 8,
-    TILE_SIZE: 64,
+    TILE_SIZE: 80,
     GAP: 4,
   },
 
@@ -37,8 +37,8 @@ export const CONFIG = {
   } as Record<string, number>,
 
   SCREEN: {
-    WIDTH: 800,
-    HEIGHT: 600,
+    WIDTH: 500,
+    HEIGHT: 844,
   },
 
   LEVEL: {
@@ -47,11 +47,11 @@ export const CONFIG = {
   },
 
   UI: {
-    HEADER_HEIGHT: 60,
-    OBJECTIVE_BAR_HEIGHT: 50,
-    OBJECTIVE_ICON_SIZE: 36,
-    MOVE_COUNTER_SIZE: 44,
-    PADDING: 10,
+    HEADER_HEIGHT: 45,
+    OBJECTIVE_BAR_HEIGHT: 40,
+    OBJECTIVE_ICON_SIZE: 32,
+    MOVE_COUNTER_SIZE: 40,
+    PADDING: 0,
     COLORS: {
       BACKGROUND: 0x1a1a2e,
       PANEL: 0x2a2a3e,

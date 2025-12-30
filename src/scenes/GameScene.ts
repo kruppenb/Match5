@@ -63,7 +63,8 @@ export class GameScene extends Phaser.Scene {
 
     const maxTileWidth = availableWidth / this.level.cols;
     const maxTileHeight = availableHeight / this.level.rows;
-    this.tileSize = Math.min(maxTileWidth, maxTileHeight, CONFIG.GRID.TILE_SIZE);
+    // Use the smaller of width/height constraints - no arbitrary cap
+    this.tileSize = Math.floor(Math.min(maxTileWidth, maxTileHeight));
 
     // Calculate grid offset for centering
     const totalGridWidth = this.level.cols * this.tileSize;
