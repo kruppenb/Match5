@@ -76,6 +76,12 @@ export class GameScene extends Phaser.Scene {
       this.load.image(`powerup_${powerup}`, path);
       this.loadedPowerupSprites.add(powerup);
     });
+
+    // Load background images
+    const backgrounds = ['garden', 'castle', 'kitchen', 'library', 'sky_tower'];
+    backgrounds.forEach(bg => {
+      this.load.image(`bg_${bg}`, `assets/backgrounds/${bg}.jpeg`);
+    });
   }
 
   create(data?: GameSceneData): void {
@@ -126,6 +132,9 @@ export class GameScene extends Phaser.Scene {
     // Setup game state listeners
     this.setupGameStateListeners();
 
+    // Render background
+    this.renderBackground();
+
     // Render UI
     this.renderUI();
 
@@ -163,11 +172,70 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  private getBackgroundForLevel(levelId: number): string {
+    // Garden: 1-10, Castle: 11-20, Kitchen: 21-30, Library: 31-40, Sky Tower: 41+
+    if (levelId <= 10) return 'bg_garden';
+    if (levelId <= 20) return 'bg_castle';
+    if (levelId <= 30) return 'bg_kitchen';
+    if (levelId <= 40) return 'bg_library';
+    return 'bg_sky_tower';
+  }
+
+  private renderBackground(): void {
+    const width = CONFIG.SCREEN.WIDTH;
+    const height = CONFIG.SCREEN.HEIGHT;
+
+    // Select background based on level
+    const bgKey = this.getBackgroundForLevel(this.level.id);
+
+    // Try to use background image if loaded
+    if (this.textures.exists(bgKey)) {
+      const bg = this.add.image(width / 2, height / 2, bgKey);
+      bg.setDepth(-10);
+
+      // Scale to cover the screen (maintaining aspect ratio, cropping if needed)
+      const scaleX = width / bg.width;
+      const scaleY = height / bg.height;
+      const scale = Math.max(scaleX, scaleY); // Cover (not contain)
+      bg.setScale(scale);
+    } else {
+      // Fallback to gradient if image not loaded
+      const bg = this.add.graphics();
+      bg.setDepth(-10);
+
+      const steps = 64;
+      const stepHeight = Math.ceil(height / steps) + 1;
+
+      const topColor = { r: 20, g: 40, b: 60 };
+      const midColor = { r: 30, g: 60, b: 50 };
+      const bottomColor = { r: 40, g: 80, b: 60 };
+
+      for (let i = 0; i < steps; i++) {
+        const t = i / steps;
+        let r, g, b;
+
+        if (t < 0.5) {
+          const localT = t * 2;
+          r = Math.round(topColor.r + (midColor.r - topColor.r) * localT);
+          g = Math.round(topColor.g + (midColor.g - topColor.g) * localT);
+          b = Math.round(topColor.b + (midColor.b - topColor.b) * localT);
+        } else {
+          const localT = (t - 0.5) * 2;
+          r = Math.round(midColor.r + (bottomColor.r - midColor.r) * localT);
+          g = Math.round(midColor.g + (bottomColor.g - midColor.g) * localT);
+          b = Math.round(midColor.b + (bottomColor.b - midColor.b) * localT);
+        }
+
+        const color = (r << 16) | (g << 8) | b;
+        bg.fillStyle(color, 1);
+        const y = Math.floor((i / steps) * height) - 1;
+        bg.fillRect(-1, y, width + 2, stepHeight);
+      }
+    }
+  }
+
   private renderUI(): void {
-    // Header background
-    const headerBg = this.add.graphics();
-    headerBg.fillStyle(CONFIG.UI.COLORS.PANEL, 1);
-    headerBg.fillRect(0, 0, CONFIG.SCREEN.WIDTH, CONFIG.UI.HEADER_HEIGHT);
+    // No header background - UI elements sit directly on gradient
 
     // Level text (left side)
     this.add.text(CONFIG.UI.PADDING, CONFIG.UI.HEADER_HEIGHT / 2, `Level ${this.level.id}`, {
@@ -205,12 +273,7 @@ export class GameScene extends Phaser.Scene {
     menuBtn.on('pointerover', () => menuBtn.setAlpha(0.8));
     menuBtn.on('pointerout', () => menuBtn.setAlpha(1));
 
-    // Objective bar background
-    const objBg = this.add.graphics();
-    objBg.fillStyle(CONFIG.UI.COLORS.BACKGROUND, 1);
-    objBg.fillRect(0, CONFIG.UI.HEADER_HEIGHT, CONFIG.SCREEN.WIDTH, CONFIG.UI.OBJECTIVE_BAR_HEIGHT);
-
-    // Objective display
+    // Objective display (no background - sits directly on gradient)
     this.objectiveDisplay = new ObjectiveDisplay(
       this,
       CONFIG.SCREEN.WIDTH / 2,
