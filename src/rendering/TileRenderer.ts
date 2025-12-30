@@ -24,8 +24,8 @@ export class TileRenderer {
       case 'yellow': // Star
         TileRenderer.drawStar(graphics, halfSize, 5);
         break;
-      case 'purple': // Moon
-        TileRenderer.drawMoon(graphics, color, halfSize);
+      case 'purple': // Amethyst Crystal
+        TileRenderer.drawAmethyst(graphics, color, halfSize);
         break;
       case 'orange': // Sun
         TileRenderer.drawSun(graphics, color, halfSize);
@@ -186,28 +186,80 @@ export class TileRenderer {
     graphics.fillPath();
   }
 
-  static drawMoon(graphics: Phaser.GameObjects.Graphics, color: number, halfSize: number): void {
+  static drawAmethyst(graphics: Phaser.GameObjects.Graphics, color: number, halfSize: number): void {
     const s = halfSize * 0.85;
 
-    // Crescent moon - draw full circle then cut out
+    // Back crystals (darker, behind)
+    graphics.fillStyle(TileRenderer.darkenColor(color, 0.3), 1);
+    // Left back crystal
+    graphics.beginPath();
+    graphics.moveTo(-s * 0.6, s * 0.7);
+    graphics.lineTo(-s * 0.45, -s * 0.4);
+    graphics.lineTo(-s * 0.3, s * 0.7);
+    graphics.closePath();
+    graphics.fillPath();
+    // Right back crystal
+    graphics.beginPath();
+    graphics.moveTo(s * 0.6, s * 0.7);
+    graphics.lineTo(s * 0.5, -s * 0.2);
+    graphics.lineTo(s * 0.35, s * 0.7);
+    graphics.closePath();
+    graphics.fillPath();
+
+    // Main center crystal (tallest)
     graphics.fillStyle(color, 1);
-    graphics.fillCircle(0, 0, s);
+    graphics.beginPath();
+    graphics.moveTo(0, -s * 0.95);  // Top point
+    graphics.lineTo(s * 0.25, -s * 0.3);  // Right upper facet
+    graphics.lineTo(s * 0.2, s * 0.7);   // Right bottom
+    graphics.lineTo(-s * 0.2, s * 0.7);  // Left bottom
+    graphics.lineTo(-s * 0.25, -s * 0.3); // Left upper facet
+    graphics.closePath();
+    graphics.fillPath();
 
-    // Cut out inner circle (darker, offset to the right)
-    graphics.fillStyle(0x1a1a2e, 1);  // Dark background color
-    graphics.fillCircle(s * 0.45, -s * 0.1, s * 0.75);
+    // Center crystal highlight facet
+    graphics.fillStyle(TileRenderer.lightenColor(color, 0.25), 1);
+    graphics.beginPath();
+    graphics.moveTo(0, -s * 0.95);
+    graphics.lineTo(s * 0.12, -s * 0.2);
+    graphics.lineTo(s * 0.08, s * 0.5);
+    graphics.lineTo(-s * 0.08, s * 0.5);
+    graphics.lineTo(-s * 0.12, -s * 0.2);
+    graphics.closePath();
+    graphics.fillPath();
 
-    // Stars around the moon
-    graphics.fillStyle(0xffffff, 0.9);
-    TileRenderer.drawMiniStar(graphics, s * 0.5, -s * 0.5, s * 0.12);
-    TileRenderer.drawMiniStar(graphics, s * 0.7, s * 0.1, s * 0.08);
-    TileRenderer.drawMiniStar(graphics, s * 0.35, s * 0.55, s * 0.1);
+    // Left front crystal
+    graphics.fillStyle(TileRenderer.darkenColor(color, 0.1), 1);
+    graphics.beginPath();
+    graphics.moveTo(-s * 0.35, s * 0.7);
+    graphics.lineTo(-s * 0.5, -s * 0.5);
+    graphics.lineTo(-s * 0.25, -s * 0.1);
+    graphics.lineTo(-s * 0.15, s * 0.7);
+    graphics.closePath();
+    graphics.fillPath();
 
-    // Moon surface details
-    graphics.fillStyle(TileRenderer.darkenColor(color, 0.1), 0.5);
-    graphics.fillCircle(-s * 0.3, -s * 0.2, s * 0.12);
-    graphics.fillCircle(-s * 0.5, s * 0.3, s * 0.08);
-    graphics.fillCircle(-s * 0.15, s * 0.4, s * 0.1);
+    // Right front crystal
+    graphics.fillStyle(TileRenderer.darkenColor(color, 0.15), 1);
+    graphics.beginPath();
+    graphics.moveTo(s * 0.4, s * 0.7);
+    graphics.lineTo(s * 0.45, -s * 0.35);
+    graphics.lineTo(s * 0.25, 0);
+    graphics.lineTo(s * 0.2, s * 0.7);
+    graphics.closePath();
+    graphics.fillPath();
+
+    // Sparkle highlights
+    graphics.fillStyle(0xffffff, 0.7);
+    graphics.fillCircle(-s * 0.08, -s * 0.6, s * 0.08);
+    graphics.fillStyle(0xffffff, 0.5);
+    graphics.fillCircle(s * 0.35, -s * 0.15, s * 0.05);
+    graphics.fillCircle(-s * 0.4, -s * 0.3, s * 0.04);
+
+    // Base/rock
+    graphics.fillStyle(0x4a4a5a, 1);
+    graphics.fillRect(-s * 0.65, s * 0.6, s * 1.3, s * 0.25);
+    graphics.fillStyle(0x3a3a4a, 1);
+    graphics.fillRect(-s * 0.55, s * 0.7, s * 1.1, s * 0.15);
   }
 
   static drawMiniStar(graphics: Phaser.GameObjects.Graphics, x: number, y: number, size: number): void {
