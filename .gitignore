@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# AI prompts (contains generation prompts, not needed in repo)
+docs/features/AI_PROMPTS.md

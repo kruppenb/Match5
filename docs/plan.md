@@ -97,7 +97,7 @@ Features:
 ---
 
 ### [Phase 4: Polish & Effects](phases/phase-4-polish.md)
-**Goal:** Juicy, satisfying game feel  
+**Goal:** Juicy, satisfying game feel
 **Duration:** 1-2 weeks
 
 Key Deliverables:
@@ -111,6 +111,26 @@ Key Deliverables:
 Features:
 - [Animations](features/animations.md)
 - [Audio](features/audio.md)
+
+---
+
+### [Phase 4.5: Visual Refresh](phases/phase-4.5-visual-refresh.md)
+**Goal:** High-quality mobile-first visual experience
+**Duration:** 1-2 weeks
+
+Key Deliverables:
+- 3D/high-quality gem sprites to replace vector drawings
+- Themed background images with environmental depth
+- Decorative game board frame with lighting effects
+- High-quality obstacle sprites (grass, ice, chains, boxes, stone)
+- Polished UI elements matching visual theme
+- Sprite-based rendering system
+
+Visual Targets:
+- 6 distinct gem designs with shine and depth
+- 5 themed backgrounds (Garden, Castle, Kitchen, Library, Sky Tower)
+- Professional board frame with corner ornaments
+- Cohesive visual style matching premium mobile games
 
 ---
 
@@ -148,6 +168,11 @@ Key Deliverables:
 | Powerup Combos | 3 | Medium | [powerups.md](features/powerups.md) |
 | Particle Effects | 4 | Medium | [animations.md](features/animations.md) |
 | Sound Effects | 4 | Medium | [audio.md](features/audio.md) |
+| Gem Sprites | 4.5 | High | [phase-4.5-visual-refresh.md](phases/phase-4.5-visual-refresh.md) |
+| Background Images | 4.5 | High | [phase-4.5-visual-refresh.md](phases/phase-4.5-visual-refresh.md) |
+| Board Frame | 4.5 | Medium | [phase-4.5-visual-refresh.md](phases/phase-4.5-visual-refresh.md) |
+| Obstacle Sprites | 4.5 | Medium | [phase-4.5-visual-refresh.md](phases/phase-4.5-visual-refresh.md) |
+| UI Visual Polish | 4.5 | Medium | [phase-4.5-visual-refresh.md](phases/phase-4.5-visual-refresh.md) |
 | Level Map | 5 | Low | [level-objectives.md](features/level-objectives.md) |
 | Stars/Rating | 5 | Low | [level-objectives.md](features/level-objectives.md) |
 

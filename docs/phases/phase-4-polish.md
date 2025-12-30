@@ -442,4 +442,4 @@ Phase 4 is complete when:
 
 ## Next Phase
 
-Proceed to [Phase 5: Meta Game](phase-5-meta.md) to add progression systems, star ratings, and PWA features.
+Proceed to [Phase 4.5: Visual Refresh](phase-4.5-visual-refresh.md) to upgrade game visuals with high-quality sprites, themed backgrounds, and a polished board design.

@@ -36,6 +36,10 @@ export class GameScene extends Phaser.Scene {
   private isProcessing = false;
   private autoTestRunning = false;
 
+  // Track which sprites are loaded
+  private loadedGemSprites: Set<string> = new Set();
+  private loadedPowerupSprites: Set<string> = new Set();
+
   // UI Components
   private moveCounter!: MoveCounter;
   private objectiveDisplay!: ObjectiveDisplay;
@@ -54,6 +58,24 @@ export class GameScene extends Phaser.Scene {
 
   constructor() {
     super('GameScene');
+  }
+
+  preload(): void {
+    // Load gem sprites
+    const gemSprites = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+    gemSprites.forEach(gem => {
+      const path = `assets/sprites/gems/${gem}.png`;
+      this.load.image(`gem_${gem}`, path);
+      this.loadedGemSprites.add(gem);
+    });
+
+    // Load powerup sprites
+    const powerupSprites = ['rocket_h', 'rocket_v', 'bomb', 'color_bomb', 'propeller'];
+    powerupSprites.forEach(powerup => {
+      const path = `assets/sprites/powerups/${powerup}.png`;
+      this.load.image(`powerup_${powerup}`, path);
+      this.loadedPowerupSprites.add(powerup);
+    });
   }
 
   create(data?: GameSceneData): void {
@@ -477,23 +499,44 @@ export class GameScene extends Phaser.Scene {
 
   private createTileSprite(tile: Tile, startRow?: number): void {
     const startPos = startRow !== undefined ? this.cellToScreen(startRow, tile.col) : this.cellToScreen(tile.row, tile.col);
-    
-    // Create a container to hold graphics
+
+    // Create a container to hold graphics or sprite
     const container = this.add.container(startPos.x, startPos.y);
-    
-    const graphics = this.add.graphics();
+
     const color = CONFIG.COLORS[tile.type as keyof typeof CONFIG.COLORS] || 0x888888;
     const size = this.tileSize - CONFIG.GRID.GAP * 4;
     const halfSize = size / 2;
 
-    // Draw shape based on tile type or powerup
-    if (tile.isPowerup && tile.powerupType) {
-      TileRenderer.drawPowerupShape(graphics, tile.powerupType, color, halfSize);
-    } else {
-      TileRenderer.drawTileShape(graphics, tile.type, color, halfSize);
-    }
+    // Check if we should use sprites
+    const useGemSprite = !tile.isPowerup && this.loadedGemSprites.has(tile.type) && this.textures.exists(`gem_${tile.type}`);
+    const usePowerupSprite = tile.isPowerup && tile.powerupType && this.loadedPowerupSprites.has(tile.powerupType) && this.textures.exists(`powerup_${tile.powerupType}`);
 
-    container.add(graphics);
+    if (useGemSprite) {
+      // Use pre-rendered gem sprite
+      const sprite = this.add.sprite(0, 0, `gem_${tile.type}`);
+      const spriteSize = Math.max(sprite.width, sprite.height);
+      const scale = size / spriteSize;
+      sprite.setScale(scale);
+      container.add(sprite);
+    } else if (usePowerupSprite) {
+      // Use pre-rendered powerup sprite
+      const sprite = this.add.sprite(0, 0, `powerup_${tile.powerupType}`);
+      const spriteSize = Math.max(sprite.width, sprite.height);
+      const scale = size / spriteSize;
+      sprite.setScale(scale);
+      container.add(sprite);
+    } else {
+      // Fallback to graphics-based rendering
+      const graphics = this.add.graphics();
+
+      if (tile.isPowerup && tile.powerupType) {
+        TileRenderer.drawPowerupShape(graphics, tile.powerupType, color, halfSize);
+      } else {
+        TileRenderer.drawTileShape(graphics, tile.type, color, halfSize);
+      }
+
+      container.add(graphics);
+    }
 
     // Set interactive on the container
     container.setSize(this.tileSize, this.tileSize);
