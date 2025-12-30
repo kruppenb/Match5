@@ -10,6 +10,12 @@ import { CONFIG } from '../config';
 import { Tile, Position, SwipeDirection, Cell } from '../types';
 import { MoveCounter, ObjectiveDisplay, EndScreen } from './UIComponents';
 import { PowerupAnimations } from './PowerupAnimations';
+import { ScreenShake } from '../utils/ScreenShake';
+import { ParticleManager } from '../utils/ParticleManager';
+import { ComboDisplay } from '../utils/ComboDisplay';
+import { ScorePopup } from '../utils/ScorePopup';
+import { getAudioManager, AudioManager } from '../utils/AudioManager';
+import { getHapticFeedback, HapticFeedback } from '../utils/HapticFeedback';
 
 export interface GameSceneData {
   levelId?: number;
@@ -36,6 +42,14 @@ export class GameScene extends Phaser.Scene {
 
   // Animation system
   private powerupAnimations!: PowerupAnimations;
+
+  // Polish/juice systems
+  private screenShake!: ScreenShake;
+  private particleManager!: ParticleManager;
+  private comboDisplay!: ComboDisplay;
+  private scorePopup!: ScorePopup;
+  private audioManager!: AudioManager;
+  private hapticFeedback!: HapticFeedback;
 
   constructor() {
     super('GameScene');
@@ -77,6 +91,14 @@ export class GameScene extends Phaser.Scene {
 
     // Initialize animation system
     this.powerupAnimations = new PowerupAnimations(this, this.gridOffsetX, this.gridOffsetY, this.tileSize);
+
+    // Initialize polish/juice systems
+    this.screenShake = new ScreenShake(this);
+    this.particleManager = new ParticleManager(this);
+    this.comboDisplay = new ComboDisplay(this);
+    this.scorePopup = new ScorePopup(this);
+    this.audioManager = getAudioManager();
+    this.hapticFeedback = getHapticFeedback();
 
     // Setup game state listeners
     this.setupGameStateListeners();
@@ -153,7 +175,10 @@ export class GameScene extends Phaser.Scene {
       backgroundColor: '#444466',
       padding: { x: 10, y: 5 },
     }).setOrigin(1, 0.5).setInteractive({ useHandCursor: true });
-    menuBtn.on('pointerdown', () => this.goToMenu());
+    menuBtn.on('pointerdown', () => {
+      this.audioManager.playClick();
+      this.goToMenu();
+    });
     menuBtn.on('pointerover', () => menuBtn.setAlpha(0.8));
     menuBtn.on('pointerout', () => menuBtn.setAlpha(1));
 
@@ -193,6 +218,11 @@ export class GameScene extends Phaser.Scene {
     // Save progress
     ProgressStorage.completeLevel(this.level.id, stars);
 
+    // Play win effects
+    this.audioManager.playWin();
+    this.hapticFeedback.success();
+    this.particleManager.emitConfetti(CONFIG.SCREEN.WIDTH / 2, CONFIG.SCREEN.HEIGHT / 3, 60);
+
     this.endScreen.showWin(score, stars, bonus, {
       onRetry: () => this.restartLevel(),
       onNext: () => this.nextLevel(),
@@ -201,6 +231,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showLoseScreen(): void {
+    // Play lose sound
+    this.audioManager.playLose();
+    this.hapticFeedback.error();
+
     this.endScreen.showLose(this.gameState.getScore(), {
       onRetry: () => this.restartLevel(),
       onMenu: () => this.goToMenu(),
@@ -767,6 +801,9 @@ export class GameScene extends Phaser.Scene {
     const axisLockThreshold = 10; // Pixels before locking to an axis
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      // Initialize audio on first interaction (required for browser autoplay policy)
+      this.audioManager.init();
+
       if (this.isProcessing) return;
 
       startPos = { x: pointer.x, y: pointer.y };
@@ -900,7 +937,9 @@ export class GameScene extends Phaser.Scene {
     // Check if swap is allowed (chains block movement)
     if (!this.grid.canSwap(from, to)) {
       console.log('Swap blocked - tile cannot move (chained?)');
-      // Visual feedback for blocked swap
+      // Visual and audio feedback for blocked swap
+      this.audioManager.playInvalid();
+      this.hapticFeedback.error();
       const tile1 = this.grid.getTile(from.row, from.col);
       const tile2 = this.grid.getTile(to.row, to.col);
       const sprite1 = tile1 ? this.tileSprites.get(tile1.id) : null;
@@ -1196,6 +1235,9 @@ export class GameScene extends Phaser.Scene {
 
     if (!sprite1 || !sprite2) return;
 
+    // Play swap sound
+    this.audioManager.playSwap();
+
     // Animate both sprites to their tile's current positions
     const targetPos1 = this.cellToScreen(tile1.row, tile1.col);
     const targetPos2 = this.cellToScreen(tile2.row, tile2.col);
@@ -1223,6 +1265,9 @@ export class GameScene extends Phaser.Scene {
   private async processMatches(): Promise<void> {
     let cascadeCount = 0;
 
+    // Reset combo display at start of move
+    this.comboDisplay.resetCombo();
+
     while (true) {
       const matches = this.matchDetector.findAllMatches(this.grid);
 
@@ -1234,6 +1279,16 @@ export class GameScene extends Phaser.Scene {
       // Increment cascade multiplier for scoring (after first match)
       if (cascadeCount > 1) {
         this.gameState.incrementCascade();
+      }
+
+      // Show combo feedback for cascades
+      this.comboDisplay.onCascade();
+
+      // Cascade audio and haptics
+      if (cascadeCount > 1) {
+        this.audioManager.playCascade(cascadeCount);
+        this.hapticFeedback.forCascade(cascadeCount);
+        this.screenShake.forCascade(cascadeCount);
       }
 
       // Clear matches
@@ -1333,13 +1388,41 @@ export class GameScene extends Phaser.Scene {
     this.updateObstacleObjectives(obstaclesClearedByType);
 
     // Add score for cleared tiles
+    const scoreEarned = tilesToClear.size * CONFIG.SCORE.MATCH_BASE + (powerupCreated ? CONFIG.SCORE.POWERUP_BONUS : 0);
     this.gameState.addMatchScore(tilesToClear.size, powerupCreated);
 
-    // Animate clear
+    // Play match sound and haptic
+    this.audioManager.playMatch();
+    this.hapticFeedback.forMatchSize(tilesToClear.size);
+
+    // Screen shake for large matches
+    this.screenShake.forMatchSize(tilesToClear.size);
+
+    // Calculate center of cleared tiles for score popup
+    let centerX = 0, centerY = 0;
+    let count = 0;
+    tilesToClear.forEach(tile => {
+      const pos = this.cellToScreen(tile.row, tile.col);
+      centerX += pos.x;
+      centerY += pos.y;
+      count++;
+    });
+    if (count > 0) {
+      centerX /= count;
+      centerY /= count;
+      // Show score popup at center of match
+      this.scorePopup.showAtMatch(centerX, centerY, scoreEarned, powerupCreated);
+    }
+
+    // Animate clear with particles
     const promises: Promise<void>[] = [];
     tilesToClear.forEach(tile => {
       const sprite = this.tileSprites.get(tile.id);
       if (sprite) {
+        // Emit particles at tile position
+        const color = CONFIG.COLORS[tile.type as keyof typeof CONFIG.COLORS] || 0xffffff;
+        this.particleManager.emitMatchParticles(sprite.x, sprite.y, color, 8);
+
         promises.push(
           new Promise(resolve => {
             this.tweens.add({
@@ -1381,14 +1464,20 @@ export class GameScene extends Phaser.Scene {
           this.grid.setTile(match.powerupPosition.row, match.powerupPosition.col, powerupTile);
           console.log(`Created ${match.powerupType} at (${match.powerupPosition.row}, ${match.powerupPosition.col})`);
 
+          // Play powerup creation sound and particles
+          const powerupColor = CONFIG.COLORS[powerupTile.type as keyof typeof CONFIG.COLORS] || 0xffffff;
+          this.audioManager.playPowerupCreate();
+          this.hapticFeedback.medium();
+          const pos = this.cellToScreen(match.powerupPosition.row, match.powerupPosition.col);
+          this.particleManager.emitPowerupCreation(pos.x, pos.y, powerupColor);
+
           // Play powerup creation animation
-          const color = CONFIG.COLORS[powerupTile.type as keyof typeof CONFIG.COLORS] || 0xffffff;
           powerupCreationPromises.push(
             this.powerupAnimations.animatePowerupCreation(
               match.powerupPosition.row,
               match.powerupPosition.col,
               match.powerupType,
-              color
+              powerupColor
             )
           );
         }
@@ -1420,17 +1509,25 @@ export class GameScene extends Phaser.Scene {
   private async playPowerupAnimation(powerup: Tile, color: number): Promise<void> {
     if (!powerup.powerupType) return;
 
+    // Play powerup sound and haptic feedback
+    this.hapticFeedback.forPowerup(powerup.powerupType);
+    this.screenShake.forPowerup(powerup.powerupType);
+
     switch (powerup.powerupType) {
       case 'rocket_h':
+        this.audioManager.playRocket();
         await this.powerupAnimations.animateRocketHorizontal(powerup.row, powerup.col, color);
         break;
       case 'rocket_v':
+        this.audioManager.playRocket();
         await this.powerupAnimations.animateRocketVertical(powerup.row, powerup.col, color);
         break;
       case 'bomb':
+        this.audioManager.playBomb();
         await this.powerupAnimations.animateBomb(powerup.row, powerup.col, 2);
         break;
       case 'color_bomb':
+        this.audioManager.playColorBomb();
         // Find all tiles that will be affected
         const targetPositions: Position[] = [];
         this.grid.forEachCell(cell => {
@@ -1441,6 +1538,7 @@ export class GameScene extends Phaser.Scene {
         await this.powerupAnimations.animateColorBomb(powerup.row, powerup.col, targetPositions);
         break;
       case 'propeller':
+        this.audioManager.playPropeller();
         // When called from here (chain reactions), calculate target and cache it
         const targets = getPropellerTargets(this.grid, powerup);
         setPropellerTarget(powerup.id, targets.main);
@@ -1476,6 +1574,10 @@ export class GameScene extends Phaser.Scene {
 
     const centerRow = powerup1.row;
     const centerCol = powerup1.col;
+
+    // Play combination sound and effects
+    this.hapticFeedback.forPowerupCombination();
+    this.screenShake.forPowerupCombination(type1, type2);
 
     switch (comboKey) {
       // Rocket + Rocket = Cross blast
