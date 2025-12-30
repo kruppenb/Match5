@@ -19,11 +19,20 @@ export interface Tile {
 }
 
 // Obstacle types
-export type ObstacleType = 'grass' | 'ice' | 'double_ice' | 'chain';
+export type ObstacleType = 'grass' | 'ice' | 'chain' | 'box' | 'stone';
 
 export interface Obstacle {
   type: ObstacleType;
-  layers: number;
+  layers: number; // For ice (1-2), box (1-3)
+}
+
+// Obstacle behavior helpers
+export interface ObstacleBehavior {
+  canTileMove: boolean;     // Can the tile be swapped? (false for chain)
+  canBeMatched: boolean;    // Can participate in matches? (true for chain, ice)
+  blocksTile: boolean;      // Does it block tile placement? (true for box, stone)
+  clearedByAdjacent: boolean; // Cleared by adjacent matches? (true for box)
+  isIndestructible: boolean;  // Cannot be destroyed? (true for stone)
 }
 
 export interface Cell {
@@ -44,7 +53,7 @@ export interface Match {
 export type SwipeDirection = 'up' | 'down' | 'left' | 'right';
 
 // Objective types
-export type ObjectiveType = 'clear_grass' | 'collect' | 'score';
+export type ObjectiveType = 'clear_grass' | 'clear_ice' | 'clear_boxes' | 'clear_chains' | 'collect' | 'score';
 
 export interface Objective {
   type: ObjectiveType;

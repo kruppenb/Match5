@@ -84,10 +84,10 @@ export class LevelSelectScene extends Phaser.Scene {
     button.lineStyle(3, isUnlocked ? 0xffffff : 0x555555, 0.5);
     button.strokeRoundedRect(x - size / 2, y - size / 2, size, size, 10);
 
-    // Level number
+    // Level number (moved up to make room for lock)
     const textColor = isUnlocked ? '#ffffff' : '#666666';
-    this.add.text(x, y - 5, levelId.toString(), {
-      fontSize: '28px',
+    this.add.text(x, y - 12, levelId.toString(), {
+      fontSize: '24px',
       fontStyle: 'bold',
       color: textColor,
     }).setOrigin(0.5);
@@ -103,16 +103,16 @@ export class LevelSelectScene extends Phaser.Scene {
       }
     }
 
-    // Lock icon (if locked)
+    // Lock icon (if locked) — smaller and positioned below number
     if (!isUnlocked) {
       const lock = this.add.graphics();
-      lock.fillStyle(0x888888, 1);
-      // Lock body
-      lock.fillRoundedRect(x - 8, y, 16, 12, 2);
-      // Lock shackle
-      lock.lineStyle(3, 0x888888, 1);
+      lock.fillStyle(0x666666, 1);
+      // Lock body (smaller)
+      lock.fillRoundedRect(x - 6, y + 8, 12, 9, 2);
+      // Lock shackle (smaller)
+      lock.lineStyle(2, 0x999999, 1);
       lock.beginPath();
-      lock.arc(x, y - 2, 6, Math.PI, 0);
+      lock.arc(x, y + 6, 4, Math.PI, 0);
       lock.strokePath();
     }
 

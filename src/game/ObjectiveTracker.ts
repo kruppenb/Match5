@@ -58,6 +58,18 @@ export class ObjectiveTracker {
     this.updateProgress('clear_grass', undefined, count);
   }
 
+  onIceCleared(count: number): void {
+    this.updateProgress('clear_ice', undefined, count);
+  }
+
+  onChainCleared(count: number): void {
+    this.updateProgress('clear_chains', undefined, count);
+  }
+
+  onBoxCleared(count: number): void {
+    this.updateProgress('clear_boxes', undefined, count);
+  }
+
   onItemCollected(tileType: string, count: number): void {
     this.updateProgress('collect', tileType, count);
   }
