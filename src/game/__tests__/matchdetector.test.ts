@@ -234,7 +234,7 @@ describe('MatchDetector', () => {
     expect(lineMatch).toBeDefined();
   });
 
-  test('square tiles are excluded from line match detection', () => {
+  test('line matches take priority over square matches (propellers)', () => {
     const grid = new Grid(5, 5);
     // Fill with unique colors
     const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
@@ -251,21 +251,90 @@ describe('MatchDetector', () => {
     grid.setTile(3, 1, { id: 's3', type: 'orange', row: 3, col: 1, isPowerup: false });
     grid.setTile(3, 2, { id: 's4', type: 'orange', row: 3, col: 2, isPowerup: false });
 
-    // Add one more orange tile adjacent - but it shouldn't form a line match
-    // because the square tiles are excluded
+    // Add one more orange tile adjacent - this SHOULD form a line match
+    // because line matches now take priority over square matches
     grid.setTile(2, 3, { id: 'extra', type: 'orange', row: 2, col: 3, isPowerup: false });
 
     const detector = new MatchDetector();
     const matches = detector.findAllMatches(grid);
 
-    // Should only have the propeller match, no line matches with orange
-    const propellerMatch = matches.find(m => m.powerupType === 'propeller');
-    expect(propellerMatch).toBeDefined();
-    // There should be no 3-in-a-row orange match
+    // Should have a 3-in-a-row horizontal match (line matches take priority)
     const orangeLineMatch = matches.find(m =>
       m.type === 'horizontal' &&
       m.tiles.every(t => t.type === 'orange')
     );
-    expect(orangeLineMatch).toBeUndefined();
+    expect(orangeLineMatch).toBeDefined();
+    expect(orangeLineMatch!.tiles.length).toBe(3);
+
+    // The propeller should NOT be created because its tiles are part of the line match
+    // (only 2 of the 4 square tiles remain after the line takes priority)
+    const propellerMatch = matches.find(m => m.powerupType === 'propeller');
+    expect(propellerMatch).toBeUndefined();
+  });
+
+  test('color bomb takes priority over bomb (5 in row + perpendicular)', () => {
+    const grid = new Grid(7, 7);
+    // Fill with unique colors
+    const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
+    for (let r = 0; r < grid.rows; r++) {
+      for (let c = 0; c < grid.cols; c++) {
+        const type = colors[(r * 7 + c) % colors.length];
+        grid.setTile(r, c, { id: `t_${r}_${c}`, type, row: r, col: c, isPowerup: false });
+      }
+    }
+
+    // Create a 5 horizontal + 3 vertical (L/T shape with 7 tiles total)
+    // The horizontal 5 should trigger color_bomb, not bomb
+    grid.setTile(3, 1, { id: 'h1', type: 'orange', row: 3, col: 1, isPowerup: false });
+    grid.setTile(3, 2, { id: 'h2', type: 'orange', row: 3, col: 2, isPowerup: false });
+    grid.setTile(3, 3, { id: 'h3', type: 'orange', row: 3, col: 3, isPowerup: false }); // intersection
+    grid.setTile(3, 4, { id: 'h4', type: 'orange', row: 3, col: 4, isPowerup: false });
+    grid.setTile(3, 5, { id: 'h5', type: 'orange', row: 3, col: 5, isPowerup: false });
+    // Vertical arm
+    grid.setTile(2, 3, { id: 'v1', type: 'orange', row: 2, col: 3, isPowerup: false });
+    grid.setTile(4, 3, { id: 'v2', type: 'orange', row: 4, col: 3, isPowerup: false });
+
+    const detector = new MatchDetector();
+    const matches = detector.findAllMatches(grid);
+
+    // Should have a color_bomb (5 in a row takes priority over L/T bomb)
+    const colorBombMatch = matches.find(m => m.powerupType === 'color_bomb');
+    expect(colorBombMatch).toBeDefined();
+    expect(colorBombMatch!.tiles.length).toBe(7); // All tiles merged
+
+    // Should NOT have a bomb
+    const bombMatch = matches.find(m => m.powerupType === 'bomb');
+    expect(bombMatch).toBeUndefined();
+  });
+
+  test('bomb takes priority over rocket (L shape with 3+3)', () => {
+    const grid = new Grid(6, 6);
+    // Fill with unique colors
+    const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
+    for (let r = 0; r < grid.rows; r++) {
+      for (let c = 0; c < grid.cols; c++) {
+        const type = colors[(r * 6 + c) % colors.length];
+        grid.setTile(r, c, { id: `t_${r}_${c}`, type, row: r, col: c, isPowerup: false });
+      }
+    }
+
+    // Create L shape: 3 horizontal + 3 vertical = 5 tiles (sharing 1)
+    grid.setTile(2, 1, { id: 'h1', type: 'orange', row: 2, col: 1, isPowerup: false });
+    grid.setTile(2, 2, { id: 'h2', type: 'orange', row: 2, col: 2, isPowerup: false });
+    grid.setTile(2, 3, { id: 'h3', type: 'orange', row: 2, col: 3, isPowerup: false }); // intersection
+    grid.setTile(3, 3, { id: 'v1', type: 'orange', row: 3, col: 3, isPowerup: false });
+    grid.setTile(4, 3, { id: 'v2', type: 'orange', row: 4, col: 3, isPowerup: false });
+
+    const detector = new MatchDetector();
+    const matches = detector.findAllMatches(grid);
+
+    // Should have a bomb (L shape with 5 tiles)
+    const bombMatch = matches.find(m => m.powerupType === 'bomb');
+    expect(bombMatch).toBeDefined();
+    expect(bombMatch!.tiles.length).toBe(5);
+
+    // Should NOT have a rocket
+    const rocketMatch = matches.find(m => m.powerupType === 'rocket_h' || m.powerupType === 'rocket_v');
+    expect(rocketMatch).toBeUndefined();
   });
 });

@@ -4,24 +4,26 @@ import { CONFIG } from '../config';
 
 export class MatchDetector {
   findAllMatches(grid: Grid): Match[] {
-    // First, find 2x2 square matches (creates propeller)
-    const squareMatches = this.findSquareMatches(grid);
+    // Find all horizontal and vertical matches first (don't exclude any tiles)
+    const horizontalMatches = this.findHorizontalMatches(grid);
+    const verticalMatches = this.findVerticalMatches(grid);
 
-    // Get tiles that are part of square matches to exclude from line detection
-    const squareTileIds = new Set<string>();
-    squareMatches.forEach(m => m.tiles.forEach(t => squareTileIds.add(t.id)));
+    // Merge overlapping line matches to detect L/T shapes (bombs)
+    const mergedLineMatches = this.mergeMatches(grid, horizontalMatches, verticalMatches);
 
-    const horizontalMatches = this.findHorizontalMatches(grid, squareTileIds);
-    const verticalMatches = this.findVerticalMatches(grid, squareTileIds);
+    // Get all tile IDs that are part of line matches (including L/T shapes)
+    const lineTileIds = new Set<string>();
+    mergedLineMatches.forEach(m => m.tiles.forEach(t => lineTileIds.add(t.id)));
 
-    // Merge overlapping matches to detect L/T shapes
-    const mergedMatches = this.mergeMatches(grid, horizontalMatches, verticalMatches);
+    // Find 2x2 square matches, but only for tiles NOT already in line matches
+    // This ensures bombs (L/T shapes) take priority over propellers (squares)
+    const squareMatches = this.findSquareMatches(grid, lineTileIds);
 
-    // Combine square matches with line matches
-    return [...squareMatches, ...mergedMatches];
+    // Combine: line matches first (higher priority), then remaining squares
+    return [...mergedLineMatches, ...squareMatches];
   }
 
-  private findSquareMatches(grid: Grid): Match[] {
+  private findSquareMatches(grid: Grid, excludeTileIds: Set<string> = new Set()): Match[] {
     const matches: Match[] = [];
     const usedPositions = new Set<string>();
 
@@ -36,10 +38,12 @@ export class MatchDetector {
         const bottomLeft = grid.getTile(row + 1, col);
         const bottomRight = grid.getTile(row + 1, col + 1);
 
-        // Check all 4 tiles exist, same type, not powerups
+        // Check all 4 tiles exist, same type, not powerups, and not excluded
         if (topLeft && topRight && bottomLeft && bottomRight &&
             !topLeft.isPowerup && !topRight.isPowerup &&
             !bottomLeft.isPowerup && !bottomRight.isPowerup &&
+            !excludeTileIds.has(topLeft.id) && !excludeTileIds.has(topRight.id) &&
+            !excludeTileIds.has(bottomLeft.id) && !excludeTileIds.has(bottomRight.id) &&
             topLeft.type === topRight.type &&
             topLeft.type === bottomLeft.type &&
             topLeft.type === bottomRight.type) {
@@ -200,21 +204,54 @@ export class MatchDetector {
       return { tiles, type: 'horizontal' };
     }
 
-    // Analyze shape
+    // Analyze shape - count tiles per row and column
     const rows = new Set(tiles.map(t => t.row));
     const cols = new Set(tiles.map(t => t.col));
+    const rowCounts = new Map<number, number>();
+    const colCounts = new Map<number, number>();
 
-    // Linear matches
+    tiles.forEach(t => {
+      rowCounts.set(t.row, (rowCounts.get(t.row) || 0) + 1);
+      colCounts.set(t.col, (colCounts.get(t.col) || 0) + 1);
+    });
+
+    // Find the longest line in any single row or column
+    const maxInRow = Math.max(...rowCounts.values());
+    const maxInCol = Math.max(...colCounts.values());
+    const maxLineLength = Math.max(maxInRow, maxInCol);
+
+    // PRIORITY 1: Color bomb (5+ in a single row or column)
+    if (maxLineLength >= CONFIG.MATCH.COLOR_BOMB_MATCH) {
+      // Find which row/col has the longest line for powerup position
+      const isHorizontal = maxInRow >= maxInCol;
+      let bestRow = 0, bestCol = 0;
+
+      if (isHorizontal) {
+        rowCounts.forEach((count, row) => {
+          if (count === maxInRow) bestRow = row;
+        });
+        const rowTiles = tiles.filter(t => t.row === bestRow);
+        bestCol = Math.floor((Math.min(...rowTiles.map(t => t.col)) + Math.max(...rowTiles.map(t => t.col))) / 2);
+      } else {
+        colCounts.forEach((count, col) => {
+          if (count === maxInCol) bestCol = col;
+        });
+        const colTiles = tiles.filter(t => t.col === bestCol);
+        bestRow = Math.floor((Math.min(...colTiles.map(t => t.row)) + Math.max(...colTiles.map(t => t.row))) / 2);
+      }
+
+      return {
+        tiles,
+        type: isHorizontal ? 'horizontal' : 'vertical',
+        powerupType: 'color_bomb',
+        powerupPosition: { row: bestRow, col: bestCol },
+      };
+    }
+
+    // Simple linear matches (single row or column)
     if (rows.size === 1) {
-      // Horizontal line
-      if (tiles.length >= CONFIG.MATCH.COLOR_BOMB_MATCH) {
-        return {
-          tiles,
-          type: 'horizontal',
-          powerupType: 'color_bomb',
-          powerupPosition: this.getMatchCenter(tiles),
-        };
-      } else if (tiles.length === CONFIG.MATCH.ROCKET_MATCH) {
+      // Horizontal line - rocket for 4
+      if (tiles.length === CONFIG.MATCH.ROCKET_MATCH) {
         return {
           tiles,
           type: 'horizontal',
@@ -226,15 +263,8 @@ export class MatchDetector {
     }
 
     if (cols.size === 1) {
-      // Vertical line
-      if (tiles.length >= CONFIG.MATCH.COLOR_BOMB_MATCH) {
-        return {
-          tiles,
-          type: 'vertical',
-          powerupType: 'color_bomb',
-          powerupPosition: this.getMatchCenter(tiles),
-        };
-      } else if (tiles.length === CONFIG.MATCH.ROCKET_MATCH) {
+      // Vertical line - rocket for 4
+      if (tiles.length === CONFIG.MATCH.ROCKET_MATCH) {
         return {
           tiles,
           type: 'vertical',
@@ -245,13 +275,24 @@ export class MatchDetector {
       return { tiles, type: 'vertical' };
     }
 
-    // L or T shape (multiple rows and columns)
+    // PRIORITY 2: Bomb (L/T shape with 5+ total tiles)
     if (tiles.length >= CONFIG.MATCH.BOMB_SHAPE_MATCH) {
       return {
         tiles,
         type: rows.size === 2 ? 'L' : 'T',
         powerupType: 'bomb',
         powerupPosition: this.getIntersectionPoint(tiles),
+      };
+    }
+
+    // PRIORITY 3: Rocket (4 in a row within an L/T shape - pick the longer arm)
+    if (maxLineLength === CONFIG.MATCH.ROCKET_MATCH) {
+      const isHorizontal = maxInRow >= maxInCol;
+      return {
+        tiles,
+        type: isHorizontal ? 'horizontal' : 'vertical',
+        powerupType: isHorizontal ? 'rocket_h' : 'rocket_v',
+        powerupPosition: this.getMatchCenter(tiles),
       };
     }
 
