@@ -335,6 +335,190 @@ Selection highlight glow for hero card, golden aura burst, energy particles radi
 
 ---
 
+---
+
+## Phase 6: Meta Game UI Assets (NEW)
+
+### 31. Gold Coin Icon
+- [ ] `public/assets/sprites/ui/coin.png`
+
+**Size:** 64x64px
+
+**Prompt:**
+```
+Shiny gold coin game currency icon, chunky 3D style, glowing rim, subtle sparkle, dollar or star symbol embossed, mobile game UI asset, warm golden color, transparent background
+```
+
+---
+
+### 32. Diamond Icon
+- [ ] `public/assets/sprites/ui/diamond.png`
+
+**Size:** 64x64px
+
+**Prompt:**
+```
+Brilliant blue diamond gem icon, faceted cut, glowing inner light, sparkle reflections, premium currency style, mobile game UI asset, cyan blue color, transparent background
+```
+
+---
+
+### 33. Treasure Chest (Closed)
+- [ ] `public/assets/sprites/ui/chest_closed.png`
+
+**Size:** 128x128px
+
+**Prompt:**
+```
+Wooden treasure chest icon closed, metal bands and lock, slightly glowing golden edges, mystery treasure vibe, mobile game style, chunky 3D look, transparent background
+```
+
+---
+
+### 34. Treasure Chest (Open)
+- [ ] `public/assets/sprites/ui/chest_open.png`
+
+**Size:** 128x128px
+
+**Prompt:**
+```
+Wooden treasure chest open with golden glow inside, coins and gems spilling out, magical sparkles, reward reveal moment, mobile game style, chunky 3D, transparent background
+```
+
+---
+
+### 35. Spin Wheel Background
+- [ ] `public/assets/sprites/ui/wheel_bg.png`
+
+**Size:** 400x400px
+
+**Prompt:**
+```
+Colorful fortune wheel game asset, 8 segments in rainbow colors (gold yellow orange red pink purple blue cyan), ornate outer rim, carnival game style, chunky mobile game look, transparent background
+```
+
+---
+
+### 36. Spin Wheel Pointer
+- [ ] `public/assets/sprites/ui/wheel_pointer.png`
+
+**Size:** 64x80px
+
+**Prompt:**
+```
+Arrow pointer for spin wheel, glossy red with golden trim, pointing downward, 3D game UI element, shiny material, mobile game style, transparent background
+```
+
+---
+
+### 37. Playing Card Back
+- [ ] `public/assets/sprites/ui/card_back.png`
+
+**Size:** 100x140px
+
+**Prompt:**
+```
+Game playing card back design, ornate pattern, deep purple with gold accents, mystery card style, question mark subtle pattern, mobile game asset, rounded corners, transparent background
+```
+
+---
+
+### 38. Shop Icon
+- [ ] `public/assets/sprites/ui/icon_shop.png`
+
+**Size:** 64x64px
+
+**Prompt:**
+```
+Shopping cart or shop bag icon, golden and white, coins inside, game store button, mobile game UI style, chunky friendly design, transparent background
+```
+
+---
+
+### 39. Mini-Games Icon
+- [ ] `public/assets/sprites/ui/icon_games.png`
+
+**Size:** 64x64px
+
+**Prompt:**
+```
+Game controller or dice icon, playful colorful design, arcade game vibe, mobile game button asset, fun and inviting, transparent background
+```
+
+---
+
+### 40. Event/Lightning Icon
+- [ ] `public/assets/sprites/ui/icon_event.png`
+
+**Size:** 64x64px
+
+**Prompt:**
+```
+Lightning bolt in shield or badge, golden energy, special event indicator, mobile game UI icon, power surge theme, glowing effect, transparent background
+```
+
+---
+
+### 41. Rocket Powerup Icon
+- [ ] `public/assets/sprites/ui/powerup_rocket.png`
+
+**Size:** 64x64px
+
+**Prompt:**
+```
+Cartoon rocket icon, red and white, exhaust flames, ready to launch, mobile game powerup style, chunky cute design, transparent background
+```
+
+---
+
+### 42. Bomb Powerup Icon
+- [ ] `public/assets/sprites/ui/powerup_bomb.png`
+
+**Size:** 64x64px
+
+**Prompt:**
+```
+Cartoon bomb icon, round black bomb with lit fuse, sparks, about to explode, mobile game powerup style, chunky cute design, transparent background
+```
+
+---
+
+### 43. Color Bomb/Rainbow Icon
+- [ ] `public/assets/sprites/ui/powerup_rainbow.png`
+
+**Size:** 64x64px
+
+**Prompt:**
+```
+Rainbow burst or color bomb icon, circular with rainbow colors radiating outward, magical sparkles, mobile game powerup style, vibrant colors, transparent background
+```
+
+---
+
+### 44. Hero Charge Meter Empty
+- [ ] `public/assets/sprites/ui/charge_meter_empty.png`
+
+**Size:** 300x40px
+
+**Prompt:**
+```
+Empty power meter bar, dark interior with metallic frame, subtle grid pattern inside, mobile game UI element, horizontal gauge style, transparent background
+```
+
+---
+
+### 45. Hero Charge Meter Fill
+- [ ] `public/assets/sprites/ui/charge_meter_fill.png`
+
+**Size:** 280x30px (tileable)
+
+**Prompt:**
+```
+Glowing energy fill for power meter, gradient from blue to bright cyan to gold at full, pulsing energy particles, game charge bar fill, can tile horizontally, transparent background
+```
+
+---
+
 ## Summary
 
 | Category | Count | Size | Status |
@@ -342,8 +526,9 @@ Selection highlight glow for hero card, golden aura burst, energy particles radi
 | Booster Icons | 8 | 256x256 | 0/8 (4 existing need upgrade) |
 | Character Portraits | 6 | 512x512 | 0/6 (3 basic exist, need replace) |
 | Effect Particles | 7 | 128x128 | 0/7 |
-| Hero Power Bar UI | 9 | Various | 0/9 (NEW) |
-| **Total** | **30** | | **0/30** |
+| Hero Power Bar UI | 9 | Various | 0/9 |
+| **Phase 6 Meta UI** | **15** | Various | **0/15 (NEW)** |
+| **Total** | **45** | | **0/45** |
 
 ---
 

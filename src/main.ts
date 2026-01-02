@@ -1,6 +1,12 @@
 import Phaser from 'phaser';
 import { LevelSelectScene } from './scenes/LevelSelectScene';
 import { GameScene } from './scenes/GameScene';
+import { ShopScene } from './scenes/ShopScene';
+import { PreLevelScene } from './scenes/PreLevelScene';
+import { MiniGameHubScene } from './scenes/MiniGameHubScene';
+import { SpinWheelScene } from './scenes/SpinWheelScene';
+import { TreasureHuntScene } from './scenes/TreasureHuntScene';
+import { LuckyMatchScene } from './scenes/LuckyMatchScene';
 import { CONFIG } from './config';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -19,7 +25,16 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [LevelSelectScene, GameScene],
+  scene: [
+    LevelSelectScene,
+    GameScene,
+    ShopScene,
+    PreLevelScene,
+    MiniGameHubScene,
+    SpinWheelScene,
+    TreasureHuntScene,
+    LuckyMatchScene,
+  ],
 };
 
 new Phaser.Game(config);

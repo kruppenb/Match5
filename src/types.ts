@@ -102,3 +102,92 @@ export interface BoosterConfig {
   icon: string;
   requiresTarget: boolean; // Does user need to tap a cell?
 }
+
+// ==================== META GAME TYPES ====================
+
+// Reward types for mini-games, events, and purchases
+export type RewardType = 'coins' | 'diamonds' | 'powerup' | 'booster';
+
+export interface Reward {
+  type: RewardType;
+  amount: number;
+  id?: string; // For powerup/booster types (e.g., 'rocket', 'bomb')
+}
+
+// Shop items
+export type ShopCategory = 'powerup' | 'booster';
+
+export interface ShopItem {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  coinCost: number;
+  category: ShopCategory;
+  quantity: number;
+}
+
+// Hero pre-charging
+export interface ChargeLevel {
+  percentage: number;
+  coinCost: number;
+  label: string;
+}
+
+// Mini-games
+export type MiniGameId = 'spin_wheel' | 'treasure_hunt' | 'lucky_match';
+
+export interface MiniGameConfig {
+  id: MiniGameId;
+  name: string;
+  description: string;
+  diamondCost: number;
+  icon: string;
+}
+
+// Progression events
+export interface EventCheckpoint {
+  pointsRequired: number;
+  reward: Reward;
+  label: string;
+}
+
+export interface ProgressionEvent {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  duration: number; // Days
+  checkpoints: EventCheckpoint[];
+  completionBonus: Reward[];
+}
+
+// Meta save data
+export interface MetaSaveData {
+  version: number;
+  coins: number;
+  diamonds: number;
+  inventory: Record<string, number>;
+  currentEvent: {
+    id: string;
+    points: number;
+    claimedCheckpoints: number[];
+    startDate: string;
+  } | null;
+  miniGames: {
+    lastPlayedDate: Record<string, string>;
+    totalPlays: Record<string, number>;
+  };
+  totalLevelsPlayed: number;
+  lastDailyLogin: string | null;
+}
+
+// Level result for currency/event rewards
+export interface LevelResult {
+  levelId: number;
+  stars: number;
+  score: number;
+  powerupsUsed: number;
+  maxCombo: number;
+  isFirstTime: boolean;
+}

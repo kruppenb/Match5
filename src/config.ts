@@ -103,4 +103,67 @@ export const CONFIG = {
       },
     } as Record<string, { name: string; description: string; icon: string; sprite: string; requiresTarget: boolean }>,
   },
+
+  META: {
+    // Currency rewards - GENEROUS by design!
+    COINS: {
+      LEVEL_COMPLETE_BASE: 100,
+      PER_STAR: 50,
+      PERFECT_BONUS: 100,
+      FIRST_TIME_BONUS: 200,
+      MATCH_3: 5,
+      MATCH_4: 15,
+      MATCH_5: 30,
+      POWERUP_USE: 10,
+      PER_COMBO: 20,
+      DAILY_LOGIN: 500,
+    },
+    DIAMONDS: {
+      EVERY_5_LEVELS: 10,
+      EVERY_10_LEVELS: 25,
+      WORLD_COMPLETE: 50,
+      PERFECT_WORLD: 100,
+      DAILY_LOGIN: 5,
+    },
+
+    // Shop items
+    SHOP_ITEMS: [
+      { id: 'rocket_3pack', name: 'Rocket Pack', description: 'Start with 3 rockets', icon: 'rocket', coinCost: 150, category: 'powerup', quantity: 3 },
+      { id: 'bomb_3pack', name: 'Bomb Pack', description: 'Start with 3 bombs', icon: 'bomb', coinCost: 200, category: 'powerup', quantity: 3 },
+      { id: 'colorBomb_1', name: 'Color Bomb', description: 'Start with a color bomb', icon: 'colorBomb', coinCost: 250, category: 'powerup', quantity: 1 },
+      { id: 'extraMoves_5', name: '+5 Moves', description: '5 extra moves', icon: 'moves', coinCost: 300, category: 'booster', quantity: 1 },
+      { id: 'shuffle', name: 'Free Shuffle', description: 'One free shuffle', icon: 'shuffle', coinCost: 100, category: 'booster', quantity: 1 },
+      { id: 'hint_3pack', name: 'Hint Pack', description: '3 hints', icon: 'hint', coinCost: 75, category: 'booster', quantity: 3 },
+    ],
+
+    // Hero charging levels
+    CHARGE_LEVELS: [
+      { percentage: 0, coinCost: 0, label: 'No Boost' },
+      { percentage: 25, coinCost: 50, label: 'Small Boost' },
+      { percentage: 50, coinCost: 100, label: 'Medium Boost' },
+      { percentage: 75, coinCost: 175, label: 'Large Boost' },
+      { percentage: 100, coinCost: 300, label: 'MAX POWER!' },
+    ],
+
+    // Mini-games
+    MINI_GAMES: [
+      { id: 'spin_wheel', name: 'Spin the Wheel', description: 'Spin for prizes!', diamondCost: 10, icon: 'wheel' },
+      { id: 'treasure_hunt', name: 'Treasure Hunt', description: 'Pick 3 chests!', diamondCost: 15, icon: 'chest' },
+      { id: 'lucky_match', name: 'Lucky Match', description: 'Match pairs to win!', diamondCost: 20, icon: 'cards' },
+    ],
+    MINI_GAME_ROTATION_DAYS: 3,
+
+    // Progression events
+    EVENT_POINTS: {
+      LEVEL_COMPLETE: 20,
+      PER_STAR: 10,
+      PERFECT_LEVEL: 15,
+      PER_POWERUP: 5,
+      BIG_COMBO: 10,
+    },
+
+    // Starting resources for new players
+    STARTING_COINS: 500,
+    STARTING_DIAMONDS: 20,
+  },
 };

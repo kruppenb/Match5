@@ -9,6 +9,9 @@ import { GravitySystem } from '../game/GravitySystem';
 import { SpecialObstacleProcessor } from '../game/SpecialObstacleProcessor';
 import { activatePowerup as activatePowerupHelper, canCombinePowerups, combinePowerups, getPropellerTargets, setPropellerTarget, getPowerupAffectedPositions, getCombinationAffectedPositions } from '../game/powerupUtils';
 import { ProgressStorage } from '../storage/ProgressStorage';
+import { getCurrencyManager } from '../meta/CurrencyManager';
+import { getProgressionEventManager } from '../meta/ProgressionEventManager';
+import { LevelResult } from '../types';
 import { CONFIG } from '../config';
 import { Tile, Position, SwipeDirection, Cell, BoosterType, Obstacle } from '../types';
 import { MoveCounter, ObjectiveDisplay, EndScreen, BoosterBar } from './UIComponents';
@@ -388,8 +391,28 @@ export class GameScene extends Phaser.Scene {
     this.boosterBar.cancelActiveBooster();
     this.boosterManager.cancelBooster();
 
+    // Check if this is a first-time completion
+    const isFirstTime = !ProgressStorage.isLevelCompleted(this.level.id);
+
     // Save progress (stars already calculated, don't let celebration affect it)
     ProgressStorage.completeLevel(this.level.id, stars);
+
+    // Award currency rewards
+    const levelResult: LevelResult = {
+      levelId: this.level.id,
+      stars,
+      score,
+      powerupsUsed: 0, // TODO: Track this in gameState
+      maxCombo: 0, // TODO: Track max cascade in GameState
+      isFirstTime,
+    };
+
+    const currencyManager = getCurrencyManager();
+    const rewards = currencyManager.awardLevelRewards(levelResult);
+
+    // Award event points
+    const eventManager = getProgressionEventManager();
+    eventManager.onLevelComplete(levelResult);
 
     // Play win effects
     this.audioManager.playWin();
@@ -397,6 +420,56 @@ export class GameScene extends Phaser.Scene {
 
     // Start the victory celebration sequence
     this.celebrationManager.playCelebration(remainingMoves, score, stars, bonus);
+
+    // Show coin reward popup
+    if (rewards.coins > 0) {
+      this.time.delayedCall(1000, () => {
+        this.showCurrencyReward(rewards.coins, rewards.diamonds);
+      });
+    }
+  }
+
+  private showCurrencyReward(coins: number, diamonds: number): void {
+    const { width, height } = this.scale;
+    const y = height / 2 - 100;
+
+    // Coin reward
+    const coinText = this.add.text(width / 2, y, `+${coins} coins!`, {
+      fontSize: '28px',
+      fontFamily: 'Arial Black',
+      color: '#ffd700',
+      stroke: '#000000',
+      strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(1000);
+
+    this.tweens.add({
+      targets: coinText,
+      y: y - 40,
+      alpha: { from: 1, to: 0 },
+      duration: 2000,
+      delay: 1500,
+      onComplete: () => coinText.destroy(),
+    });
+
+    // Diamond reward (if any)
+    if (diamonds > 0) {
+      const diamondText = this.add.text(width / 2, y + 40, `+${diamonds} diamonds!`, {
+        fontSize: '24px',
+        fontFamily: 'Arial Black',
+        color: '#00bfff',
+        stroke: '#000000',
+        strokeThickness: 4,
+      }).setOrigin(0.5).setDepth(1000);
+
+      this.tweens.add({
+        targets: diamondText,
+        y: y,
+        alpha: { from: 1, to: 0 },
+        duration: 2000,
+        delay: 1500,
+        onComplete: () => diamondText.destroy(),
+      });
+    }
   }
 
   private showWinEndScreen(score: number, stars: number, bonus: number): void {
