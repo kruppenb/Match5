@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
-import { Objective } from '../types';
+import { Objective, BoosterType, BoosterInventory } from '../types';
 
 export class MoveCounter {
   private scene: Phaser.Scene;
@@ -387,6 +387,195 @@ export class EndScreen {
 
   hide(): void {
     this.container.setVisible(false);
+  }
+
+  destroy(): void {
+    this.container.destroy();
+  }
+}
+
+export class BoosterBar {
+  private scene: Phaser.Scene;
+  private container: Phaser.GameObjects.Container;
+  private buttons: Map<BoosterType, {
+    container: Phaser.GameObjects.Container;
+    background: Phaser.GameObjects.Graphics;
+    countText: Phaser.GameObjects.Text;
+    hitArea: Phaser.GameObjects.Rectangle;
+  }> = new Map();
+  private activeBooster: BoosterType | null = null;
+  private onBoosterSelect: (type: BoosterType) => void;
+  private onBoosterCancel: () => void;
+
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    inventory: BoosterInventory,
+    onSelect: (type: BoosterType) => void,
+    onCancel: () => void
+  ) {
+    this.scene = scene;
+    this.onBoosterSelect = onSelect;
+    this.onBoosterCancel = onCancel;
+    this.container = scene.add.container(x, y);
+    this.container.setDepth(100);
+
+    const boosterTypes: BoosterType[] = ['hammer', 'row_arrow', 'col_arrow', 'shuffle'];
+    const buttonSize = 50;
+    const spacing = 10;
+    const totalWidth = boosterTypes.length * buttonSize + (boosterTypes.length - 1) * spacing;
+    const startX = -totalWidth / 2 + buttonSize / 2;
+
+    boosterTypes.forEach((type, index) => {
+      const buttonX = startX + index * (buttonSize + spacing);
+      this.createBoosterButton(type, buttonX, 0, buttonSize, inventory[type]);
+    });
+  }
+
+  private createBoosterButton(type: BoosterType, x: number, y: number, size: number, count: number): void {
+    const buttonContainer = this.scene.add.container(x, y);
+
+    // Background
+    const background = this.scene.add.graphics();
+    this.drawButtonBackground(background, size, false, count > 0);
+    buttonContainer.add(background);
+
+    // Icon (emoji)
+    const config = CONFIG.BOOSTERS.CONFIGS[type];
+    const icon = this.scene.add.text(0, -5, config.icon, {
+      fontSize: '24px',
+    }).setOrigin(0.5);
+    buttonContainer.add(icon);
+
+    // Count badge
+    const countText = this.scene.add.text(size / 2 - 8, size / 2 - 12, count.toString(), {
+      fontSize: '12px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+      backgroundColor: '#4488ff',
+      padding: { x: 4, y: 2 },
+    }).setOrigin(0.5);
+    buttonContainer.add(countText);
+
+    // Hit area for interaction
+    const hitArea = this.scene.add.rectangle(0, 0, size, size, 0x000000, 0);
+    hitArea.setInteractive({ useHandCursor: true });
+    hitArea.on('pointerdown', () => this.handleBoosterClick(type));
+    buttonContainer.add(hitArea);
+
+    this.container.add(buttonContainer);
+    this.buttons.set(type, { container: buttonContainer, background, countText, hitArea });
+  }
+
+  private drawButtonBackground(graphics: Phaser.GameObjects.Graphics, size: number, active: boolean, enabled: boolean): void {
+    graphics.clear();
+
+    // Shadow
+    graphics.fillStyle(0x000000, 0.3);
+    graphics.fillRoundedRect(-size / 2 + 2, -size / 2 + 2, size, size, 8);
+
+    // Background
+    let bgColor = enabled ? 0x3a3a5e : 0x2a2a3e;
+    if (active) bgColor = 0x4488ff;
+    graphics.fillStyle(bgColor, 1);
+    graphics.fillRoundedRect(-size / 2, -size / 2, size, size, 8);
+
+    // Border
+    const borderColor = active ? 0x88ccff : (enabled ? 0x5a5a7e : 0x3a3a4e);
+    graphics.lineStyle(2, borderColor, 1);
+    graphics.strokeRoundedRect(-size / 2, -size / 2, size, size, 8);
+  }
+
+  private handleBoosterClick(type: BoosterType): void {
+    const button = this.buttons.get(type);
+    if (!button) return;
+
+    const count = parseInt(button.countText.text, 10);
+    if (count <= 0) return;
+
+    // If already active, cancel
+    if (this.activeBooster === type) {
+      this.cancelActiveBooster();
+      return;
+    }
+
+    // If another booster is active, cancel it first
+    if (this.activeBooster !== null) {
+      this.setButtonActive(this.activeBooster, false);
+    }
+
+    // Activate this booster
+    this.activeBooster = type;
+    this.setButtonActive(type, true);
+    this.onBoosterSelect(type);
+
+    // If booster doesn't require target, it will be used immediately
+    // and the game will call updateInventory and cancelActiveBooster
+  }
+
+  private setButtonActive(type: BoosterType, active: boolean): void {
+    const button = this.buttons.get(type);
+    if (!button) return;
+
+    const count = parseInt(button.countText.text, 10);
+    this.drawButtonBackground(button.background, 50, active, count > 0);
+
+    if (active) {
+      this.scene.tweens.add({
+        targets: button.container,
+        scale: 1.1,
+        duration: 100,
+        ease: 'Back.easeOut',
+      });
+    } else {
+      this.scene.tweens.add({
+        targets: button.container,
+        scale: 1,
+        duration: 100,
+      });
+    }
+  }
+
+  cancelActiveBooster(): void {
+    if (this.activeBooster !== null) {
+      this.setButtonActive(this.activeBooster, false);
+      this.activeBooster = null;
+      this.onBoosterCancel();
+    }
+  }
+
+  updateInventory(inventory: BoosterInventory): void {
+    const boosterTypes: BoosterType[] = ['hammer', 'row_arrow', 'col_arrow', 'shuffle'];
+    boosterTypes.forEach(type => {
+      const button = this.buttons.get(type);
+      if (button) {
+        const count = inventory[type];
+        button.countText.setText(count.toString());
+
+        // Update button appearance based on availability
+        const isActive = this.activeBooster === type;
+        this.drawButtonBackground(button.background, 50, isActive, count > 0);
+
+        // Disable interaction if no boosters left
+        if (count <= 0) {
+          button.container.setAlpha(0.5);
+        } else {
+          button.container.setAlpha(1);
+        }
+      }
+    });
+  }
+
+  getActiveBooster(): BoosterType | null {
+    return this.activeBooster;
+  }
+
+  setEnabled(enabled: boolean): void {
+    this.buttons.forEach((button) => {
+      button.hitArea.setInteractive(enabled ? { useHandCursor: true } : false);
+      button.container.setAlpha(enabled ? 1 : 0.5);
+    });
   }
 
   destroy(): void {

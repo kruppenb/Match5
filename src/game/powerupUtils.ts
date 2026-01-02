@@ -7,6 +7,12 @@ export interface PropellerResult {
   targetPosition?: Position;
 }
 
+// Result type for powerup activation that includes both tiles and positions
+export interface PowerupActivationResult {
+  tiles: Tile[];
+  positions: Position[];  // All positions affected (including cells without tiles, like ice)
+}
+
 // Store for pre-calculated propeller targets (set before activation, used during activation)
 const propellerTargetCache: Map<string, Position | null> = new Map();
 
@@ -99,6 +105,78 @@ export function activatePowerup(grid: Grid, powerup: Tile, targetColor?: string,
   }
 
   return affected;
+}
+
+/**
+ * Get all positions affected by a powerup (including cells without tiles, like ice blocks).
+ * This is used to ensure obstacles at these positions are also cleared.
+ */
+export function getPowerupAffectedPositions(grid: Grid, powerup: Tile, targetColor?: string): Position[] {
+  if (!powerup || !powerup.powerupType) return [];
+
+  const positions: Position[] = [];
+  const addPosition = (row: number, col: number) => {
+    const cell = grid.getCell(row, col);
+    if (cell && !cell.blocked) {
+      positions.push({ row, col });
+    }
+  };
+
+  switch (powerup.powerupType) {
+    case 'rocket_h':
+      for (let col = 0; col < grid.cols; col++) {
+        addPosition(powerup.row, col);
+      }
+      break;
+
+    case 'rocket_v':
+      for (let row = 0; row < grid.rows; row++) {
+        addPosition(row, powerup.col);
+      }
+      break;
+
+    case 'bomb':
+      // 5x5 area (radius 2)
+      for (let dr = -2; dr <= 2; dr++) {
+        for (let dc = -2; dc <= 2; dc++) {
+          addPosition(powerup.row + dr, powerup.col + dc);
+        }
+      }
+      break;
+
+    case 'color_bomb':
+      // Color bomb only affects cells with tiles of a specific color
+      // So no positions without tiles are affected
+      let chosenColor = targetColor ?? powerup.type;
+      if (chosenColor) {
+        grid.forEachCell(cell => {
+          if (cell.tile && cell.tile.type === chosenColor && cell.tile.id !== powerup.id) {
+            positions.push({ row: cell.row, col: cell.col });
+          }
+        });
+      }
+      break;
+
+    case 'propeller':
+      // Propeller clears adjacent positions plus target
+      const adjacentOffsets = [
+        { dr: -1, dc: 0 },
+        { dr: 1, dc: 0 },
+        { dr: 0, dc: -1 },
+        { dr: 0, dc: 1 },
+      ];
+      for (const offset of adjacentOffsets) {
+        addPosition(powerup.row + offset.dr, powerup.col + offset.dc);
+      }
+      // Add target position (if cached)
+      const cachedTarget = propellerTargetCache.get(powerup.id);
+      if (cachedTarget) {
+        addPosition(cachedTarget.row, cachedTarget.col);
+      }
+      break;
+  }
+
+  return positions;
 }
 
 // Propeller activation with smart targeting
@@ -467,4 +545,172 @@ export function combinePowerups(
   }
 
   return affected;
+}
+
+/**
+ * Get all positions affected by a powerup combination (including cells without tiles, like ice blocks).
+ * This is used to ensure obstacles at these positions are also cleared.
+ */
+export function getCombinationAffectedPositions(grid: Grid, powerup1: Tile, powerup2: Tile): Position[] {
+  if (!canCombinePowerups(powerup1, powerup2)) return [];
+
+  const positions: Position[] = [];
+  const positionSet = new Set<string>();
+  
+  const addPosition = (row: number, col: number) => {
+    const cell = grid.getCell(row, col);
+    if (cell && !cell.blocked) {
+      const key = `${row},${col}`;
+      if (!positionSet.has(key)) {
+        positionSet.add(key);
+        positions.push({ row, col });
+      }
+    }
+  };
+
+  const type1 = powerup1.powerupType!;
+  const type2 = powerup2.powerupType!;
+  const types = [type1, type2].sort();
+  const comboKey = types.join('+');
+  const centerRow = powerup1.row;
+  const centerCol = powerup1.col;
+
+  switch (comboKey) {
+    // Rocket + Rocket = Cross blast (row AND column)
+    case 'rocket_h+rocket_h':
+    case 'rocket_h+rocket_v':
+    case 'rocket_v+rocket_v':
+      for (let col = 0; col < grid.cols; col++) {
+        addPosition(centerRow, col);
+      }
+      for (let row = 0; row < grid.rows; row++) {
+        addPosition(row, centerCol);
+      }
+      break;
+
+    // Bomb + Bomb = 7x7 explosion
+    case 'bomb+bomb':
+      for (let dr = -3; dr <= 3; dr++) {
+        for (let dc = -3; dc <= 3; dc++) {
+          addPosition(centerRow + dr, centerCol + dc);
+        }
+      }
+      break;
+
+    // Rocket + Bomb = 3-row AND 3-column clear
+    case 'bomb+rocket_h':
+    case 'bomb+rocket_v':
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let col = 0; col < grid.cols; col++) {
+          addPosition(centerRow + dr, col);
+        }
+      }
+      for (let dc = -1; dc <= 1; dc++) {
+        for (let row = 0; row < grid.rows; row++) {
+          addPosition(row, centerCol + dc);
+        }
+      }
+      break;
+
+    // Color Bomb + Rocket = All tiles of a color and their rows/columns
+    case 'color_bomb+rocket_h':
+    case 'color_bomb+rocket_v':
+      const rocketColor = type1 === 'color_bomb' ? powerup2.type : powerup1.type;
+      const isHorizontal = type1 === 'rocket_h' || type2 === 'rocket_h';
+      grid.forEachCell(cell => {
+        if (cell.tile && cell.tile.type === rocketColor) {
+          addPosition(cell.row, cell.col);
+          if (isHorizontal) {
+            for (let col = 0; col < grid.cols; col++) {
+              addPosition(cell.row, col);
+            }
+          } else {
+            for (let row = 0; row < grid.rows; row++) {
+              addPosition(row, cell.col);
+            }
+          }
+        }
+      });
+      break;
+
+    // Color Bomb + Bomb = All tiles of a color and 3x3 around each
+    case 'bomb+color_bomb':
+      const bombColor = type1 === 'color_bomb' ? powerup2.type : powerup1.type;
+      grid.forEachCell(cell => {
+        if (cell.tile && cell.tile.type === bombColor) {
+          for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+              addPosition(cell.row + dr, cell.col + dc);
+            }
+          }
+        }
+      });
+      break;
+
+    // Color Bomb + Color Bomb = Entire board
+    case 'color_bomb+color_bomb':
+      grid.forEachCell(cell => {
+        if (!cell.blocked) {
+          addPosition(cell.row, cell.col);
+        }
+      });
+      break;
+
+    // Propeller combinations - include target positions
+    case 'propeller+rocket_h':
+    case 'propeller+rocket_v':
+    case 'bomb+propeller':
+    case 'color_bomb+propeller':
+    case 'propeller+propeller':
+      // For propeller combos, include the cached targets and their blast areas
+      const cachedTarget1 = propellerTargetCache.get(powerup1.id);
+      const cachedTarget2 = propellerTargetCache.get(powerup2.id);
+      
+      if (cachedTarget1) {
+        // Add 3x3 or cross around target depending on combo
+        if (comboKey.includes('rocket')) {
+          // Cross blast at target
+          for (let col = 0; col < grid.cols; col++) {
+            addPosition(cachedTarget1.row, col);
+          }
+          for (let row = 0; row < grid.rows; row++) {
+            addPosition(row, cachedTarget1.col);
+          }
+        } else if (comboKey === 'bomb+propeller') {
+          // 5x5 at target
+          for (let dr = -2; dr <= 2; dr++) {
+            for (let dc = -2; dc <= 2; dc++) {
+              addPosition(cachedTarget1.row + dr, cachedTarget1.col + dc);
+            }
+          }
+        } else {
+          // 3x3 at target
+          for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+              addPosition(cachedTarget1.row + dr, cachedTarget1.col + dc);
+            }
+          }
+        }
+      }
+      
+      if (cachedTarget2 && comboKey === 'propeller+propeller') {
+        // Second propeller target 3x3
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            addPosition(cachedTarget2.row + dr, cachedTarget2.col + dc);
+          }
+        }
+      }
+      break;
+
+    default:
+      // Fallback: get positions from individual powerups
+      const pos1 = getPowerupAffectedPositions(grid, powerup1);
+      const pos2 = getPowerupAffectedPositions(grid, powerup2);
+      pos1.forEach(p => addPosition(p.row, p.col));
+      pos2.forEach(p => addPosition(p.row, p.col));
+      break;
+  }
+
+  return positions;
 }

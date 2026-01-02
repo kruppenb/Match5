@@ -19,7 +19,7 @@ export interface Tile {
 }
 
 // Obstacle types
-export type ObstacleType = 'grass' | 'ice' | 'chain' | 'box' | 'stone';
+export type ObstacleType = 'grass' | 'ice' | 'chain' | 'box' | 'stone' | 'barrel' | 'ice_bucket';
 
 export interface Obstacle {
   type: ObstacleType;
@@ -84,3 +84,21 @@ export interface GameProgress {
 
 // Game status
 export type GameStatus = 'playing' | 'won' | 'lost' | 'paused';
+
+// Booster types (outside-grid powerups)
+export type BoosterType = 'hammer' | 'row_arrow' | 'col_arrow' | 'shuffle';
+
+export interface BoosterInventory {
+  hammer: number;
+  row_arrow: number;
+  col_arrow: number;
+  shuffle: number;
+}
+
+export interface BoosterConfig {
+  type: BoosterType;
+  name: string;
+  description: string;
+  icon: string;
+  requiresTarget: boolean; // Does user need to tap a cell?
+}

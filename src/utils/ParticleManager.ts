@@ -195,6 +195,94 @@ export class ParticleManager {
   }
 
   /**
+   * Emit a single firework burst at position
+   */
+  emitFirework(x: number, y: number): void {
+    const colors = [0xff0000, 0xff8800, 0xffff00, 0x00ff00, 0x00ffff, 0xff00ff, 0xffffff];
+    const baseColor = colors[Math.floor(Math.random() * colors.length)];
+    const particleCount = 30 + Math.floor(Math.random() * 20);
+
+    for (let i = 0; i < particleCount; i++) {
+      const angle = (i / particleCount) * Math.PI * 2;
+      const speed = 4 + Math.random() * 6;
+      // Add slight color variation
+      const colorVariation = Math.random() > 0.7 ? 0xffffff : baseColor;
+
+      this.createParticle({
+        x,
+        y,
+        vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 2,
+        vy: Math.sin(angle) * speed + (Math.random() - 0.5) * 2,
+        life: 40 + Math.random() * 30,
+        maxLife: 70,
+        color: colorVariation,
+        size: 3 + Math.random() * 4,
+      });
+    }
+
+    // Add sparkle trails
+    for (let i = 0; i < 10; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 8 + Math.random() * 4;
+      this.createParticle({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 20 + Math.random() * 15,
+        maxLife: 35,
+        color: 0xffffff,
+        size: 2 + Math.random() * 2,
+      });
+    }
+    this.startUpdate();
+  }
+
+  /**
+   * Emit a rising firework trail (rocket going up before explosion)
+   */
+  emitFireworkTrail(x: number, y: number): void {
+    for (let i = 0; i < 5; i++) {
+      this.createParticle({
+        x: x + (Math.random() - 0.5) * 6,
+        y: y + (Math.random() - 0.5) * 6,
+        vx: (Math.random() - 0.5) * 1,
+        vy: 1 + Math.random() * 2,
+        life: 8 + Math.random() * 8,
+        maxLife: 16,
+        color: 0xff8800,
+        size: 2 + Math.random() * 2,
+      });
+    }
+    this.startUpdate();
+  }
+
+  /**
+   * Emit celebration stars (big flashy stars)
+   */
+  emitCelebrationStars(x: number, y: number, count: number = 8): void {
+    const goldColors = [0xffd700, 0xffec8b, 0xffa500, 0xffff00];
+
+    for (let i = 0; i < count; i++) {
+      const color = goldColors[Math.floor(Math.random() * goldColors.length)];
+      const angle = (i / count) * Math.PI * 2;
+      const speed = 3 + Math.random() * 4;
+
+      this.createParticle({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 2,
+        life: 50 + Math.random() * 30,
+        maxLife: 80,
+        color,
+        size: 6 + Math.random() * 6,
+      });
+    }
+    this.startUpdate();
+  }
+
+  /**
    * Emit cascade combo particles
    */
   emitCascadeParticles(x: number, y: number, cascadeLevel: number): void {

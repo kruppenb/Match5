@@ -1,0 +1,4 @@
+Special thing that happens for combo
+
+Issues:
+67 needs new 3D icon, not working correctly visually

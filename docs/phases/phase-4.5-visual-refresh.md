@@ -375,4 +375,4 @@ Phase 4.5 is complete when:
 
 ## Next Phase
 
-After completing the visual refresh, proceed to [Phase 5: Meta Game](phase-5-meta.md) to add progression systems, star ratings, level maps, and PWA features.
+After completing the visual refresh, proceed to [Phase 5: Hero Polish & Character Powers](phase-5-polish-heroes.md) to upgrade boosters with hero-themed abilities and add the character power system.

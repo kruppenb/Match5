@@ -1,5 +1,6 @@
 import { Grid } from '../Grid';
-import { activatePowerup } from '../powerupUtils';
+import { activatePowerup, getPowerupAffectedPositions, getCombinationAffectedPositions } from '../powerupUtils';
+import { createIce } from '../Obstacle';
 
 describe('Powerups', () => {
   describe('Rocket', () => {
@@ -292,6 +293,268 @@ describe('Powerups', () => {
       const tile = { id: 't1', type: 'red', row: 1, col: 1, isPowerup: false } as any;
       const affected = activatePowerup(grid, tile);
       expect(affected).toEqual([]);
+    });
+  });
+
+  describe('Ice Block Clearing (obstacles without tiles)', () => {
+    test('getPowerupAffectedPositions returns positions even for cells without tiles', () => {
+      const grid = new Grid(5, 5);
+      grid.fillGrid();
+
+      // Place ice blocks (obstacles that block tiles) in the rocket's path
+      const cell1 = grid.getCell(2, 0);
+      const cell2 = grid.getCell(2, 4);
+      if (cell1) {
+        cell1.obstacle = createIce(1);
+        cell1.tile = null; // Ice blocks don't have tiles underneath
+      }
+      if (cell2) {
+        cell2.obstacle = createIce(2);
+        cell2.tile = null;
+      }
+
+      const rocket = { id: 'r1', type: 'red', row: 2, col: 2, isPowerup: true, powerupType: 'rocket_h' } as any;
+      grid.setTile(2, 2, rocket);
+
+      // activatePowerup only returns tiles, so it won't include ice block positions
+      const affectedTiles = activatePowerup(grid, rocket);
+      expect(affectedTiles.length).toBe(2); // Only tiles at cols 1 and 3
+
+      // getPowerupAffectedPositions should return ALL positions in the row
+      const affectedPositions = getPowerupAffectedPositions(grid, rocket);
+      expect(affectedPositions.length).toBe(5); // All 5 columns in row 2
+
+      // Verify ice block positions are included
+      const hasIcePos0 = affectedPositions.some(p => p.row === 2 && p.col === 0);
+      const hasIcePos4 = affectedPositions.some(p => p.row === 2 && p.col === 4);
+      expect(hasIcePos0).toBe(true);
+      expect(hasIcePos4).toBe(true);
+    });
+
+    test('horizontal rocket getPowerupAffectedPositions includes all row positions', () => {
+      const grid = new Grid(5, 5);
+      // Don't fill - leave empty cells to simulate ice blocks
+      
+      const rocket = { id: 'r1', type: 'red', row: 2, col: 2, isPowerup: true, powerupType: 'rocket_h' } as any;
+
+      const positions = getPowerupAffectedPositions(grid, rocket);
+      expect(positions.length).toBe(5);
+      expect(positions.every(p => p.row === 2)).toBe(true);
+      const cols = positions.map(p => p.col).sort((a, b) => a - b);
+      expect(cols).toEqual([0, 1, 2, 3, 4]);
+    });
+
+    test('vertical rocket getPowerupAffectedPositions includes all column positions', () => {
+      const grid = new Grid(5, 5);
+      
+      const rocket = { id: 'r1', type: 'red', row: 2, col: 2, isPowerup: true, powerupType: 'rocket_v' } as any;
+
+      const positions = getPowerupAffectedPositions(grid, rocket);
+      expect(positions.length).toBe(5);
+      expect(positions.every(p => p.col === 2)).toBe(true);
+      const rows = positions.map(p => p.row).sort((a, b) => a - b);
+      expect(rows).toEqual([0, 1, 2, 3, 4]);
+    });
+
+    test('bomb getPowerupAffectedPositions includes 5x5 area positions', () => {
+      const grid = new Grid(7, 7);
+      
+      const bomb = { id: 'b1', type: 'red', row: 3, col: 3, isPowerup: true, powerupType: 'bomb' } as any;
+
+      const positions = getPowerupAffectedPositions(grid, bomb);
+      // 5x5 area = 25 positions
+      expect(positions.length).toBe(25);
+
+      // Check corners of the 5x5 area
+      expect(positions.some(p => p.row === 1 && p.col === 1)).toBe(true);
+      expect(positions.some(p => p.row === 1 && p.col === 5)).toBe(true);
+      expect(positions.some(p => p.row === 5 && p.col === 1)).toBe(true);
+      expect(positions.some(p => p.row === 5 && p.col === 5)).toBe(true);
+    });
+
+    test('bomb at corner getPowerupAffectedPositions only includes valid positions', () => {
+      const grid = new Grid(5, 5);
+      
+      const bomb = { id: 'b1', type: 'red', row: 0, col: 0, isPowerup: true, powerupType: 'bomb' } as any;
+
+      const positions = getPowerupAffectedPositions(grid, bomb);
+      // At corner (0,0) with radius 2: rows 0-2, cols 0-2 = 9 positions
+      expect(positions.length).toBe(9);
+
+      // All positions should be in valid range
+      expect(positions.every(p => p.row >= 0 && p.row <= 2)).toBe(true);
+      expect(positions.every(p => p.col >= 0 && p.col <= 2)).toBe(true);
+    });
+
+    test('ice blocks in bomb radius are included in affected positions', () => {
+      const grid = new Grid(5, 5);
+      grid.fillGrid();
+
+      // Place ice blocks in bomb's radius
+      const icePositions = [
+        { row: 1, col: 2 },
+        { row: 2, col: 1 },
+        { row: 3, col: 2 },
+      ];
+      for (const pos of icePositions) {
+        const cell = grid.getCell(pos.row, pos.col);
+        if (cell) {
+          cell.obstacle = createIce(1);
+          cell.tile = null;
+        }
+      }
+
+      const bomb = { id: 'b1', type: 'red', row: 2, col: 2, isPowerup: true, powerupType: 'bomb' } as any;
+      grid.setTile(2, 2, bomb);
+
+      const positions = getPowerupAffectedPositions(grid, bomb);
+
+      // All ice block positions should be in affected positions
+      for (const icePos of icePositions) {
+        const found = positions.some(p => p.row === icePos.row && p.col === icePos.col);
+        expect(found).toBe(true);
+      }
+    });
+
+    test('getCombinationAffectedPositions for rocket+rocket includes cross pattern', () => {
+      const grid = new Grid(5, 5);
+      
+      const rocket1 = { id: 'r1', type: 'red', row: 2, col: 2, isPowerup: true, powerupType: 'rocket_h' } as any;
+      const rocket2 = { id: 'r2', type: 'blue', row: 2, col: 2, isPowerup: true, powerupType: 'rocket_v' } as any;
+
+      const positions = getCombinationAffectedPositions(grid, rocket1, rocket2);
+
+      // Cross pattern: row 2 (5 positions) + column 2 (5 positions) - center overlap = 9 unique positions
+      expect(positions.length).toBe(9);
+
+      // Check row is complete
+      for (let col = 0; col < 5; col++) {
+        expect(positions.some(p => p.row === 2 && p.col === col)).toBe(true);
+      }
+      // Check column is complete
+      for (let row = 0; row < 5; row++) {
+        expect(positions.some(p => p.row === row && p.col === 2)).toBe(true);
+      }
+    });
+
+    test('getCombinationAffectedPositions for bomb+bomb includes 7x7 area', () => {
+      const grid = new Grid(9, 9);
+      
+      const bomb1 = { id: 'b1', type: 'red', row: 4, col: 4, isPowerup: true, powerupType: 'bomb' } as any;
+      const bomb2 = { id: 'b2', type: 'blue', row: 4, col: 4, isPowerup: true, powerupType: 'bomb' } as any;
+
+      const positions = getCombinationAffectedPositions(grid, bomb1, bomb2);
+
+      // 7x7 area = 49 positions
+      expect(positions.length).toBe(49);
+
+      // Check corners of the 7x7 area
+      expect(positions.some(p => p.row === 1 && p.col === 1)).toBe(true);
+      expect(positions.some(p => p.row === 1 && p.col === 7)).toBe(true);
+      expect(positions.some(p => p.row === 7 && p.col === 1)).toBe(true);
+      expect(positions.some(p => p.row === 7 && p.col === 7)).toBe(true);
+    });
+
+    test('getCombinationAffectedPositions for color_bomb+color_bomb includes entire board', () => {
+      const grid = new Grid(5, 5);
+      
+      const cb1 = { id: 'cb1', type: 'red', row: 2, col: 2, isPowerup: true, powerupType: 'color_bomb' } as any;
+      const cb2 = { id: 'cb2', type: 'blue', row: 2, col: 2, isPowerup: true, powerupType: 'color_bomb' } as any;
+
+      const positions = getCombinationAffectedPositions(grid, cb1, cb2);
+
+      // Entire board = 25 positions
+      expect(positions.length).toBe(25);
+    });
+
+    test('grid.clearObstacle properly removes ice obstacles', () => {
+      const grid = new Grid(5, 5);
+      
+      // Place a 2-layer ice block
+      const cell = grid.getCell(2, 2);
+      if (cell) {
+        cell.obstacle = createIce(2);
+        cell.tile = null;
+      }
+
+      // First clear should reduce to 1 layer
+      let cleared = grid.clearObstacle(2, 2);
+      expect(cleared).toBeNull(); // Not fully cleared yet
+      expect(cell?.obstacle?.layers).toBe(1);
+
+      // Second clear should fully remove
+      cleared = grid.clearObstacle(2, 2);
+      expect(cleared).not.toBeNull();
+      expect(cleared?.type).toBe('ice');
+      expect(cell?.obstacle).toBeNull();
+    });
+
+    test('blocked cells are excluded from affected positions', () => {
+      const grid = new Grid(5, 5);
+      
+      // Block a cell in the rocket's path
+      const blockedCell = grid.getCell(2, 3);
+      if (blockedCell) {
+        blockedCell.blocked = true;
+      }
+
+      const rocket = { id: 'r1', type: 'red', row: 2, col: 2, isPowerup: true, powerupType: 'rocket_h' } as any;
+
+      const positions = getPowerupAffectedPositions(grid, rocket);
+
+      // Should have 4 positions (row of 5 minus 1 blocked)
+      expect(positions.length).toBe(4);
+      expect(positions.some(p => p.row === 2 && p.col === 3)).toBe(false);
+    });
+
+    test('2-layer ice damaged by multiple adjacent matches is fully cleared', () => {
+      const grid = new Grid(5, 5);
+      
+      // Place a 2-layer ice block at center
+      const iceCell = grid.getCell(2, 2);
+      if (iceCell) {
+        iceCell.obstacle = createIce(2);
+        iceCell.tile = null;
+      }
+
+      // Place tiles adjacent to the ice (left and right)
+      grid.setTile(2, 1, { id: 't1', type: 'red', row: 2, col: 1, isPowerup: false } as any);
+      grid.setTile(2, 3, { id: 't2', type: 'red', row: 2, col: 3, isPowerup: false } as any);
+
+      // Damage from first adjacent match
+      const damaged1 = grid.damageAdjacentObstacles(2, 1);
+      expect(damaged1.length).toBe(1);
+      expect(damaged1[0].cleared).toBe(false); // 2 -> 1 layer
+      expect(iceCell?.obstacle?.layers).toBe(1);
+
+      // Damage from second adjacent match
+      const damaged2 = grid.damageAdjacentObstacles(2, 3);
+      expect(damaged2.length).toBe(1);
+      expect(damaged2[0].cleared).toBe(true); // 1 -> 0 layers (cleared)
+      expect(iceCell?.obstacle).toBeNull();
+    });
+
+    test('damageAdjacentObstacles returns correct cleared state for each damage', () => {
+      const grid = new Grid(5, 5);
+      
+      // Place a 1-layer ice block
+      const iceCell = grid.getCell(2, 2);
+      if (iceCell) {
+        iceCell.obstacle = createIce(1);
+        iceCell.tile = null;
+      }
+
+      // Place a tile adjacent to the ice
+      grid.setTile(2, 1, { id: 't1', type: 'red', row: 2, col: 1, isPowerup: false } as any);
+
+      // Damage from adjacent match should fully clear 1-layer ice
+      const damaged = grid.damageAdjacentObstacles(2, 1);
+      expect(damaged.length).toBe(1);
+      expect(damaged[0].row).toBe(2);
+      expect(damaged[0].col).toBe(2);
+      expect(damaged[0].cleared).toBe(true);
+      expect(damaged[0].obstacle.type).toBe('ice');
+      expect(iceCell?.obstacle).toBeNull();
     });
   });
 });

@@ -134,7 +134,21 @@ Visual Targets:
 
 ---
 
-### [Phase 5: Meta Game](phases/phase-5-meta.md)
+### [Phase 5: Hero Polish & Character Powers](phases/phase-5-polish-heroes.md)
+**Goal:** Premium feel with hero-themed abilities and character power-ups
+**Duration:** 2-3 weeks
+
+Key Deliverables:
+- Hero-themed booster icons (Thor's Hammer, Iron Man Beam, Cap's Shield, Infinity Shuffle)
+- Character power system (heroes pop in during chain combos)
+- Unique power for each character (Thor lightning, Iron Man missiles, Elsa ice wave)
+- Final polish pass - eliminate all placeholder assets
+- Chunky, satisfying visual effects for all abilities
+- Audio integration for all powers
+
+---
+
+### [Phase 6: Meta Game](phases/phase-6-meta.md)
 **Goal:** Progression and replayability  
 **Duration:** 2-3 weeks
 
@@ -173,8 +187,11 @@ Key Deliverables:
 | Board Frame | 4.5 | Medium | [phase-4.5-visual-refresh.md](phases/phase-4.5-visual-refresh.md) |
 | Obstacle Sprites | 4.5 | Medium | [phase-4.5-visual-refresh.md](phases/phase-4.5-visual-refresh.md) |
 | UI Visual Polish | 4.5 | Medium | [phase-4.5-visual-refresh.md](phases/phase-4.5-visual-refresh.md) |
-| Level Map | 5 | Low | [level-objectives.md](features/level-objectives.md) |
-| Stars/Rating | 5 | Low | [level-objectives.md](features/level-objectives.md) |
+| Hero Boosters | 5 | High | [phase-5-polish-heroes.md](phases/phase-5-polish-heroes.md) |
+| Character Powers | 5 | High | [phase-5-polish-heroes.md](phases/phase-5-polish-heroes.md) |
+| Final Asset Polish | 5 | High | [phase-5-polish-heroes.md](phases/phase-5-polish-heroes.md) |
+| Level Map | 6 | Low | [level-objectives.md](features/level-objectives.md) |
+| Stars/Rating | 6 | Low | [level-objectives.md](features/level-objectives.md) |
 
 ---
 

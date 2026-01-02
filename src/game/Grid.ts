@@ -6,6 +6,8 @@ import {
   createChain,
   createBox,
   createStone,
+  createBarrel,
+  createIceBucket,
   canTileMove as obstacleCanTileMove,
   blocksTile,
   clearedByAdjacent,
@@ -66,20 +68,23 @@ export class Grid {
 
     // Parse layout codes:
     // '.' = normal cell (random tile)
-    // 'G' = grass obstacle underneath (random tile on top)
+    // 'G' = grass obstacle underneath (random tile on top) - 1 layer
     // 'X' = blocked cell (no tile)
     // 'R' = pre-placed horizontal rocket
     // 'V' = pre-placed vertical rocket
     // 'B' = pre-placed bomb
     // 'C' = pre-placed color bomb
     // 'P' = pre-placed propeller
-    // 'I' = ice obstacle (1 layer) with random tile
-    // 'D' = double ice obstacle (2 layers) with random tile
+    // 'I' = ice obstacle (always 2 layers) with random tile
+    // 'D' = (legacy) same as 'I' - ice is always 2 layers
     // 'H' = chain obstacle with random tile (locks tile)
     // 'O' = box obstacle (1 layer, no tile)
     // '2' = box obstacle (2 layers, no tile)
     // '3' = box obstacle (3 layers, no tile)
     // 'S' = stone obstacle (permanent blocker, no tile)
+    // 'L' = barrel obstacle (1 layer, explodes on destruction)
+    // 'M' = barrel obstacle (2 layers, explodes on destruction)
+    // 'K' = ice bucket obstacle (spawns ice on adjacent cells when destroyed)
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
         const code = layout[row]?.[col] ?? '.';
@@ -97,14 +102,16 @@ export class Grid {
             cell.tile = this.createRandomTile(row, col);
             break;
           case 'I':
+            // Single layer ice block (no tile underneath)
             cell.blocked = false;
             cell.obstacle = createIce(1);
-            cell.tile = this.createRandomTile(row, col);
+            cell.tile = null;
             break;
           case 'D':
+            // Double layer ice block (no tile underneath)
             cell.blocked = false;
             cell.obstacle = createIce(2);
-            cell.tile = this.createRandomTile(row, col);
+            cell.tile = null;
             break;
           case 'H':
             cell.blocked = false;
@@ -130,6 +137,21 @@ export class Grid {
             cell.blocked = false;
             cell.obstacle = createStone();
             cell.tile = null; // Stone blocks tile
+            break;
+          case 'L':
+            cell.blocked = false;
+            cell.obstacle = createBarrel(1);
+            cell.tile = null; // Barrel blocks tile
+            break;
+          case 'M':
+            cell.blocked = false;
+            cell.obstacle = createBarrel(2);
+            cell.tile = null; // Double barrel
+            break;
+          case 'K':
+            cell.blocked = false;
+            cell.obstacle = createIceBucket();
+            cell.tile = null; // Ice bucket blocks tile
             break;
           case 'R':
             cell.blocked = false;
@@ -345,6 +367,44 @@ export class Grid {
       }
     });
     return cells;
+  }
+
+  // Get adjacent cells (for barrel explosion, ice bucket, etc.)
+  getAdjacentCells(row: number, col: number): Cell[] {
+    const cells: Cell[] = [];
+    const adjacentOffsets = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    for (const [dr, dc] of adjacentOffsets) {
+      const cell = this.getCell(row + dr, col + dc);
+      if (cell && !cell.blocked) {
+        cells.push(cell);
+      }
+    }
+    return cells;
+  }
+
+  // Spawn ice on a cell (for ice bucket effect)
+  // Only spawns if cell has a tile and no existing obstacle
+  spawnIceOnCell(row: number, col: number): { spawned: boolean; replacedTile: boolean } {
+    const cell = this.getCell(row, col);
+    if (cell && !cell.obstacle && !cell.blocked) {
+      const hadTile = cell.tile !== null;
+      cell.obstacle = createIce(1);
+      cell.tile = null; // Ice blocks now replace tiles
+      return { spawned: true, replacedTile: hadTile };
+    }
+    return { spawned: false, replacedTile: false };
+  }
+
+  // Clear a tile at position (for barrel explosion effect)
+  // Returns the tile that was cleared, or null
+  clearTileAt(row: number, col: number): Tile | null {
+    const cell = this.getCell(row, col);
+    if (cell && cell.tile && !blocksTile(cell.obstacle)) {
+      const tile = cell.tile;
+      cell.tile = null;
+      return tile;
+    }
+    return null;
   }
 
   forEachCell(callback: (cell: Cell) => void): void {

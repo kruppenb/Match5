@@ -69,4 +69,34 @@ export const CONFIG = {
     CASCADE_MULTIPLIER: 1.5, // Multiplier for cascade matches
     POWERUP_BONUS: 50, // Bonus for creating a powerup
   },
+
+  BOOSTERS: {
+    STARTING_COUNT: 1, // How many of each booster players start with per level
+    CONFIGS: {
+      hammer: {
+        name: 'Hammer',
+        description: 'Destroy a single tile',
+        icon: '🔨',
+        requiresTarget: true,
+      },
+      row_arrow: {
+        name: 'Row Arrow',
+        description: 'Clear an entire row',
+        icon: '➡️',
+        requiresTarget: true,
+      },
+      col_arrow: {
+        name: 'Column Arrow',
+        description: 'Clear an entire column',
+        icon: '⬇️',
+        requiresTarget: true,
+      },
+      shuffle: {
+        name: 'Shuffle',
+        description: 'Reshuffle all tiles',
+        icon: '🔀',
+        requiresTarget: false,
+      },
+    } as Record<string, { name: string; description: string; icon: string; requiresTarget: boolean }>,
+  },
 };

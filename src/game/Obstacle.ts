@@ -10,10 +10,10 @@ const OBSTACLE_BEHAVIORS: Record<ObstacleType, ObstacleBehavior> = {
     isIndestructible: false,
   },
   ice: {
-    canTileMove: true,      // Frozen tiles CAN be swapped
-    canBeMatched: true,     // Can participate in matches
-    blocksTile: false,      // Tile exists on top
-    clearedByAdjacent: false,
+    canTileMove: false,     // Ice blocks cannot be moved
+    canBeMatched: false,    // Cannot be matched directly
+    blocksTile: true,       // Occupies entire cell (no tile underneath)
+    clearedByAdjacent: true, // Cleared by adjacent matches or powerups
     isIndestructible: false,
   },
   chain: {
@@ -37,6 +37,22 @@ const OBSTACLE_BEHAVIORS: Record<ObstacleType, ObstacleBehavior> = {
     clearedByAdjacent: false,
     isIndestructible: true, // Cannot be destroyed
   },
+  barrel: {
+    canTileMove: false,     // No tile to move
+    canBeMatched: false,    // Cannot be matched directly
+    blocksTile: true,       // Occupies entire cell
+    clearedByAdjacent: true, // Cleared by adjacent matches
+    isIndestructible: false,
+    // Special: When destroyed, damages adjacent tiles/obstacles (explosion effect)
+  },
+  ice_bucket: {
+    canTileMove: false,     // No tile to move
+    canBeMatched: false,    // Cannot be matched directly
+    blocksTile: true,       // Occupies entire cell
+    clearedByAdjacent: true, // Cleared by adjacent matches
+    isIndestructible: false,
+    // Special: When destroyed, spawns ice on adjacent cells with tiles
+  },
 };
 
 export function getObstacleBehavior(type: ObstacleType): ObstacleBehavior {
@@ -55,7 +71,7 @@ export function createGrass(): Obstacle {
 }
 
 export function createIce(layers: number = 1): Obstacle {
-  // Ice can have 1 or 2 layers (double ice)
+  // Ice blocks occupy a cell, cleared by adjacent matches
   return createObstacle('ice', Math.min(Math.max(layers, 1), 2));
 }
 
@@ -70,6 +86,16 @@ export function createBox(layers: number = 1): Obstacle {
 
 export function createStone(): Obstacle {
   return createObstacle('stone', 1);
+}
+
+export function createBarrel(layers: number = 1): Obstacle {
+  // Barrel can have 1-2 layers, explodes when destroyed
+  return createObstacle('barrel', Math.min(Math.max(layers, 1), 2));
+}
+
+export function createIceBucket(): Obstacle {
+  // Ice bucket spawns ice on adjacent cells when destroyed
+  return createObstacle('ice_bucket', 1);
 }
 
 export function damageObstacle(obstacle: Obstacle): Obstacle | null {

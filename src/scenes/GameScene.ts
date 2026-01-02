@@ -4,11 +4,14 @@ import { MatchDetector } from '../game/MatchDetector';
 import { GameTester } from '../game/GameTester';
 import { Level } from '../game/Level';
 import { GameState } from '../game/GameState';
-import { activatePowerup as activatePowerupHelper, canCombinePowerups, combinePowerups, getPropellerTargets, setPropellerTarget } from '../game/powerupUtils';
+import { BoosterManager } from '../game/BoosterManager';
+import { GravitySystem } from '../game/GravitySystem';
+import { SpecialObstacleProcessor } from '../game/SpecialObstacleProcessor';
+import { activatePowerup as activatePowerupHelper, canCombinePowerups, combinePowerups, getPropellerTargets, setPropellerTarget, getPowerupAffectedPositions, getCombinationAffectedPositions } from '../game/powerupUtils';
 import { ProgressStorage } from '../storage/ProgressStorage';
 import { CONFIG } from '../config';
-import { Tile, Position, SwipeDirection, Cell } from '../types';
-import { MoveCounter, ObjectiveDisplay, EndScreen } from './UIComponents';
+import { Tile, Position, SwipeDirection, Cell, BoosterType, Obstacle } from '../types';
+import { MoveCounter, ObjectiveDisplay, EndScreen, BoosterBar } from './UIComponents';
 import { PowerupAnimations } from './PowerupAnimations';
 import { ScreenShake } from '../utils/ScreenShake';
 import { ParticleManager } from '../utils/ParticleManager';
@@ -17,6 +20,8 @@ import { ScorePopup } from '../utils/ScorePopup';
 import { getAudioManager, AudioManager } from '../utils/AudioManager';
 import { getHapticFeedback, HapticFeedback } from '../utils/HapticFeedback';
 import { TileRenderer } from '../rendering/TileRenderer';
+import { ObstacleRenderer } from '../rendering/ObstacleRenderer';
+import { CelebrationManager } from './CelebrationManager';
 
 export interface GameSceneData {
   levelId?: number;
@@ -44,6 +49,10 @@ export class GameScene extends Phaser.Scene {
   private moveCounter!: MoveCounter;
   private objectiveDisplay!: ObjectiveDisplay;
   private endScreen!: EndScreen;
+  private boosterBar!: BoosterBar;
+
+  // Booster system
+  private boosterManager!: BoosterManager;
 
   // Animation system
   private powerupAnimations!: PowerupAnimations;
@@ -55,6 +64,18 @@ export class GameScene extends Phaser.Scene {
   private scorePopup!: ScorePopup;
   private audioManager!: AudioManager;
   private hapticFeedback!: HapticFeedback;
+
+  // Celebration system
+  private celebrationManager!: CelebrationManager;
+
+  // Rendering
+  private obstacleRenderer!: ObstacleRenderer;
+
+  // Physics
+  private gravitySystem!: GravitySystem;
+
+  // Special obstacles
+  private specialObstacleProcessor!: SpecialObstacleProcessor;
 
   constructor() {
     super('GameScene');
@@ -99,6 +120,7 @@ export class GameScene extends Phaser.Scene {
     this.matchDetector = new MatchDetector();
     this.gameTester = new GameTester(this.grid, this.matchDetector);
     this.gameState = new GameState(this.level);
+    this.boosterManager = new BoosterManager();
 
     // Calculate dynamic tile size to fit grid on screen
     const availableWidth = CONFIG.SCREEN.WIDTH - CONFIG.UI.PADDING * 2;
@@ -121,6 +143,33 @@ export class GameScene extends Phaser.Scene {
     // Initialize animation system
     this.powerupAnimations = new PowerupAnimations(this, this.gridOffsetX, this.gridOffsetY, this.tileSize);
 
+    // Initialize obstacle renderer
+    this.obstacleRenderer = new ObstacleRenderer(this, this.tileSize);
+
+    // Initialize gravity system
+    this.gravitySystem = new GravitySystem(this, this.grid, {
+      cellToScreen: (row, col) => this.cellToScreen(row, col),
+      createTileSprite: (tile, startRow) => this.createTileSprite(tile, startRow),
+      getTileSprite: (tileId) => this.tileSprites.get(tileId),
+    });
+
+    // Initialize special obstacle processor
+    this.specialObstacleProcessor = new SpecialObstacleProcessor(
+      this,
+      this.grid,
+      this.gameState,
+      this.tileSize,
+      {
+        cellToScreen: (row, col) => this.cellToScreen(row, col),
+        removeObstacleSprite: (row, col) => this.removeObstacleSprite(row, col),
+        updateObstacleSprite: (row, col) => this.updateObstacleSprite(row, col),
+        createObstacleSprite: (cell) => this.createObstacleSprite(cell),
+        getTileSprite: (tileId) => this.tileSprites.get(tileId),
+        deleteTileSprite: (tileId) => this.tileSprites.delete(tileId),
+        killTweensOf: (target) => this.tweens.killTweensOf(target),
+      }
+    );
+
     // Initialize polish/juice systems
     this.screenShake = new ScreenShake(this);
     this.particleManager = new ParticleManager(this);
@@ -128,6 +177,22 @@ export class GameScene extends Phaser.Scene {
     this.scorePopup = new ScorePopup(this);
     this.audioManager = getAudioManager();
     this.hapticFeedback = getHapticFeedback();
+
+    // Initialize celebration manager
+    this.celebrationManager = new CelebrationManager(
+      this,
+      this.grid,
+      this.particleManager,
+      this.screenShake,
+      this.audioManager,
+      this.hapticFeedback,
+      {
+        onComplete: (score, stars, bonus) => this.showWinEndScreen(score, stars, bonus),
+        cellToScreen: (row, col) => this.cellToScreen(row, col),
+        getTileSprite: (tileId) => this.tileSprites.get(tileId),
+        deleteTileSprite: (tileId) => this.tileSprites.delete(tileId),
+      }
+    );
 
     // Setup game state listeners
     this.setupGameStateListeners();
@@ -281,6 +346,16 @@ export class GameScene extends Phaser.Scene {
       this.gameState.getObjectives()
     );
 
+    // Booster bar (at bottom of screen)
+    this.boosterBar = new BoosterBar(
+      this,
+      CONFIG.SCREEN.WIDTH / 2,
+      CONFIG.SCREEN.HEIGHT - 40,
+      this.boosterManager.getInventory(),
+      (type) => this.onBoosterSelect(type),
+      () => this.onBoosterCancel()
+    );
+
     // End screen (hidden initially)
     this.endScreen = new EndScreen(this);
   }
@@ -299,16 +374,26 @@ export class GameScene extends Phaser.Scene {
   private showWinScreen(): void {
     const stars = this.gameState.calculateStars();
     const score = this.gameState.getScore();
-    const bonus = this.gameState.getMovesRemaining() * CONFIG.LEVEL.BONUS_POINTS_PER_MOVE;
+    const remainingMoves = this.gameState.getMovesRemaining();
+    const bonus = remainingMoves * CONFIG.LEVEL.BONUS_POINTS_PER_MOVE;
 
-    // Save progress
+    // Disable boosters
+    this.boosterBar.setEnabled(false);
+    this.boosterBar.cancelActiveBooster();
+    this.boosterManager.cancelBooster();
+
+    // Save progress (stars already calculated, don't let celebration affect it)
     ProgressStorage.completeLevel(this.level.id, stars);
 
     // Play win effects
     this.audioManager.playWin();
     this.hapticFeedback.success();
-    this.particleManager.emitConfetti(CONFIG.SCREEN.WIDTH / 2, CONFIG.SCREEN.HEIGHT / 3, 60);
 
+    // Start the victory celebration sequence
+    this.celebrationManager.playCelebration(remainingMoves, score, stars, bonus);
+  }
+
+  private showWinEndScreen(score: number, stars: number, bonus: number): void {
     this.endScreen.showWin(score, stars, bonus, {
       onRetry: () => this.restartLevel(),
       onNext: () => this.nextLevel(),
@@ -317,6 +402,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showLoseScreen(): void {
+    // Disable boosters
+    this.boosterBar.setEnabled(false);
+    this.boosterBar.cancelActiveBooster();
+    this.boosterManager.cancelBooster();
+
     // Play lose sound
     this.audioManager.playLose();
     this.hapticFeedback.error();
@@ -406,124 +496,11 @@ export class GameScene extends Phaser.Scene {
     const pos = this.cellToScreen(cell.row, cell.col);
     const key = `obstacle_${cell.row}_${cell.col}`;
 
-    const graphics = this.add.graphics();
-    const size = this.tileSize - CONFIG.GRID.GAP;
-    const halfSize = size / 2;
+    const { graphics, layerText } = this.obstacleRenderer.createObstacleGraphics(cell.obstacle, pos);
 
-    switch (cell.obstacle.type) {
-      case 'grass':
-        graphics.setDepth(0); // Below tiles
-        graphics.fillStyle(CONFIG.UI.COLORS.GRASS, 1);
-        graphics.fillRoundedRect(
-          pos.x - halfSize + CONFIG.GRID.GAP / 2,
-          pos.y - halfSize + CONFIG.GRID.GAP / 2,
-          size - CONFIG.GRID.GAP,
-          size - CONFIG.GRID.GAP,
-          8
-        );
-        // Grass pattern lines
-        graphics.lineStyle(2, CONFIG.UI.COLORS.GRASS_DARK, 0.6);
-        for (let i = 0; i < 4; i++) {
-          const offsetX = (i - 1.5) * 12;
-          graphics.lineBetween(
-            pos.x + offsetX,
-            pos.y + halfSize * 0.4,
-            pos.x + offsetX + 4,
-            pos.y - halfSize * 0.3
-          );
-        }
-        break;
-
-      case 'ice':
-        graphics.setDepth(2); // Above tiles
-        const iceAlpha = cell.obstacle.layers === 2 ? 0.7 : 0.4;
-        graphics.fillStyle(0x88ddff, iceAlpha);
-        graphics.fillRoundedRect(
-          pos.x - halfSize + CONFIG.GRID.GAP / 2,
-          pos.y - halfSize + CONFIG.GRID.GAP / 2,
-          size - CONFIG.GRID.GAP,
-          size - CONFIG.GRID.GAP,
-          8
-        );
-        // Ice crack pattern
-        graphics.lineStyle(cell.obstacle.layers === 2 ? 3 : 2, 0xffffff, 0.5);
-        graphics.lineBetween(pos.x - halfSize * 0.3, pos.y - halfSize * 0.2, pos.x + halfSize * 0.2, pos.y + halfSize * 0.3);
-        graphics.lineBetween(pos.x - halfSize * 0.1, pos.y - halfSize * 0.4, pos.x + halfSize * 0.3, pos.y);
-        if (cell.obstacle.layers === 2) {
-          graphics.lineBetween(pos.x - halfSize * 0.4, pos.y + halfSize * 0.1, pos.x, pos.y + halfSize * 0.4);
-        }
-        break;
-
-      case 'chain':
-        graphics.setDepth(2); // Above tiles
-        // Chain links around the tile
-        graphics.lineStyle(4, 0x888888, 1);
-        const chainSize = halfSize * 0.85;
-        // Horizontal chains
-        graphics.strokeRect(pos.x - chainSize, pos.y - chainSize * 0.15, chainSize * 0.4, chainSize * 0.3);
-        graphics.strokeRect(pos.x + chainSize * 0.6, pos.y - chainSize * 0.15, chainSize * 0.4, chainSize * 0.3);
-        // Vertical chains
-        graphics.strokeRect(pos.x - chainSize * 0.15, pos.y - chainSize, chainSize * 0.3, chainSize * 0.4);
-        graphics.strokeRect(pos.x - chainSize * 0.15, pos.y + chainSize * 0.6, chainSize * 0.3, chainSize * 0.4);
-        // Highlight
-        graphics.lineStyle(2, 0xaaaaaa, 0.5);
-        graphics.strokeCircle(pos.x, pos.y, halfSize * 0.6);
-        break;
-
-      case 'box':
-        graphics.setDepth(1);
-        const boxColor = cell.obstacle.layers === 3 ? 0x8B4513 : cell.obstacle.layers === 2 ? 0xA0522D : 0xCD853F;
-        graphics.fillStyle(boxColor, 1);
-        graphics.fillRoundedRect(
-          pos.x - halfSize + CONFIG.GRID.GAP / 2,
-          pos.y - halfSize + CONFIG.GRID.GAP / 2,
-          size - CONFIG.GRID.GAP,
-          size - CONFIG.GRID.GAP,
-          4
-        );
-        // Wood grain lines
-        graphics.lineStyle(2, 0x654321, 0.5);
-        graphics.lineBetween(pos.x - halfSize * 0.6, pos.y - halfSize * 0.3, pos.x + halfSize * 0.6, pos.y - halfSize * 0.3);
-        graphics.lineBetween(pos.x - halfSize * 0.6, pos.y + halfSize * 0.3, pos.x + halfSize * 0.6, pos.y + halfSize * 0.3);
-        // Layer indicator
-        if (cell.obstacle.layers > 1) {
-          graphics.fillStyle(0xffffff, 0.3);
-          graphics.fillCircle(pos.x, pos.y, halfSize * 0.25);
-          const layerText = this.add.text(pos.x, pos.y, cell.obstacle.layers.toString(), {
-            fontSize: '14px',
-            fontStyle: 'bold',
-            color: '#ffffff',
-          }).setOrigin(0.5).setDepth(2);
-          // Store reference to destroy later
-          (graphics as any).layerText = layerText;
-        }
-        break;
-
-      case 'stone':
-        graphics.setDepth(1);
-        graphics.fillStyle(0x666666, 1);
-        graphics.fillRoundedRect(
-          pos.x - halfSize + CONFIG.GRID.GAP / 2,
-          pos.y - halfSize + CONFIG.GRID.GAP / 2,
-          size - CONFIG.GRID.GAP,
-          size - CONFIG.GRID.GAP,
-          8
-        );
-        // Stone texture
-        graphics.fillStyle(0x555555, 1);
-        graphics.fillCircle(pos.x - halfSize * 0.3, pos.y - halfSize * 0.2, halfSize * 0.15);
-        graphics.fillCircle(pos.x + halfSize * 0.2, pos.y + halfSize * 0.3, halfSize * 0.2);
-        graphics.fillCircle(pos.x + halfSize * 0.3, pos.y - halfSize * 0.35, halfSize * 0.12);
-        // Edge highlight
-        graphics.lineStyle(2, 0x888888, 0.5);
-        graphics.strokeRoundedRect(
-          pos.x - halfSize + CONFIG.GRID.GAP / 2,
-          pos.y - halfSize + CONFIG.GRID.GAP / 2,
-          size - CONFIG.GRID.GAP,
-          size - CONFIG.GRID.GAP,
-          8
-        );
-        break;
+    // Store layer text reference for cleanup
+    if (layerText) {
+      (graphics as any).layerText = layerText;
     }
 
     this.obstacleSprites.set(key, graphics);
@@ -533,6 +510,9 @@ export class GameScene extends Phaser.Scene {
     const key = `obstacle_${row}_${col}`;
     const sprite = this.obstacleSprites.get(key);
     if (sprite) {
+      // Remove from map IMMEDIATELY to prevent race conditions
+      this.obstacleSprites.delete(key);
+
       // Destroy any associated text
       const layerText = (sprite as any).layerText;
       if (layerText) layerText.destroy();
@@ -544,7 +524,6 @@ export class GameScene extends Phaser.Scene {
         duration: CONFIG.TIMING.CLEAR_DURATION,
         onComplete: () => {
           sprite.destroy();
-          this.obstacleSprites.delete(key);
         },
       });
     }
@@ -716,8 +695,29 @@ export class GameScene extends Phaser.Scene {
       const distance = Math.sqrt(dx * dx + dy * dy);
 
       if (distance < 20) {
-        // Just a tap - check if it's a powerup
+        // Just a tap - check if booster is active or if it's a powerup
         const tile = this.grid.getTile(startCell.row, startCell.col);
+        const cell = this.grid.getCell(startCell.row, startCell.col);
+
+        // If a booster is active and requires a target, handle the cell tap
+        const activeBooster = this.boosterManager.getActiveBooster();
+        if (activeBooster && this.boosterManager.requiresTarget(activeBooster)) {
+          // Row/column arrows work on any cell in the row/column
+          // Hammer can target tiles OR obstacles (ice, boxes, etc.)
+          const hasTarget = tile || cell?.obstacle;
+          if (activeBooster === 'hammer' && !hasTarget) {
+            // No tile or obstacle to hammer, cancel the booster
+            this.boosterBar.cancelActiveBooster();
+          } else if (hasTarget || activeBooster === 'row_arrow' || activeBooster === 'col_arrow') {
+            this.executeBooster(activeBooster, startCell);
+          }
+          startPos = null;
+          startCell = null;
+          draggedSprite = null;
+          originalPos = null;
+          return;
+        }
+
         if (tile) {
           this.onTileTap(tile);
         }
@@ -860,6 +860,13 @@ export class GameScene extends Phaser.Scene {
   private async onTileTap(tile: Tile): Promise<void> {
     if (this.isProcessing || !this.gameState.isPlaying()) return;
 
+    // Check if a booster is active and needs a target
+    const activeBooster = this.boosterManager.getActiveBooster();
+    if (activeBooster && this.boosterManager.requiresTarget(activeBooster)) {
+      await this.executeBooster(activeBooster, { row: tile.row, col: tile.col });
+      return;
+    }
+
     if (tile.isPowerup) {
       this.isProcessing = true;
       console.log('Tapped powerup:', tile.powerupType);
@@ -876,6 +883,518 @@ export class GameScene extends Phaser.Scene {
 
       this.isProcessing = false;
     }
+  }
+
+  private onBoosterSelect(type: BoosterType): void {
+    if (this.isProcessing || !this.gameState.isPlaying()) {
+      this.boosterBar.cancelActiveBooster();
+      return;
+    }
+
+    this.boosterManager.setActiveBooster(type);
+    console.log('Booster selected:', type);
+
+    // If booster doesn't require a target, execute immediately
+    if (!this.boosterManager.requiresTarget(type)) {
+      this.executeBooster(type);
+    }
+  }
+
+  private onBoosterCancel(): void {
+    this.boosterManager.cancelBooster();
+    console.log('Booster cancelled');
+  }
+
+  private async executeBooster(type: BoosterType, target?: Position): Promise<void> {
+    if (this.isProcessing || !this.gameState.isPlaying()) return;
+
+    // Check if booster is available
+    if (!this.boosterManager.hasBooster(type)) {
+      this.boosterBar.cancelActiveBooster();
+      this.boosterManager.cancelBooster();
+      return;
+    }
+
+    this.isProcessing = true;
+
+    // Use the booster
+    this.boosterManager.useBooster(type);
+    this.boosterBar.updateInventory(this.boosterManager.getInventory());
+    this.boosterBar.cancelActiveBooster();
+    this.boosterManager.cancelBooster();
+
+    // Play sound and haptic
+    this.audioManager.playPowerupCreate();
+    this.hapticFeedback.heavy();
+
+    switch (type) {
+      case 'hammer':
+        if (target) await this.executeHammerBooster(target);
+        break;
+      case 'row_arrow':
+        if (target) await this.executeRowArrowBooster(target);
+        break;
+      case 'col_arrow':
+        if (target) await this.executeColArrowBooster(target);
+        break;
+      case 'shuffle':
+        await this.executeShuffleBooster();
+        break;
+    }
+
+    // Process any resulting matches
+    await this.processMatches();
+
+    this.isProcessing = false;
+  }
+
+  private async executeHammerBooster(target: Position): Promise<void> {
+    const cell = this.grid.getCell(target.row, target.col);
+    if (!cell) return;
+
+    const tile = cell.tile;
+    const obstacle = cell.obstacle;
+
+    // Must have either a tile or an obstacle to target
+    if (!tile && !obstacle) return;
+
+    // Play animation
+    const pos = this.cellToScreen(target.row, target.col);
+    this.screenShake.shake(3, 100);
+
+    // Emit particles based on what we're smashing
+    if (tile) {
+      this.particleManager.emitMatchParticles(pos.x, pos.y, CONFIG.COLORS[tile.type as keyof typeof CONFIG.COLORS] || 0xffffff, 12);
+    } else {
+      // Obstacle-only cell (ice, box, etc.) - use white/blue particles
+      this.particleManager.emitMatchParticles(pos.x, pos.y, 0x88ccff, 12);
+    }
+
+    // Damage obstacle (1 layer)
+    if (obstacle) {
+      const clearedObstacle = this.grid.clearObstacle(target.row, target.col);
+      if (clearedObstacle) {
+        // Fully destroyed
+        this.removeObstacleSprite(target.row, target.col);
+        this.updateObstacleObjectives({ [clearedObstacle.type]: 1 });
+      } else if (cell.obstacle) {
+        // Just damaged, update sprite to show reduced layers
+        this.updateObstacleSprite(target.row, target.col);
+      }
+    }
+
+    // Clear the tile if present
+    if (tile) {
+      await this.clearSingleTile(tile);
+    }
+
+    // Apply gravity
+    await this.applyGravity();
+  }
+
+  private async executeRowArrowBooster(target: Position): Promise<void> {
+    const tilesToClear: Tile[] = [];
+    const positions: Position[] = [];
+
+    for (let col = 0; col < this.grid.cols; col++) {
+      positions.push({ row: target.row, col });
+      const tile = this.grid.getTile(target.row, col);
+      if (tile) tilesToClear.push(tile);
+    }
+
+    // Play row clear animation
+    this.screenShake.shake(5, 150);
+
+    // Emit particles along the row
+    for (const pos of positions) {
+      const screenPos = this.cellToScreen(pos.row, pos.col);
+      const cell = this.grid.getCell(pos.row, pos.col);
+      const tile = cell?.tile;
+      if (tile) {
+        this.particleManager.emitMatchParticles(screenPos.x, screenPos.y, CONFIG.COLORS[tile.type as keyof typeof CONFIG.COLORS] || 0xffffff, 6);
+      } else if (cell?.obstacle) {
+        // Obstacle-only cell - emit ice-blue particles
+        this.particleManager.emitMatchParticles(screenPos.x, screenPos.y, 0x88ccff, 6);
+      }
+    }
+
+    // Clear obstacles and tiles
+    await this.clearBoosterTargets(positions, tilesToClear);
+
+    // Apply gravity
+    await this.applyGravity();
+  }
+
+  private async executeColArrowBooster(target: Position): Promise<void> {
+    const tilesToClear: Tile[] = [];
+    const positions: Position[] = [];
+
+    for (let row = 0; row < this.grid.rows; row++) {
+      positions.push({ row, col: target.col });
+      const tile = this.grid.getTile(row, target.col);
+      if (tile) tilesToClear.push(tile);
+    }
+
+    // Play column clear animation
+    this.screenShake.shake(5, 150);
+
+    // Emit particles along the column
+    for (const pos of positions) {
+      const screenPos = this.cellToScreen(pos.row, pos.col);
+      const cell = this.grid.getCell(pos.row, pos.col);
+      const tile = cell?.tile;
+      if (tile) {
+        this.particleManager.emitMatchParticles(screenPos.x, screenPos.y, CONFIG.COLORS[tile.type as keyof typeof CONFIG.COLORS] || 0xffffff, 6);
+      } else if (cell?.obstacle) {
+        // Obstacle-only cell - emit ice-blue particles
+        this.particleManager.emitMatchParticles(screenPos.x, screenPos.y, 0x88ccff, 6);
+      }
+    }
+
+    // Clear obstacles and tiles
+    await this.clearBoosterTargets(positions, tilesToClear);
+
+    // Apply gravity
+    await this.applyGravity();
+  }
+
+  private async executeShuffleBooster(): Promise<void> {
+    // Collect all tiles and their positions
+    const tileData: { tile: Tile; row: number; col: number }[] = [];
+    this.grid.forEachCell((cell) => {
+      if (cell.tile && !cell.blocked) {
+        tileData.push({ tile: cell.tile, row: cell.row, col: cell.col });
+      }
+    });
+
+    if (tileData.length < 2) return;
+
+    // Create 67 overlay animation
+    const overlay = this.create67Overlay();
+
+    // Store original positions for animation
+    const originalPositions = new Map<string, { x: number; y: number }>();
+    tileData.forEach(({ tile }) => {
+      const sprite = this.tileSprites.get(tile.id);
+      if (sprite) {
+        originalPositions.set(tile.id, { x: sprite.x, y: sprite.y });
+      }
+    });
+
+    // Phase 1: Animate tiles flying to center chaos
+    const centerX = CONFIG.SCREEN.WIDTH / 2;
+    const centerY = CONFIG.SCREEN.HEIGHT / 2;
+    const flyToCenter: Promise<void>[] = [];
+
+    tileData.forEach(({ tile }, index) => {
+      const sprite = this.tileSprites.get(tile.id);
+      if (sprite) {
+        const angle = (index / tileData.length) * Math.PI * 2;
+        const radius = 50 + Math.random() * 30;
+        const targetX = centerX + Math.cos(angle) * radius;
+        const targetY = centerY + Math.sin(angle) * radius;
+
+        flyToCenter.push(
+          new Promise(resolve => {
+            this.tweens.add({
+              targets: sprite,
+              x: targetX,
+              y: targetY,
+              scale: 0.6,
+              angle: Math.random() * 360,
+              duration: 300,
+              ease: 'Cubic.easeIn',
+              onComplete: () => resolve(),
+            });
+          })
+        );
+      }
+    });
+
+    await Promise.all(flyToCenter);
+
+    // Phase 2: Spin around center while shuffling
+    const spinDuration = 500;
+    const spinPromises: Promise<void>[] = [];
+
+    tileData.forEach(({ tile }) => {
+      const sprite = this.tileSprites.get(tile.id);
+      if (sprite) {
+        spinPromises.push(
+          new Promise(resolve => {
+            this.tweens.add({
+              targets: sprite,
+              angle: sprite.angle + 720,
+              duration: spinDuration,
+              ease: 'Linear',
+              onComplete: () => resolve(),
+            });
+          })
+        );
+      }
+    });
+
+    // Wait for spin
+    await Promise.all(spinPromises);
+
+    // Shuffle tile positions (not types - we swap actual grid positions)
+    const shuffledPositions = [...tileData];
+    for (let i = shuffledPositions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      // Swap the row/col assignments
+      const tempRow = shuffledPositions[i].row;
+      const tempCol = shuffledPositions[i].col;
+      shuffledPositions[i].row = shuffledPositions[j].row;
+      shuffledPositions[i].col = shuffledPositions[j].col;
+      shuffledPositions[j].row = tempRow;
+      shuffledPositions[j].col = tempCol;
+    }
+
+    // Update grid with new positions
+    // First clear all tile positions
+    tileData.forEach(({ tile }) => {
+      this.grid.setTile(tile.row, tile.col, null);
+    });
+
+    // Then set new positions
+    shuffledPositions.forEach(({ tile, row, col }) => {
+      tile.row = row;
+      tile.col = col;
+      this.grid.setTile(row, col, tile);
+    });
+
+    // Remove initial matches (this changes tile types, not positions)
+    this.removeInitialMatches();
+
+    // Phase 3: Animate tiles flying back to their new positions
+    const flyBack: Promise<void>[] = [];
+
+    this.grid.forEachCell((cell) => {
+      if (cell.tile) {
+        const sprite = this.tileSprites.get(cell.tile.id);
+        if (sprite) {
+          const targetPos = this.cellToScreen(cell.row, cell.col);
+
+          flyBack.push(
+            new Promise(resolve => {
+              this.tweens.add({
+                targets: sprite,
+                x: targetPos.x,
+                y: targetPos.y,
+                scale: 1,
+                angle: 0,
+                duration: 300,
+                ease: 'Cubic.easeOut',
+                onComplete: () => resolve(),
+              });
+            })
+          );
+        }
+      }
+    });
+
+    await Promise.all(flyBack);
+
+    // Small delay to ensure all animations are fully complete
+    await this.wait(50);
+
+    // Kill ALL tweens on ALL tracked sprites and destroy them
+    // This ensures no animation artifacts remain
+    const spritesToDestroy = Array.from(this.tileSprites.entries());
+    for (const [tileId, sprite] of spritesToDestroy) {
+      this.tweens.killTweensOf(sprite);
+      sprite.destroy(true);
+      this.tileSprites.delete(tileId);
+    }
+
+    // Now recreate all sprites fresh at their correct positions
+    this.grid.forEachCell((cell) => {
+      if (cell.tile) {
+        this.createTileSprite(cell.tile);
+      }
+    });
+
+    // Remove 67 overlay with fade
+    this.remove67Overlay(overlay);
+  }
+
+  private create67Overlay(): Phaser.GameObjects.Container {
+    const container = this.add.container(CONFIG.SCREEN.WIDTH / 2, CONFIG.SCREEN.HEIGHT / 2);
+    container.setDepth(500);
+
+    // Semi-transparent background
+    const bg = this.add.graphics();
+    bg.fillStyle(0x000000, 0.3);
+    bg.fillRect(-CONFIG.SCREEN.WIDTH / 2, -CONFIG.SCREEN.HEIGHT / 2, CONFIG.SCREEN.WIDTH, CONFIG.SCREEN.HEIGHT);
+    container.add(bg);
+
+    // Create the 6
+    const six = this.add.text(-60, 0, '6', {
+      fontSize: '120px',
+      fontStyle: 'bold',
+      color: '#ff6b6b',
+      stroke: '#ffffff',
+      strokeThickness: 4,
+    }).setOrigin(0.5);
+    container.add(six);
+
+    // Create the 7
+    const seven = this.add.text(60, 0, '7', {
+      fontSize: '120px',
+      fontStyle: 'bold',
+      color: '#4ecdc4',
+      stroke: '#ffffff',
+      strokeThickness: 4,
+    }).setOrigin(0.5);
+    container.add(seven);
+
+    // Store tweens on the container so we can kill them later
+    const tweens: Phaser.Tweens.Tween[] = [];
+
+    // Animate 6 bouncing
+    tweens.push(this.tweens.add({
+      targets: six,
+      y: -20,
+      duration: 200,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    }));
+
+    // Animate 7 bouncing (offset timing)
+    tweens.push(this.tweens.add({
+      targets: seven,
+      y: -20,
+      duration: 200,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+      delay: 100,
+    }));
+
+    // Store tweens on container for cleanup
+    container.setData('tweens', tweens);
+
+    // Scale in animation
+    container.setScale(0);
+    this.tweens.add({
+      targets: container,
+      scale: 1,
+      duration: 200,
+      ease: 'Back.easeOut',
+    });
+
+    return container;
+  }
+
+  private remove67Overlay(container: Phaser.GameObjects.Container): void {
+    // Kill all stored tweens first
+    const tweens = container.getData('tweens') as Phaser.Tweens.Tween[] | undefined;
+    if (tweens) {
+      tweens.forEach(tween => {
+        if (tween && tween.isPlaying()) {
+          tween.stop();
+        }
+      });
+    }
+
+    // Kill any tweens on children
+    container.each((child: Phaser.GameObjects.GameObject) => {
+      this.tweens.killTweensOf(child);
+    });
+
+    this.tweens.add({
+      targets: container,
+      scale: 0,
+      alpha: 0,
+      duration: 200,
+      ease: 'Back.easeIn',
+      onComplete: () => {
+        // Destroy with all children
+        container.destroy(true);
+      },
+    });
+  }
+
+  private async clearSingleTile(tile: Tile): Promise<void> {
+    const sprite = this.tileSprites.get(tile.id);
+    if (sprite) {
+      await new Promise<void>(resolve => {
+        this.tweens.add({
+          targets: sprite,
+          alpha: 0,
+          scale: 0,
+          duration: CONFIG.TIMING.CLEAR_DURATION,
+          ease: 'Back.easeIn',
+          onComplete: () => {
+            sprite.destroy();
+            this.tileSprites.delete(tile.id);
+            resolve();
+          },
+        });
+      });
+    }
+    this.grid.setTile(tile.row, tile.col, null);
+  }
+
+  private async clearBoosterTargets(positions: Position[], tilesToClear: Tile[]): Promise<void> {
+    // Track obstacles cleared
+    const obstaclesClearedByType: Record<string, number> = {};
+
+    // Damage obstacles at all positions (1 layer each)
+    for (const pos of positions) {
+      const cell = this.grid.getCell(pos.row, pos.col);
+      if (!cell?.obstacle) continue;
+
+      const clearedObstacle = this.grid.clearObstacle(pos.row, pos.col);
+      if (clearedObstacle) {
+        // Fully destroyed
+        obstaclesClearedByType[clearedObstacle.type] = (obstaclesClearedByType[clearedObstacle.type] || 0) + 1;
+        this.removeObstacleSprite(pos.row, pos.col);
+      } else if (cell.obstacle) {
+        // Just damaged, update sprite to show reduced layers
+        this.updateObstacleSprite(pos.row, pos.col);
+      }
+    }
+
+    // Update objectives
+    this.updateObstacleObjectives(obstaclesClearedByType);
+
+    // Add score
+    this.gameState.addMatchScore(tilesToClear.length, false);
+    this.scorePopup.showAtMatch(
+      CONFIG.SCREEN.WIDTH / 2,
+      CONFIG.SCREEN.HEIGHT / 2,
+      tilesToClear.length * CONFIG.SCORE.MATCH_BASE,
+      false
+    );
+
+    // Clear tiles with animation
+    const promises: Promise<void>[] = [];
+    for (const tile of tilesToClear) {
+      const sprite = this.tileSprites.get(tile.id);
+      if (sprite) {
+        promises.push(
+          new Promise(resolve => {
+            this.tweens.add({
+              targets: sprite,
+              alpha: 0,
+              scale: 0,
+              duration: CONFIG.TIMING.CLEAR_DURATION,
+              ease: 'Back.easeIn',
+              onComplete: () => {
+                sprite.destroy();
+                this.tileSprites.delete(tile.id);
+                resolve();
+              },
+            });
+          })
+        );
+      }
+      this.grid.setTile(tile.row, tile.col, null);
+    }
+
+    await Promise.all(promises);
   }
 
   private async activateAndClearPowerups(powerups: Tile[], swapTargetColors?: Map<string, string | undefined>): Promise<void> {
@@ -920,13 +1439,22 @@ export class GameScene extends Phaser.Scene {
       affected.forEach(t => tilesToClear.add(t));
     }
 
-    // Clear obstacles under cleared tiles and track for objectives
+    // Get all positions affected by powerups (including cells without tiles like ice blocks)
+    const affectedPositions = new Set<string>();
+    for (const powerup of powerups) {
+      const targetColor = swapTargetColors?.get(powerup.id);
+      const positions = getPowerupAffectedPositions(this.grid, powerup, targetColor);
+      positions.forEach(p => affectedPositions.add(`${p.row},${p.col}`));
+    }
+
+    // Clear obstacles at all affected positions (not just under tiles)
     const obstaclesClearedByType: Record<string, number> = {};
-    tilesToClear.forEach(tile => {
-      const clearedObstacle = this.grid.clearObstacle(tile.row, tile.col);
+    affectedPositions.forEach(key => {
+      const [row, col] = key.split(',').map(Number);
+      const clearedObstacle = this.grid.clearObstacle(row, col);
       if (clearedObstacle) {
         obstaclesClearedByType[clearedObstacle.type] = (obstaclesClearedByType[clearedObstacle.type] || 0) + 1;
-        this.removeObstacleSprite(tile.row, tile.col);
+        this.removeObstacleSprite(row, col);
       }
     });
 
@@ -989,32 +1517,46 @@ export class GameScene extends Phaser.Scene {
     const affected = combinePowerups(this.grid, powerup1, powerup2, alreadyActivated);
     affected.forEach(t => tilesToClear.add(t));
 
-    // Clear obstacles under cleared tiles and track for objectives
+    // Get all positions affected by the combination (including cells without tiles like ice blocks)
+    const affectedPositions = getCombinationAffectedPositions(this.grid, powerup1, powerup2);
+    const affectedPositionSet = new Set<string>(affectedPositions.map(p => `${p.row},${p.col}`));
+
+    // Clear obstacles at all affected positions (not just under tiles)
     const obstaclesClearedByType: Record<string, number> = {};
-    tilesToClear.forEach(tile => {
-      const clearedObstacle = this.grid.clearObstacle(tile.row, tile.col);
+    affectedPositionSet.forEach(key => {
+      const [row, col] = key.split(',').map(Number);
+      const clearedObstacle = this.grid.clearObstacle(row, col);
       if (clearedObstacle) {
         obstaclesClearedByType[clearedObstacle.type] = (obstaclesClearedByType[clearedObstacle.type] || 0) + 1;
-        this.removeObstacleSprite(tile.row, tile.col);
+        this.removeObstacleSprite(row, col);
       }
     });
 
-    // Damage adjacent obstacles (boxes)
-    const damagedObstacles = new Set<string>();
+    // Damage adjacent obstacles (boxes, ice, barrels, ice_buckets)
+    // Track the FINAL state of each damaged obstacle position
+    const damagedObstaclesFinalState = new Map<string, { row: number; col: number; obstacle: Obstacle; cleared: boolean }>();
     tilesToClear.forEach(tile => {
       const damaged = this.grid.damageAdjacentObstacles(tile.row, tile.col);
       damaged.forEach(d => {
         const key = `${d.row},${d.col}`;
-        if (!damagedObstacles.has(key)) {
-          damagedObstacles.add(key);
-          if (d.cleared) {
-            this.removeObstacleSprite(d.row, d.col);
-            obstaclesClearedByType['box'] = (obstaclesClearedByType['box'] || 0) + 1;
-          } else {
-            this.updateObstacleSprite(d.row, d.col);
-          }
+        const existing = damagedObstaclesFinalState.get(key);
+        
+        if (!existing) {
+          damagedObstaclesFinalState.set(key, d);
+        } else if (d.cleared && !existing.cleared) {
+          damagedObstaclesFinalState.set(key, d);
         }
       });
+    });
+
+    // Now process the final state of each damaged obstacle
+    damagedObstaclesFinalState.forEach((d) => {
+      if (d.cleared) {
+        this.removeObstacleSprite(d.row, d.col);
+        obstaclesClearedByType[d.obstacle.type] = (obstaclesClearedByType[d.obstacle.type] || 0) + 1;
+      } else {
+        this.updateObstacleSprite(d.row, d.col);
+      }
     });
 
     // Update objective tracker for obstacles cleared
@@ -1171,10 +1713,14 @@ export class GameScene extends Phaser.Scene {
       await Promise.all(powerupAnimPromises);
     }
 
-    // Now collect affected tiles
+    // Now collect affected tiles and positions
+    const powerupAffectedPositions = new Set<string>();
     for (const powerup of powerupsToActivate) {
       const additionalTiles = this.activatePowerup(powerup);
       additionalTiles.forEach(t => tilesToClear.add(t));
+      // Also get positions affected by powerups (including cells without tiles like ice blocks)
+      const positions = getPowerupAffectedPositions(this.grid, powerup);
+      positions.forEach(p => powerupAffectedPositions.add(`${p.row},${p.col}`));
     }
 
     // Track positions where matches occurred for damaging adjacent obstacles
@@ -1183,32 +1729,60 @@ export class GameScene extends Phaser.Scene {
       matchedPositions.add(`${tile.row},${tile.col}`);
     });
 
-    // Damage adjacent obstacles (boxes) for each matched position
-    const damagedObstacles = new Set<string>();
+    // Damage adjacent obstacles (boxes, barrels, ice buckets, ice) for each matched position
+    // Track the FINAL state of each damaged obstacle position
+    const damagedObstaclesFinalState = new Map<string, { row: number; col: number; obstacle: Obstacle; cleared: boolean }>();
+    const clearedSpecialObstacles: { row: number; col: number; type: string }[] = [];
+    const adjacentObstaclesClearedByType: Record<string, number> = {};
+    
     tilesToClear.forEach(tile => {
       const damaged = this.grid.damageAdjacentObstacles(tile.row, tile.col);
       damaged.forEach(d => {
         const key = `${d.row},${d.col}`;
-        if (!damagedObstacles.has(key)) {
-          damagedObstacles.add(key);
-          if (d.cleared) {
-            this.removeObstacleSprite(d.row, d.col);
-          } else {
-            // Update sprite for reduced layers
-            this.updateObstacleSprite(d.row, d.col);
-          }
+        const existing = damagedObstaclesFinalState.get(key);
+        
+        if (!existing) {
+          // First time seeing this position
+          damagedObstaclesFinalState.set(key, d);
+        } else if (d.cleared && !existing.cleared) {
+          // Position was previously damaged but now fully cleared
+          damagedObstaclesFinalState.set(key, d);
         }
+        // If already cleared, ignore subsequent damage reports
       });
     });
 
-    // Count boxes cleared from adjacent damage
-    const boxesCleared = Array.from(damagedObstacles).filter(key => {
-      const [row, col] = key.split(',').map(Number);
-      return this.grid.getCell(row, col)?.obstacle === null;
-    }).length;
+    // Now process the final state of each damaged obstacle
+    damagedObstaclesFinalState.forEach((d) => {
+      if (d.cleared) {
+        this.removeObstacleSprite(d.row, d.col);
+        // Track all cleared obstacles by type for objectives
+        adjacentObstaclesClearedByType[d.obstacle.type] = (adjacentObstaclesClearedByType[d.obstacle.type] || 0) + 1;
+        // Track special obstacles for their effects
+        if (d.obstacle.type === 'barrel' || d.obstacle.type === 'ice_bucket') {
+          clearedSpecialObstacles.push({ row: d.row, col: d.col, type: d.obstacle.type });
+        }
+      } else {
+        // Update sprite for reduced layers
+        this.updateObstacleSprite(d.row, d.col);
+      }
+    });
 
-    // Clear obstacles under matched tiles and track for objectives
+    // Handle special obstacle effects
+    this.processSpecialObstacleEffects(clearedSpecialObstacles, tilesToClear);
+
+    // Clear obstacles at powerup-affected positions (includes cells without tiles like ice blocks)
     const obstaclesClearedByType: Record<string, number> = {};
+    powerupAffectedPositions.forEach(key => {
+      const [row, col] = key.split(',').map(Number);
+      const clearedObstacle = this.grid.clearObstacle(row, col);
+      if (clearedObstacle) {
+        obstaclesClearedByType[clearedObstacle.type] = (obstaclesClearedByType[clearedObstacle.type] || 0) + 1;
+        this.removeObstacleSprite(row, col);
+      }
+    });
+
+    // Also clear obstacles under matched tiles
     tilesToClear.forEach(tile => {
       const clearedObstacle = this.grid.clearObstacle(tile.row, tile.col);
       if (clearedObstacle) {
@@ -1217,9 +1791,9 @@ export class GameScene extends Phaser.Scene {
       }
     });
 
-    // Add boxes cleared from adjacent damage
-    if (boxesCleared > 0) {
-      obstaclesClearedByType['box'] = (obstaclesClearedByType['box'] || 0) + boxesCleared;
+    // Add obstacles cleared from adjacent damage
+    for (const [type, count] of Object.entries(adjacentObstaclesClearedByType)) {
+      obstaclesClearedByType[type] = (obstaclesClearedByType[type] || 0) + count;
     }
 
     // Update objective tracker for obstacles cleared
@@ -1510,90 +2084,22 @@ export class GameScene extends Phaser.Scene {
   }
 
   private async applyGravity(): Promise<void> {
-    const promises: Promise<void>[] = [];
-
-    for (let col = 0; col < this.grid.cols; col++) {
-      let emptyRow = this.grid.rows - 1;
-
-      // Move existing tiles down (including powerups that were just created)
-      for (let row = this.grid.rows - 1; row >= 0; row--) {
-        const tile = this.grid.getTile(row, col);
-        if (tile) {
-          if (row !== emptyRow) {
-            const fromRow = row;
-            this.grid.setTile(emptyRow, col, tile);
-            this.grid.setTile(row, col, null);
-            
-            // If tile has no sprite (e.g., newly created powerup), create it
-            if (!this.tileSprites.has(tile.id)) {
-              this.createTileSprite(tile, fromRow);
-            }
-            
-            promises.push(this.animateFallFromTo(tile, fromRow, emptyRow));
-          } else {
-            // Tile staying in place - ensure it has a sprite
-            if (!this.tileSprites.has(tile.id)) {
-              this.createTileSprite(tile);
-            }
-          }
-          emptyRow--;
-        }
-      }
-
-      // Spawn new tiles (they start above the grid and fall down)
-      const spawnCount = emptyRow + 1;
-      for (let i = 0; i < spawnCount; i++) {
-        const targetRow = emptyRow - i;
-        const startRow = -1 - i; // Start above the grid
-        const newTile = this.grid.createRandomTile(targetRow, col);
-        this.grid.setTile(targetRow, col, newTile);
-        this.createTileSprite(newTile, startRow);
-        promises.push(this.animateFallFromTo(newTile, startRow, targetRow));
-      }
-    }
-
-    await Promise.all(promises);
-  }
-
-  private async animateFallFromTo(tile: Tile, fromRow: number, toRow: number): Promise<void> {
-    const sprite = this.tileSprites.get(tile.id);
-    if (!sprite) return;
-
-    const targetPos = this.cellToScreen(toRow, tile.col);
-    const distance = Math.abs(toRow - fromRow);
-    const duration = CONFIG.TIMING.FALL_DURATION + (distance * 30);
-
-    return new Promise(resolve => {
-      this.tweens.add({
-        targets: sprite,
-        x: targetPos.x,
-        y: targetPos.y,
-        duration: duration,
-        ease: 'Cubic.easeIn',
-        onComplete: () => resolve(),
-      });
-    });
+    await this.gravitySystem.applyGravity();
   }
 
   private wait(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  private updateObstacleObjectives(clearedByType: Record<string, number>): void {
-    const tracker = this.gameState.getObjectiveTracker();
+  private processSpecialObstacleEffects(
+    clearedObstacles: { row: number; col: number; type: string }[],
+    tilesToClear: Set<Tile>
+  ): void {
+    this.specialObstacleProcessor.processSpecialObstacleEffects(clearedObstacles, tilesToClear);
+  }
 
-    if (clearedByType['grass']) {
-      tracker.onGrassCleared(clearedByType['grass']);
-    }
-    if (clearedByType['ice']) {
-      tracker.onIceCleared(clearedByType['ice']);
-    }
-    if (clearedByType['chain']) {
-      tracker.onChainCleared(clearedByType['chain']);
-    }
-    if (clearedByType['box']) {
-      tracker.onBoxCleared(clearedByType['box']);
-    }
+  private updateObstacleObjectives(clearedByType: Record<string, number>): void {
+    this.specialObstacleProcessor.updateObstacleObjectives(clearedByType);
   }
 
   private setupTestingKeys(): void {
