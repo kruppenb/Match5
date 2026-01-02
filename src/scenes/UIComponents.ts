@@ -441,12 +441,25 @@ export class BoosterBar {
     this.drawButtonBackground(background, size, false, count > 0);
     buttonContainer.add(background);
 
-    // Icon (emoji)
+    // Icon (sprite or emoji fallback)
     const config = CONFIG.BOOSTERS.CONFIGS[type];
-    const icon = this.scene.add.text(0, -5, config.icon, {
-      fontSize: '24px',
-    }).setOrigin(0.5);
-    buttonContainer.add(icon);
+    const spriteKey = config.sprite;
+    
+    if (spriteKey && this.scene.textures.exists(spriteKey)) {
+      // Use sprite icon
+      const iconSprite = this.scene.add.sprite(0, -2, spriteKey);
+      // Scale sprite to fit within the button (leaving some padding)
+      const iconSize = size * 0.6;
+      const spriteSize = Math.max(iconSprite.width, iconSprite.height);
+      iconSprite.setScale(iconSize / spriteSize);
+      buttonContainer.add(iconSprite);
+    } else {
+      // Fallback to emoji
+      const icon = this.scene.add.text(0, -5, config.icon, {
+        fontSize: '24px',
+      }).setOrigin(0.5);
+      buttonContainer.add(icon);
+    }
 
     // Count badge
     const countText = this.scene.add.text(size / 2 - 8, size / 2 - 12, count.toString(), {

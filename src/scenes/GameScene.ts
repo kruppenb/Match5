@@ -103,6 +103,12 @@ export class GameScene extends Phaser.Scene {
     backgrounds.forEach(bg => {
       this.load.image(`bg_${bg}`, `assets/backgrounds/${bg}.jpeg`);
     });
+
+    // Load booster sprites
+    this.load.image('booster_hammer', 'assets/sprites/boosters/hammer.png');
+    this.load.image('booster_row_arrow', 'assets/sprites/boosters/arrow_h.png');
+    this.load.image('booster_col_arrow', 'assets/sprites/boosters/beam_v.png');
+    this.load.image('booster_shuffle', 'assets/sprites/boosters/lucky67.png');
   }
 
   create(data?: GameSceneData): void {
