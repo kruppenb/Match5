@@ -26,6 +26,7 @@ import { getHapticFeedback, HapticFeedback } from '../utils/HapticFeedback';
 import { TileRenderer } from '../rendering/TileRenderer';
 import { ObstacleRenderer } from '../rendering/ObstacleRenderer';
 import { CelebrationManager } from './CelebrationManager';
+import { HeroPowerSystem } from '../game/HeroPowerSystem';
 
 export interface GameSceneData {
   levelId?: number;
@@ -84,14 +85,9 @@ export class GameScene extends Phaser.Scene {
   // Special obstacles
   private specialObstacleProcessor!: SpecialObstacleProcessor;
 
-  // Hero ability system
-  private heroChargePercent: number = 0;
-  private heroMeterBg!: Phaser.GameObjects.Graphics;
-  private heroMeterFill!: Phaser.GameObjects.Graphics;
-  private heroButton!: Phaser.GameObjects.Container;
-  private heroChargeText!: Phaser.GameObjects.Text;
-  private readonly HERO_CHARGE_PER_MATCH = 5; // 5% per match-3
-  private readonly HERO_CHARGE_PER_TILE = 2; // 2% per additional tile beyond 3
+  // Hero power system
+  private heroPowerSystem!: HeroPowerSystem;
+  private initialHeroCharge: number = 0;
 
   // Replay mode
   private isReplay: boolean = false;
@@ -129,14 +125,19 @@ export class GameScene extends Phaser.Scene {
     this.load.image('booster_row_arrow', 'assets/sprites/boosters/arrow_h.png');
     this.load.image('booster_col_arrow', 'assets/sprites/boosters/beam_v.png');
     this.load.image('booster_shuffle', 'assets/sprites/boosters/lucky67.png');
+
+    // Load hero sprites
+    this.load.image('hero_thor', 'assets/sprites/characters/thor.png');
+    this.load.image('hero_ironman', 'assets/sprites/characters/ironman.jpeg');
+    this.load.image('hero_elsa', 'assets/sprites/characters/elsa.jpeg');
   }
 
   create(data?: GameSceneData): void {
     const levelId = data?.levelId ?? 1;
-    this.heroChargePercent = data?.heroChargePercent ?? 0;
+    this.initialHeroCharge = data?.heroChargePercent ?? 0;
     this.isReplay = data?.isReplay ?? false;
     this._selectedBoosters = data?.selectedBoosters ?? [];
-    console.log(`Game Scene Created - Level ${levelId}, Hero Charge: ${this.heroChargePercent}%, Replay: ${this.isReplay}, Boosters: ${this._selectedBoosters.join(', ')}`);
+    console.log(`Game Scene Created - Level ${levelId}, Hero Charge: ${this.initialHeroCharge}%, Replay: ${this.isReplay}, Boosters: ${this._selectedBoosters.join(', ')}`);
 
     // Load level
     this.level = Level.load(levelId);
@@ -388,186 +389,49 @@ export class GameScene extends Phaser.Scene {
     // End screen (hidden initially)
     this.endScreen = new EndScreen(this);
 
-    // Hero ability meter (left side of screen)
-    this.createHeroMeter();
+    // Hero power system (top of screen)
+    this.initHeroPowerSystem();
   }
 
-  private createHeroMeter(): void {
-    const meterX = 35;
-    const meterY = CONFIG.SCREEN.HEIGHT / 2 - 60;
-    const meterWidth = 24;
-    const meterHeight = 120;
-
-    // Background
-    this.heroMeterBg = this.add.graphics();
-    this.heroMeterBg.fillStyle(0x333333, 0.8);
-    this.heroMeterBg.fillRoundedRect(meterX - meterWidth / 2, meterY, meterWidth, meterHeight, 8);
-    this.heroMeterBg.lineStyle(2, 0x4a90d9);
-    this.heroMeterBg.strokeRoundedRect(meterX - meterWidth / 2, meterY, meterWidth, meterHeight, 8);
-
-    // Fill (starts from bottom)
-    this.heroMeterFill = this.add.graphics();
-    this.updateHeroMeterVisual();
-
-    // Hero icon/button
-    this.heroButton = this.add.container(meterX, meterY + meterHeight + 30);
-
-    const buttonBg = this.add.circle(0, 0, 22, 0x4a90d9);
-    buttonBg.setStrokeStyle(2, 0x6ab0f9);
-    this.heroButton.add(buttonBg);
-
-    const heroIcon = this.add.text(0, 0, '⚡', {
-      fontSize: '20px',
-    }).setOrigin(0.5);
-    this.heroButton.add(heroIcon);
-
-    // Charge percentage text
-    this.heroChargeText = this.add.text(meterX, meterY - 15, `${Math.floor(this.heroChargePercent)}%`, {
-      fontSize: '12px',
-      fontFamily: 'Arial Bold',
-      color: '#ffffff',
-    }).setOrigin(0.5);
-
-    // Make hero button interactive when fully charged
-    buttonBg.setInteractive({ useHandCursor: true });
-    buttonBg.on('pointerdown', () => this.tryActivateHeroAbility());
-
-    this.updateHeroButtonState();
+  private initHeroPowerSystem(): void {
+    this.heroPowerSystem = new HeroPowerSystem(
+      this,
+      this.grid,
+      {
+        cellToScreen: (row, col) => this.cellToScreen(row, col),
+        getTileSprite: (tileId) => this.tileSprites.get(tileId),
+        clearTiles: (tiles) => this.clearHeroPowerTiles(tiles),
+        applyGravity: () => this.applyGravity(),
+        processMatches: () => this.processMatches(),
+        playSound: (type) => {
+          if (type === 'match') this.audioManager.playMatch();
+          else if (type === 'powerup') this.audioManager.playPowerupCreate();
+          else if (type === 'combo') this.audioManager.playCascade(2);
+        },
+        shake: (intensity) => {
+          if (intensity === 'light') this.screenShake.light();
+          else if (intensity === 'medium') this.screenShake.medium();
+          else this.screenShake.heavy();
+        },
+        haptic: (type) => this.hapticFeedback.forPowerup(type as any),
+        emitParticles: (x, y, color, count) => this.particleManager.emitMatchParticles(x, y, color, count),
+      },
+      this.initialHeroCharge
+    );
   }
 
-  private updateHeroMeterVisual(): void {
-    const meterX = 35;
-    const meterY = CONFIG.SCREEN.HEIGHT / 2 - 60;
-    const meterWidth = 24;
-    const meterHeight = 120;
-    const padding = 3;
-
-    const fillPercent = Math.min(this.heroChargePercent / 100, 1);
-    const fillHeight = (meterHeight - padding * 2) * fillPercent;
-
-    this.heroMeterFill.clear();
-    if (fillPercent > 0) {
-      // Color gradient based on charge level
-      let color = 0x4a90d9; // Blue
-      if (fillPercent >= 1) {
-        color = 0xffaa00; // Gold when full
-      } else if (fillPercent >= 0.75) {
-        color = 0x66cc66; // Green
-      }
-
-      this.heroMeterFill.fillStyle(color);
-      this.heroMeterFill.fillRoundedRect(
-        meterX - meterWidth / 2 + padding,
-        meterY + meterHeight - padding - fillHeight,
-        meterWidth - padding * 2,
-        fillHeight,
-        4
-      );
-    }
-
-    if (this.heroChargeText) {
-      this.heroChargeText.setText(`${Math.floor(this.heroChargePercent)}%`);
-      if (fillPercent >= 1) {
-        this.heroChargeText.setColor('#ffaa00');
-      } else {
-        this.heroChargeText.setColor('#ffffff');
-      }
+  private addHeroCharge(matchSize: number, cascadeLevel: number = 0, powerupActivated: boolean = false): void {
+    if (this.heroPowerSystem) {
+      this.heroPowerSystem.addCharge(matchSize, cascadeLevel, powerupActivated);
     }
   }
 
-  private updateHeroButtonState(): void {
-    if (!this.heroButton) return;
-
-    const buttonBg = this.heroButton.getAt(0) as Phaser.GameObjects.Arc;
-    const isReady = this.heroChargePercent >= 100;
-
-    if (isReady) {
-      buttonBg.setFillStyle(0xffaa00);
-      buttonBg.setStrokeStyle(2, 0xffcc44);
-      // Pulse animation when ready
-      this.tweens.add({
-        targets: this.heroButton,
-        scaleX: 1.1,
-        scaleY: 1.1,
-        duration: 500,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
-    } else {
-      buttonBg.setFillStyle(0x4a90d9);
-      buttonBg.setStrokeStyle(2, 0x6ab0f9);
-      this.tweens.killTweensOf(this.heroButton);
-      this.heroButton.setScale(1);
-    }
+  private isInputBlocked(): boolean {
+    return this.isProcessing ||
+           (this.heroPowerSystem && (this.heroPowerSystem.isActivating() || this.heroPowerSystem.isSelectionOpen()));
   }
 
-  private addHeroCharge(matchSize: number): void {
-    if (this.heroChargePercent >= 100) return;
-
-    // Base charge for match-3, plus extra for larger matches
-    let chargeGain = this.HERO_CHARGE_PER_MATCH;
-    if (matchSize > 3) {
-      chargeGain += (matchSize - 3) * this.HERO_CHARGE_PER_TILE;
-    }
-
-    this.heroChargePercent = Math.min(100, this.heroChargePercent + chargeGain);
-    this.updateHeroMeterVisual();
-    this.updateHeroButtonState();
-
-    console.log(`Hero charge: ${this.heroChargePercent}% (+${chargeGain})`);
-  }
-
-  private async tryActivateHeroAbility(): Promise<void> {
-    if (this.heroChargePercent < 100 || this.isProcessing) return;
-
-    console.log('Hero ability activated!');
-    this.heroChargePercent = 0;
-    this.updateHeroMeterVisual();
-    this.updateHeroButtonState();
-
-    // Hero ability: Clear all tiles of a random color
-    const colors = CONFIG.TILES.ALL_COLORS.slice(0, this.level.tileVariety);
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-
-    // Find all tiles of this color
-    const tilesToClear: Tile[] = [];
-    for (let row = 0; row < this.grid.rows; row++) {
-      for (let col = 0; col < this.grid.cols; col++) {
-        const cell = this.grid.getCell(row, col);
-        if (cell && cell.tile && cell.tile.type === randomColor && !cell.tile.isPowerup) {
-          tilesToClear.push(cell.tile);
-        }
-      }
-    }
-
-    if (tilesToClear.length === 0) return;
-
-    // Play effects
-    this.audioManager.playMatch();
-    this.hapticFeedback.forPowerup('color_bomb');
-    this.screenShake.medium();
-
-    // Flash hero button
-    this.tweens.add({
-      targets: this.heroButton,
-      scaleX: 1.5,
-      scaleY: 1.5,
-      duration: 150,
-      yoyo: true,
-    });
-
-    // Clear tiles with animation
-    this.isProcessing = true;
-
-    await this.clearHeroTargetTiles(tilesToClear);
-    await this.applyGravity();
-    await this.processMatches();
-
-    this.isProcessing = false;
-  }
-
-  private async clearHeroTargetTiles(tiles: Tile[]): Promise<void> {
+  private async clearHeroPowerTiles(tiles: Tile[]): Promise<void> {
     const clearPromises = tiles.map(tile => {
       return new Promise<void>(resolve => {
         const sprite = this.tileSprites.get(tile.id);
@@ -943,7 +807,7 @@ export class GameScene extends Phaser.Scene {
       // Initialize audio on first interaction (required for browser autoplay policy)
       this.audioManager.init();
 
-      if (this.isProcessing) return;
+      if (this.isInputBlocked()) return;
 
       startPos = { x: pointer.x, y: pointer.y };
       startCell = this.screenToCell(pointer.x, pointer.y);
@@ -963,7 +827,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (!startPos || !draggedSprite || !originalPos || this.isProcessing) return;
+      if (!startPos || !draggedSprite || !originalPos || this.isInputBlocked()) return;
 
       const dx = pointer.x - startPos.x;
       const dy = pointer.y - startPos.y;
@@ -1004,7 +868,7 @@ export class GameScene extends Phaser.Scene {
         draggedSprite.setDepth(0);
       }
       
-      if (!startPos || !startCell || this.isProcessing) {
+      if (!startPos || !startCell || this.isInputBlocked()) {
         startPos = null;
         startCell = null;
         draggedSprite = null;

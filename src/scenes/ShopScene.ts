@@ -19,8 +19,6 @@ export class ShopScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale;
-
     // Background
     this.renderBackground();
 
@@ -201,7 +199,7 @@ export class ShopScene extends Phaser.Scene {
       tabGraphics.lineStyle(1.5, borderColor, isActive ? 0.9 : 0.5);
       tabGraphics.strokeRoundedRect(x - tabWidth / 2, tabY - tabHeight / 2, tabWidth, tabHeight, 20);
 
-      const tab = this.add.rectangle(x, tabY, tabWidth, tabHeight, 0x000000, 0)
+      this.add.rectangle(x, tabY, tabWidth, tabHeight, 0x000000, 0)
         .setInteractive({ useHandCursor: true })
         .on('pointerover', () => {
           if (!isActive) {
@@ -505,7 +503,7 @@ export class ShopScene extends Phaser.Scene {
     btnGraphics.lineStyle(1.5, 0x6a8aaa, 0.7);
     btnGraphics.strokeRoundedRect(btnX - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 21);
 
-    const backBtn = this.add.rectangle(btnX, btnY, btnWidth, btnHeight, 0x000000, 0)
+    this.add.rectangle(btnX, btnY, btnWidth, btnHeight, 0x000000, 0)
       .setInteractive({ useHandCursor: true })
       .on('pointerover', () => {
         btnGraphics.clear();

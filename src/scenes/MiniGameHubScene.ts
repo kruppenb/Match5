@@ -17,8 +17,6 @@ export class MiniGameHubScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale;
-
     // Background
     this.renderBackground();
 
@@ -256,7 +254,7 @@ export class MiniGameHubScene extends Phaser.Scene {
     playBtnGraphics.strokeRoundedRect(btnX - btnWidth / 2, y - btnHeight / 2, btnWidth, btnHeight, 10);
 
     if (canAfford) {
-      const playBtnHit = this.add.rectangle(btnX, y, btnWidth, btnHeight, 0x000000, 0)
+      this.add.rectangle(btnX, y, btnWidth, btnHeight, 0x000000, 0)
         .setInteractive({ useHandCursor: true })
         .on('pointerover', () => {
           playBtnGraphics.clear();
@@ -425,7 +423,7 @@ export class MiniGameHubScene extends Phaser.Scene {
     btnGraphics.lineStyle(1.5, 0x6a8aaa, 0.7);
     btnGraphics.strokeRoundedRect(btnX - btnWidth / 2, btnY - btnHeight / 2, btnWidth, btnHeight, 21);
 
-    const backBtn = this.add.rectangle(btnX, btnY, btnWidth, btnHeight, 0x000000, 0)
+    this.add.rectangle(btnX, btnY, btnWidth, btnHeight, 0x000000, 0)
       .setInteractive({ useHandCursor: true })
       .on('pointerover', () => {
         btnGraphics.clear();

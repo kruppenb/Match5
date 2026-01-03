@@ -198,3 +198,25 @@ export interface LevelResult {
   maxCombo: number;
   isFirstTime: boolean;
 }
+
+// ==================== HERO POWER TYPES ====================
+
+export type HeroType = 'thor' | 'ironman' | 'elsa';
+
+export interface HeroPowerConfig {
+  hero: HeroType;
+  name: string;
+  powerName: string;
+  description: string;
+  icon: string;
+  color: number;
+  spriteKey: string;
+}
+
+export interface HeroPowerBarState {
+  currentCharge: number;       // 0-100
+  isReady: boolean;            // true when >= 100
+  isSelectionOpen: boolean;    // true when popup is showing
+  selectedHero: HeroType | null;
+  isActivating: boolean;       // true during power activation
+}

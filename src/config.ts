@@ -166,4 +166,50 @@ export const CONFIG = {
     STARTING_COINS: 500,
     STARTING_DIAMONDS: 20,
   },
+
+  HERO_POWERS: {
+    // Charge rates
+    CHARGE_PER_TILE: 2,           // +2% per tile cleared
+    CHARGE_PER_CASCADE: 10,       // +10% bonus per cascade level
+    CHARGE_PER_POWERUP: 6,        // +6% when powerup activates
+    COMBO_MULTIPLIER: 1.5,        // Multiplier for combo chains
+    MAX_CHARGE: 100,
+
+    // Hero configurations
+    HEROES: {
+      thor: {
+        hero: 'thor',
+        name: 'Thor',
+        powerName: 'Lightning Storm',
+        description: 'Strikes 5-7 random tiles with lightning',
+        icon: '⚡',
+        color: 0x6ab0f9,
+        spriteKey: 'hero_thor',
+      },
+      ironman: {
+        hero: 'ironman',
+        name: 'Iron Man',
+        powerName: 'Missile Barrage',
+        description: 'Fires 4 missiles with 2x2 explosions',
+        icon: '🚀',
+        color: 0xff4444,
+        spriteKey: 'hero_ironman',
+      },
+      elsa: {
+        hero: 'elsa',
+        name: 'Elsa',
+        powerName: 'Ice Wave',
+        description: 'Freezes and shatters 3 rows or columns',
+        icon: '❄️',
+        color: 0x87ceeb,
+        spriteKey: 'hero_elsa',
+      },
+    } as Record<string, { hero: string; name: string; powerName: string; description: string; icon: string; color: number; spriteKey: string }>,
+
+    // Power parameters
+    THOR_STRIKE_COUNT: { min: 5, max: 7 },
+    IRONMAN_MISSILE_COUNT: 4,
+    IRONMAN_EXPLOSION_SIZE: 2, // 2x2 area
+    ELSA_LINES_COUNT: 3,
+  },
 };

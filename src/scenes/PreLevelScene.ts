@@ -48,8 +48,6 @@ export class PreLevelScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale;
-
     // Background
     this.renderBackground();
 
