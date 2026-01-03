@@ -162,6 +162,12 @@ export interface ProgressionEvent {
   completionBonus: Reward[];
 }
 
+// Daily replay bonus data
+export interface DailyReplayData {
+  lastResetDate: string;
+  replaysCompleted: number;
+}
+
 // Meta save data
 export interface MetaSaveData {
   version: number;
@@ -180,6 +186,7 @@ export interface MetaSaveData {
   };
   totalLevelsPlayed: number;
   lastDailyLogin: string | null;
+  dailyReplay: DailyReplayData;
 }
 
 // Level result for currency/event rewards

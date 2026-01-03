@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
+import { TitleScene } from './scenes/TitleScene';
 import { LevelSelectScene } from './scenes/LevelSelectScene';
+import { ReplayLevelsScene } from './scenes/ReplayLevelsScene';
 import { GameScene } from './scenes/GameScene';
 import { ShopScene } from './scenes/ShopScene';
 import { PreLevelScene } from './scenes/PreLevelScene';
@@ -26,7 +28,9 @@ const config: Phaser.Types.Core.GameConfig = {
     },
   },
   scene: [
+    TitleScene,
     LevelSelectScene,
+    ReplayLevelsScene,
     GameScene,
     ShopScene,
     PreLevelScene,

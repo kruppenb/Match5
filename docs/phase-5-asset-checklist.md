@@ -5,7 +5,7 @@
 
 ---
 
-## Booster Icons (256x256px, PNG with transparency)
+## Booster Icons (256x256px, PNG with white background)
 
 > **Note:** Basic versions of all 4 main booster icons already exist. These need to be UPGRADED to chunky, high-quality versions.
 
@@ -14,7 +14,8 @@
 
 **Prompt:**
 ```
-Chunky powerful fantasy war hammer icon, isometric view, glowing blue energy crackling around weathered metal head, ornate Norse runes on handle, dramatic rim lighting, mobile game UI style, 3D rendered look, transparent background, centered composition
+Chunky powerful fantasy war hammer icon, isometric view, glowing blue energy crackling around weathered metal head, ornate Norse runes on handle, dramatic rim lighting, mobile game UI style, 3D rendered look, white background, centered composition
+
 ```
 
 ---
@@ -24,7 +25,7 @@ Chunky powerful fantasy war hammer icon, isometric view, glowing blue energy cra
 
 **Prompt:**
 ```
-Glowing fantasy war hammer icon, isometric view, intense blue-white energy aura surrounding entire hammer, magical particles floating around it, charged up ready to strike, mobile game UI style, 3D rendered, transparent background, centered
+Glowing fantasy war hammer icon, isometric view, intense blue-white energy aura surrounding entire hammer, magical particles floating around it, charged up ready to strike, mobile game UI style, 3D rendered, white background, centered
 ```
 
 ---
@@ -34,7 +35,7 @@ Glowing fantasy war hammer icon, isometric view, intense blue-white energy aura 
 
 **Prompt:**
 ```
-Vertical energy beam cannon icon, chunky high-tech emitter device at top, glowing blue-white energy beam shooting downward, arc reactor style core, sci-fi mobile game asset, 3D game icon style, transparent background, dramatic lighting
+Vertical energy beam cannon icon, chunky high-tech emitter device at top, glowing blue-white energy beam shooting downward, arc reactor style core, sci-fi mobile game asset, 3D game icon style, white background, dramatic lighting
 ```
 
 ---
@@ -44,7 +45,7 @@ Vertical energy beam cannon icon, chunky high-tech emitter device at top, glowin
 
 **Prompt:**
 ```
-Energy beam device charging up, spinning energy rings around glowing core, electrical arcs, building power effect, blue and white glow intensifying, mobile game UI icon, 3D rendered style, transparent background
+Energy beam device charging up, spinning energy rings around glowing core, electrical arcs, building power effect, blue and white glow intensifying, mobile game UI icon, 3D rendered style, white background
 ```
 
 ---
@@ -54,7 +55,7 @@ Energy beam device charging up, spinning energy rings around glowing core, elect
 
 **Prompt:**
 ```
-Horizontal energy projectile disc icon, sleek aerodynamic design, glowing orange-yellow core, speed lines and motion blur trails, fast and powerful look, mobile game booster icon, 3D chunky style, transparent background
+Horizontal energy projectile disc icon, sleek aerodynamic design, glowing orange-yellow core, speed lines and motion blur trails, fast and powerful look, mobile game booster icon, 3D chunky style, white background
 ```
 
 ---
@@ -64,7 +65,7 @@ Horizontal energy projectile disc icon, sleek aerodynamic design, glowing orange
 
 **Prompt:**
 ```
-Fast-moving energy disc projectile with heavy motion blur, streaking orange energy trails, speed lines, dynamic action pose, mobile game power-up icon, 3D style, transparent background, centered
+Fast-moving energy disc projectile with heavy motion blur, streaking orange energy trails, speed lines, dynamic action pose, mobile game power-up icon, 3D style, white background, centered
 ```
 
 ---
@@ -74,7 +75,7 @@ Fast-moving energy disc projectile with heavy motion blur, streaking orange ener
 
 **Prompt:**
 ```
-Magical cosmic shuffle icon with "67" incorporated, swirling vortex of colorful gems (red blue yellow purple green orange), reality-warping effect, magical sparkles, mystical energy, mobile game UI icon style, 3D rendered, transparent background
+Magical cosmic shuffle icon with "67" incorporated, swirling vortex of colorful gems (red blue yellow purple green orange), reality-warping effect, magical sparkles, mystical energy, mobile game UI icon style, 3D rendered, white background
 ```
 
 ---
@@ -84,12 +85,12 @@ Magical cosmic shuffle icon with "67" incorporated, swirling vortex of colorful 
 
 **Prompt:**
 ```
-Activated cosmic portal swirl, intense glowing "67" at center, gems spiraling inward with motion blur, bright magical energy burst, reality distortion effect, mobile game power icon, vivid colors, transparent background
+Activated cosmic portal swirl, intense glowing "67" at center, gems spiraling inward with motion blur, bright magical energy burst, reality distortion effect, mobile game power icon, vivid colors, white background
 ```
 
 ---
 
-## Character Portraits (512x512px, PNG with transparency)
+## Character Portraits (512x512px, PNG with white background)
 
 > **Note:** Basic character images already exist (`thor.png`, `ironman.jpeg`, `elsa.jpeg`) but need to be REPLACED with high-quality portraits and action poses in proper folder structure.
 
@@ -98,7 +99,7 @@ Activated cosmic portal swirl, intense glowing "67" at center, gems spiraling in
 
 **Prompt:**
 ```
-Thor god of thunder, upper body portrait, heroic confident pose, holding Mjolnir hammer, long blonde hair flowing, red cape, silver armor, lightning crackling in background, cartoon mobile game style, chunky stylized art, vibrant colors, transparent background
+Thor god of thunder, upper body portrait, heroic confident pose, holding Mjolnir hammer, long blonde hair flowing, red cape, silver armor, lightning crackling in background, cartoon mobile game style, chunky stylized art, vibrant colors, white background
 ```
 
 ---
@@ -108,7 +109,7 @@ Thor god of thunder, upper body portrait, heroic confident pose, holding Mjolnir
 
 **Prompt:**
 ```
-Thor raising hammer high overhead, dramatic action pose, calling down lightning, glowing eyes, intense expression, electricity arcing from Mjolnir, dynamic power stance, cartoon mobile game art style, chunky proportions, transparent background
+Thor raising hammer high overhead, dramatic action pose, calling down lightning, glowing eyes, intense expression, electricity arcing from Mjolnir, dynamic power stance, cartoon mobile game art style, chunky proportions, white background
 ```
 
 ---
@@ -118,7 +119,7 @@ Thor raising hammer high overhead, dramatic action pose, calling down lightning,
 
 **Prompt:**
 ```
-Iron Man Mark suit, upper body portrait, flying pose, glowing blue chest arc reactor, red and gold armor, helmet with glowing white eyes, shoulder missile pods visible, cartoon mobile game style, chunky stylized look, dramatic lighting, transparent background
+Iron Man Mark suit, upper body portrait, flying pose, glowing blue chest arc reactor, red and gold armor, helmet with glowing white eyes, shoulder missile pods visible, cartoon mobile game style, chunky stylized look, dramatic lighting, white background
 ```
 
 ---
@@ -128,7 +129,7 @@ Iron Man Mark suit, upper body portrait, flying pose, glowing blue chest arc rea
 
 **Prompt:**
 ```
-Iron Man launching missiles from shoulder pods, both arms extended with repulsors glowing, targeting HUD elements, smoke trails from missiles, dynamic action pose, cartoon mobile game art, chunky style, red gold armor, transparent background
+Iron Man launching missiles from shoulder pods, both arms extended with repulsors glowing, targeting HUD elements, smoke trails from missiles, dynamic action pose, cartoon mobile game art, chunky style, red gold armor, white background
 ```
 
 ---
@@ -138,7 +139,7 @@ Iron Man launching missiles from shoulder pods, both arms extended with repulsor
 
 **Prompt:**
 ```
-Elsa ice queen, upper body portrait, confident magical pose, platinum blonde braid, blue ice dress, snowflakes floating around her, gentle blue aura, cartoon mobile game style, chunky stylized art, elegant expression, transparent background
+Elsa ice queen, upper body portrait, confident magical pose, platinum blonde braid, blue ice dress, snowflakes floating around her, gentle blue aura, cartoon mobile game style, chunky stylized art, elegant expression, white background
 ```
 
 ---
@@ -148,19 +149,19 @@ Elsa ice queen, upper body portrait, confident magical pose, platinum blonde bra
 
 **Prompt:**
 ```
-Elsa casting powerful ice magic, hands extended forward, intense ice storm swirling from palms, blue white magical energy, ice crystals forming, dramatic casting pose, cartoon mobile game style, chunky proportions, transparent background
+Elsa casting powerful ice magic, hands extended forward, intense ice storm swirling from palms, blue white magical energy, ice crystals forming, dramatic casting pose, cartoon mobile game style, chunky proportions, white background
 ```
 
 ---
 
-## Effect Particles (128x128px, PNG with transparency)
+## Effect Particles (128x128px, PNG with white background)
 
 ### 15. Lightning Bolt
 - [ ] `public/assets/sprites/effects/lightning_bolt.png`
 
 **Prompt:**
 ```
-Single lightning bolt sprite, bright electric blue white, branching electricity, glowing core, game effect asset, clean edges, transparent background, suitable for particle system, top-down vertical orientation
+Single lightning bolt sprite, bright electric blue white, branching electricity, glowing core, game effect asset, clean edges, white background, suitable for particle system, top-down vertical orientation
 ```
 
 ---
@@ -170,7 +171,7 @@ Single lightning bolt sprite, bright electric blue white, branching electricity,
 
 **Prompt:**
 ```
-Small rocket missile sprite, red tip, metallic body, fins at back, small smoke trail, side view, mobile game projectile asset, clean simple design, transparent background
+Small rocket missile sprite, red tip, metallic body, fins at back, small smoke trail, side view, mobile game projectile asset, clean simple design, white background
 ```
 
 ---
@@ -180,7 +181,7 @@ Small rocket missile sprite, red tip, metallic body, fins at back, small smoke t
 
 **Prompt:**
 ```
-Explosion effect sprite, orange yellow fireball, expanding shockwave ring, debris particles, game VFX asset, radial burst, suitable for animation frame, transparent background
+Explosion effect sprite, orange yellow fireball, expanding shockwave ring, debris particles, game VFX asset, radial burst, suitable for animation frame, white background
 ```
 
 ---
@@ -190,7 +191,7 @@ Explosion effect sprite, orange yellow fireball, expanding shockwave ring, debri
 
 **Prompt:**
 ```
-Single ice crystal shard, translucent blue white, sharp geometric facets, glowing inner light, frost particles, game effect sprite, clean design, transparent background
+Single ice crystal shard, translucent blue white, sharp geometric facets, glowing inner light, frost particles, game effect sprite, clean design, white background
 ```
 
 ---
@@ -200,7 +201,7 @@ Single ice crystal shard, translucent blue white, sharp geometric facets, glowin
 
 **Prompt:**
 ```
-Ice shatter explosion effect, multiple crystalline fragments flying outward, blue white sparkles, frozen mist, radial burst pattern, game VFX sprite, transparent background
+Ice shatter explosion effect, multiple crystalline fragments flying outward, blue white sparkles, frozen mist, radial burst pattern, game VFX sprite, white background
 ```
 
 ---
@@ -210,7 +211,7 @@ Ice shatter explosion effect, multiple crystalline fragments flying outward, blu
 
 **Prompt:**
 ```
-Energy impact burst effect, bright white core with blue rings radiating outward, shockwave ripples, game hit effect sprite, radial design, transparent background
+Energy impact burst effect, bright white core with blue rings radiating outward, shockwave ripples, game hit effect sprite, radial design, white background
 ```
 
 ---
@@ -220,12 +221,12 @@ Energy impact burst effect, bright white core with blue rings radiating outward,
 
 **Prompt:**
 ```
-Reality warp distortion effect, swirling cosmic vortex, multicolored gem particles spiraling, magical sparkles, space-bending visual, game VFX asset, circular design, transparent background
+Reality warp distortion effect, swirling cosmic vortex, multicolored gem particles spiraling, magical sparkles, space-bending visual, game VFX asset, circular design, white background
 ```
 
 ---
 
-## Hero Power Bar UI (Various sizes, PNG with transparency)
+## Hero Power Bar UI (Various sizes, PNG with white background)
 
 ### 22. Power Bar Background
 - [ ] `public/assets/sprites/ui/hero_power_bar_bg.png`
@@ -234,7 +235,7 @@ Reality warp distortion effect, swirling cosmic vortex, multicolored gem particl
 
 **Prompt:**
 ```
-Sleek horizontal power bar background, dark metallic frame, subtle gradient interior, game UI element, mobile game style, rounded ends, sci-fi/fantasy hybrid look, transparent background
+Sleek horizontal power bar background, dark metallic frame, subtle gradient interior, game UI element, mobile game style, rounded ends, sci-fi/fantasy hybrid look, white background
 ```
 
 ---
@@ -246,7 +247,7 @@ Sleek horizontal power bar background, dark metallic frame, subtle gradient inte
 
 **Prompt:**
 ```
-Glowing energy bar fill segment, gradient from blue to bright cyan, pulsing energy effect, sparkle particles, game power meter fill, can tile horizontally, vibrant glow, transparent background
+Glowing energy bar fill segment, gradient from blue to bright cyan, pulsing energy effect, sparkle particles, game power meter fill, can tile horizontally, vibrant glow, white background
 ```
 
 ---
@@ -258,7 +259,7 @@ Glowing energy bar fill segment, gradient from blue to bright cyan, pulsing ener
 
 **Prompt:**
 ```
-Ornate decorative frame for power bar, metallic gold and silver accents, heroic design with subtle hero motifs, mobile game UI style, 9-slice compatible, transparent background
+Ornate decorative frame for power bar, metallic gold and silver accents, heroic design with subtle hero motifs, mobile game UI style, 9-slice compatible, white background
 ```
 
 ---
@@ -270,7 +271,7 @@ Ornate decorative frame for power bar, metallic gold and silver accents, heroic 
 
 **Prompt:**
 ```
-Generic hero silhouette icon, dramatic cape and pose, glowing outline, mystery hero symbol, mobile game UI icon, simple bold design, transparent background
+Generic hero silhouette icon, dramatic cape and pose, glowing outline, mystery hero symbol, mobile game UI icon, simple bold design, white background
 ```
 
 ---
@@ -282,7 +283,7 @@ Generic hero silhouette icon, dramatic cape and pose, glowing outline, mystery h
 
 **Prompt:**
 ```
-Radiant glow burst effect for power bar ready state, golden energy aura, pulsing light rays, celebratory sparkles, game UI highlight effect, transparent background, additive blend ready
+Radiant glow burst effect for power bar ready state, golden energy aura, pulsing light rays, celebratory sparkles, game UI highlight effect, white background, additive blend ready
 ```
 
 ---
@@ -294,7 +295,7 @@ Radiant glow burst effect for power bar ready state, golden energy aura, pulsing
 
 **Prompt:**
 ```
-Game popup panel background, ornate fantasy frame with metallic accents, dramatic lighting, dark interior with subtle glow, mobile game modal style, rounded corners, transparent background
+Game popup panel background, ornate fantasy frame with metallic accents, dramatic lighting, dark interior with subtle glow, mobile game modal style, rounded corners, white background
 ```
 
 ---
@@ -306,7 +307,7 @@ Game popup panel background, ornate fantasy frame with metallic accents, dramati
 
 **Prompt:**
 ```
-Character portrait frame for hero selection, ornate border with heroic design, metallic gold and silver, glowing edge accents, mobile game card frame style, transparent background
+Character portrait frame for hero selection, ornate border with heroic design, metallic gold and silver, glowing edge accents, mobile game card frame style, white background
 ```
 
 ---
@@ -318,7 +319,7 @@ Character portrait frame for hero selection, ornate border with heroic design, m
 
 **Prompt:**
 ```
-Selection highlight glow for hero card, golden aura burst, energy particles radiating outward, selected state indicator, game UI hover effect, additive blend ready, transparent background
+Selection highlight glow for hero card, golden aura burst, energy particles radiating outward, selected state indicator, game UI hover effect, additive blend ready, white background
 ```
 
 ---
@@ -330,7 +331,7 @@ Selection highlight glow for hero card, golden aura burst, energy particles radi
 
 **Prompt:**
 ```
-"HERO POWER READY!" game banner text, bold chunky letters with golden glow, energy crackling around text, dramatic mobile game announcement style, transparent background
+"HERO POWER READY!" game banner text, bold chunky letters with golden glow, energy crackling around text, dramatic mobile game announcement style, white background
 ```
 
 ---
@@ -346,7 +347,7 @@ Selection highlight glow for hero card, golden aura burst, energy particles radi
 
 **Prompt:**
 ```
-Shiny gold coin game currency icon, chunky 3D style, glowing rim, subtle sparkle, dollar or star symbol embossed, mobile game UI asset, warm golden color, transparent background
+Shiny gold coin game currency icon, chunky 3D style, glowing rim, subtle sparkle, dollar or star symbol embossed, mobile game UI asset, warm golden color, white background
 ```
 
 ---
@@ -358,7 +359,7 @@ Shiny gold coin game currency icon, chunky 3D style, glowing rim, subtle sparkle
 
 **Prompt:**
 ```
-Brilliant blue diamond gem icon, faceted cut, glowing inner light, sparkle reflections, premium currency style, mobile game UI asset, cyan blue color, transparent background
+Brilliant blue diamond gem icon, faceted cut, glowing inner light, sparkle reflections, premium currency style, mobile game UI asset, cyan blue color, white background
 ```
 
 ---
@@ -370,7 +371,7 @@ Brilliant blue diamond gem icon, faceted cut, glowing inner light, sparkle refle
 
 **Prompt:**
 ```
-Wooden treasure chest icon closed, metal bands and lock, slightly glowing golden edges, mystery treasure vibe, mobile game style, chunky 3D look, transparent background
+Wooden treasure chest icon closed, metal bands and lock, slightly glowing golden edges, mystery treasure vibe, mobile game style, chunky 3D look, white background
 ```
 
 ---
@@ -382,7 +383,7 @@ Wooden treasure chest icon closed, metal bands and lock, slightly glowing golden
 
 **Prompt:**
 ```
-Wooden treasure chest open with golden glow inside, coins and gems spilling out, magical sparkles, reward reveal moment, mobile game style, chunky 3D, transparent background
+Wooden treasure chest open with golden glow inside, coins and gems spilling out, magical sparkles, reward reveal moment, mobile game style, chunky 3D, white background
 ```
 
 ---
@@ -394,7 +395,7 @@ Wooden treasure chest open with golden glow inside, coins and gems spilling out,
 
 **Prompt:**
 ```
-Colorful fortune wheel game asset, 8 segments in rainbow colors (gold yellow orange red pink purple blue cyan), ornate outer rim, carnival game style, chunky mobile game look, transparent background
+Colorful fortune wheel game asset, 8 segments in rainbow colors (gold yellow orange red pink purple blue cyan), ornate outer rim, carnival game style, chunky mobile game look, white background
 ```
 
 ---
@@ -406,7 +407,7 @@ Colorful fortune wheel game asset, 8 segments in rainbow colors (gold yellow ora
 
 **Prompt:**
 ```
-Arrow pointer for spin wheel, glossy red with golden trim, pointing downward, 3D game UI element, shiny material, mobile game style, transparent background
+Arrow pointer for spin wheel, glossy red with golden trim, pointing downward, 3D game UI element, shiny material, mobile game style, white background
 ```
 
 ---
@@ -418,7 +419,7 @@ Arrow pointer for spin wheel, glossy red with golden trim, pointing downward, 3D
 
 **Prompt:**
 ```
-Game playing card back design, ornate pattern, deep purple with gold accents, mystery card style, question mark subtle pattern, mobile game asset, rounded corners, transparent background
+Game playing card back design, ornate pattern, deep purple with gold accents, mystery card style, question mark subtle pattern, mobile game asset, rounded corners, white background
 ```
 
 ---
@@ -430,7 +431,7 @@ Game playing card back design, ornate pattern, deep purple with gold accents, my
 
 **Prompt:**
 ```
-Shopping cart or shop bag icon, golden and white, coins inside, game store button, mobile game UI style, chunky friendly design, transparent background
+Shopping cart or shop bag icon, golden and white, coins inside, game store button, mobile game UI style, chunky friendly design, white background
 ```
 
 ---
@@ -442,7 +443,7 @@ Shopping cart or shop bag icon, golden and white, coins inside, game store butto
 
 **Prompt:**
 ```
-Game controller or dice icon, playful colorful design, arcade game vibe, mobile game button asset, fun and inviting, transparent background
+Game controller or dice icon, playful colorful design, arcade game vibe, mobile game button asset, fun and inviting, white background
 ```
 
 ---
@@ -454,7 +455,7 @@ Game controller or dice icon, playful colorful design, arcade game vibe, mobile 
 
 **Prompt:**
 ```
-Lightning bolt in shield or badge, golden energy, special event indicator, mobile game UI icon, power surge theme, glowing effect, transparent background
+Lightning bolt in shield or badge, golden energy, special event indicator, mobile game UI icon, power surge theme, glowing effect, white background
 ```
 
 ---
@@ -466,7 +467,7 @@ Lightning bolt in shield or badge, golden energy, special event indicator, mobil
 
 **Prompt:**
 ```
-Cartoon rocket icon, red and white, exhaust flames, ready to launch, mobile game powerup style, chunky cute design, transparent background
+Cartoon rocket icon, red and white, exhaust flames, ready to launch, mobile game powerup style, chunky cute design, white background
 ```
 
 ---
@@ -478,7 +479,7 @@ Cartoon rocket icon, red and white, exhaust flames, ready to launch, mobile game
 
 **Prompt:**
 ```
-Cartoon bomb icon, round black bomb with lit fuse, sparks, about to explode, mobile game powerup style, chunky cute design, transparent background
+Cartoon bomb icon, round black bomb with lit fuse, sparks, about to explode, mobile game powerup style, chunky cute design, white background
 ```
 
 ---
@@ -490,7 +491,7 @@ Cartoon bomb icon, round black bomb with lit fuse, sparks, about to explode, mob
 
 **Prompt:**
 ```
-Rainbow burst or color bomb icon, circular with rainbow colors radiating outward, magical sparkles, mobile game powerup style, vibrant colors, transparent background
+Rainbow burst or color bomb icon, circular with rainbow colors radiating outward, magical sparkles, mobile game powerup style, vibrant colors, white background
 ```
 
 ---
@@ -502,7 +503,7 @@ Rainbow burst or color bomb icon, circular with rainbow colors radiating outward
 
 **Prompt:**
 ```
-Empty power meter bar, dark interior with metallic frame, subtle grid pattern inside, mobile game UI element, horizontal gauge style, transparent background
+Empty power meter bar, dark interior with metallic frame, subtle grid pattern inside, mobile game UI element, horizontal gauge style, white background
 ```
 
 ---
@@ -514,7 +515,7 @@ Empty power meter bar, dark interior with metallic frame, subtle grid pattern in
 
 **Prompt:**
 ```
-Glowing energy fill for power meter, gradient from blue to bright cyan to gold at full, pulsing energy particles, game charge bar fill, can tile horizontally, transparent background
+Glowing energy fill for power meter, gradient from blue to bright cyan to gold at full, pulsing energy particles, game charge bar fill, can tile horizontally, white background
 ```
 
 ---
@@ -536,7 +537,7 @@ Glowing energy fill for power meter, gradient from blue to bright cyan to gold a
 
 - Add `game asset, 2D sprite` to prompts if results are too realistic
 - Use `centered composition, single object` if items are off-center
-- Add `no background, alpha channel` if transparency isn't working
+- Add `solid white background` if the background isn't pure white
 - For particles, try `additive blend ready, bright glow` for better in-game compositing
 - Generate at 2x size (512x512 for icons, 1024x1024 for portraits) and downscale for sharper results
 

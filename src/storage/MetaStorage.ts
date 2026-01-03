@@ -1,4 +1,4 @@
-import { MetaSaveData } from '../types';
+import { MetaSaveData, DailyReplayData } from '../types';
 import { CONFIG } from '../config';
 
 const STORAGE_KEY = 'match5_meta';
@@ -15,6 +15,10 @@ const DEFAULT_META: MetaSaveData = {
   },
   totalLevelsPlayed: 0,
   lastDailyLogin: null,
+  dailyReplay: {
+    lastResetDate: '',
+    replaysCompleted: 0,
+  },
 };
 
 export class MetaStorage {
@@ -42,6 +46,10 @@ export class MetaStorage {
           miniGames: {
             ...DEFAULT_META.miniGames,
             ...parsed.miniGames,
+          },
+          dailyReplay: {
+            ...DEFAULT_META.dailyReplay,
+            ...(parsed.dailyReplay || {}),
           },
         };
         return this.data;
@@ -194,5 +202,54 @@ export class MetaStorage {
       lastPlayed: data.miniGames.lastPlayedDate[gameId] || null,
       totalPlays: data.miniGames.totalPlays[gameId] || 0,
     };
+  }
+
+  // Daily replay bonus tracking
+  static getDailyReplayData(): DailyReplayData {
+    const data = this.load();
+    const today = new Date().toISOString().split('T')[0];
+
+    // Reset if it's a new day
+    if (data.dailyReplay.lastResetDate !== today) {
+      data.dailyReplay = {
+        lastResetDate: today,
+        replaysCompleted: 0,
+      };
+      this.save(data);
+    }
+
+    return data.dailyReplay;
+  }
+
+  static incrementDailyReplay(): boolean {
+    const data = this.load();
+    const today = new Date().toISOString().split('T')[0];
+
+    // Reset if it's a new day
+    if (data.dailyReplay.lastResetDate !== today) {
+      data.dailyReplay = {
+        lastResetDate: today,
+        replaysCompleted: 0,
+      };
+    }
+
+    // Check if bonus still available
+    if (data.dailyReplay.replaysCompleted >= 3) {
+      return false; // No bonus available
+    }
+
+    data.dailyReplay.replaysCompleted++;
+    this.save(data);
+    return true; // Bonus was earned
+  }
+
+  static canEarnReplayBonus(): boolean {
+    const replayData = this.getDailyReplayData();
+    return replayData.replaysCompleted < 3;
+  }
+
+  static getRemainingReplayBonuses(): number {
+    const replayData = this.getDailyReplayData();
+    return Math.max(0, 3 - replayData.replaysCompleted);
   }
 }

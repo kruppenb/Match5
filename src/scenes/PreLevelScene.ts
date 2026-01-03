@@ -6,6 +6,13 @@ import { getInventoryManager } from '../meta/InventoryManager';
 import { LEVELS } from '../data/levels';
 import { LevelConfig } from '../types';
 
+interface BoosterSlot {
+  id: string;
+  icon: string;
+  owned: number;
+  selected: boolean;
+}
+
 export class PreLevelScene extends Phaser.Scene {
   private levelId: number = 1;
   private selectedChargeIndex: number = 0;
@@ -13,21 +20,38 @@ export class PreLevelScene extends Phaser.Scene {
   private chargeMeterFill!: Phaser.GameObjects.Graphics;
   private chargeLabel!: Phaser.GameObjects.Text;
   private costText!: Phaser.GameObjects.Text;
+  private isReplay: boolean = false;
+  private returnScene: string = 'TitleScene';
+
+  private selectedBoosters: Set<string> = new Set();
+  private boosterSlots: { container: Phaser.GameObjects.Container; slot: BoosterSlot; bg: Phaser.GameObjects.Graphics }[] = [];
+  private chargeButtons: Phaser.GameObjects.Arc[] = [];
 
   constructor() {
     super({ key: 'PreLevelScene' });
   }
 
-  init(data: { levelId: number }): void {
+  preload(): void {
+    if (!this.textures.exists('bg_title')) {
+      this.load.image('bg_title', 'assets/backgrounds/title_screen.jpg.jpeg');
+    }
+  }
+
+  init(data: { levelId: number; isReplay?: boolean; returnScene?: string }): void {
     this.levelId = data.levelId || 1;
     this.selectedChargeIndex = 0;
+    this.isReplay = data.isReplay ?? false;
+    this.returnScene = data.returnScene ?? 'TitleScene';
+    this.selectedBoosters.clear();
+    this.boosterSlots = [];
+    this.chargeButtons = [];
   }
 
   create(): void {
     const { width, height } = this.scale;
 
     // Background
-    this.add.rectangle(width / 2, height / 2, width, height, CONFIG.UI.COLORS.BACKGROUND);
+    this.renderBackground();
 
     // Header
     this.createHeader();
@@ -46,6 +70,28 @@ export class PreLevelScene extends Phaser.Scene {
 
     // Back button
     this.createBackButton();
+  }
+
+  private renderBackground(): void {
+    const { width, height } = this.scale;
+
+    if (this.textures.exists('bg_title')) {
+      const bg = this.add.image(width / 2, height, 'bg_title');
+      bg.setOrigin(0.5, 1);
+      bg.setDepth(-10);
+
+      const scaleX = width / bg.width;
+      const scaleY = height / bg.height;
+      const scale = Math.max(scaleX, scaleY);
+      bg.setScale(scale);
+
+      // Dark overlay for better UI readability
+      this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.4).setDepth(-9);
+      return;
+    }
+
+    // Fallback to solid color
+    this.add.rectangle(width / 2, height / 2, width, height, CONFIG.UI.COLORS.BACKGROUND);
   }
 
   private createHeader(): void {
@@ -171,11 +217,12 @@ export class PreLevelScene extends Phaser.Scene {
 
     chargeLevels.forEach((level, index) => {
       const x = startX + index * buttonSpacing;
-      this.createChargeButton(level, index, x, buttonY);
+      const btn = this.createChargeButton(level, index, x, buttonY);
+      this.chargeButtons.push(btn);
     });
   }
 
-  private createChargeButton(level: ChargeLevel, index: number, x: number, y: number): void {
+  private createChargeButton(level: ChargeLevel, index: number, x: number, y: number): Phaser.GameObjects.Arc {
     const currencyManager = getCurrencyManager();
     const canAfford = currencyManager.getCoins() >= level.coinCost;
     const isSelected = index === this.selectedChargeIndex;
@@ -204,12 +251,28 @@ export class PreLevelScene extends Phaser.Scene {
       });
       btn.on('pointerdown', () => this.selectChargeLevel(index));
     }
+
+    return btn;
   }
 
   private selectChargeLevel(index: number): void {
     this.selectedChargeIndex = index;
     this.updateChargeMeter();
-    this.scene.restart({ levelId: this.levelId });
+    this.updateChargeButtons();
+  }
+
+  private updateChargeButtons(): void {
+    const chargeLevels = CONFIG.META.CHARGE_LEVELS as ChargeLevel[];
+    const currencyManager = getCurrencyManager();
+
+    this.chargeButtons.forEach((btn, index) => {
+      const level = chargeLevels[index];
+      const canAfford = currencyManager.getCoins() >= level.coinCost;
+      const isSelected = index === this.selectedChargeIndex;
+
+      btn.setFillStyle(isSelected ? 0x4a90d9 : (canAfford ? 0x3a3a4e : 0x222222));
+      btn.setStrokeStyle(3, isSelected ? 0x6ab0f9 : (canAfford ? 0x555555 : 0x333333));
+    });
   }
 
   private updateChargeMeter(): void {
@@ -257,51 +320,101 @@ export class PreLevelScene extends Phaser.Scene {
     const inventoryManager = getInventoryManager();
     const inventory = inventoryManager.getInventory();
 
-    this.add.text(width / 2, 530, 'Your Boosters', {
+    this.add.text(width / 2, 520, 'Select Boosters', {
       fontSize: '18px',
       fontFamily: 'Arial Black',
       color: '#ffffff',
     }).setOrigin(0.5);
 
-    const boosterTypes = ['rocket_3pack', 'bomb_3pack', 'colorBomb_1', 'shuffle'];
-    const boosterY = 580;
-    const spacing = 80;
-    const startX = width / 2 - (boosterTypes.length - 1) * spacing / 2;
+    const slotY = 575;
+    const slotSize = 52;
+    const spacing = 16;
 
-    boosterTypes.forEach((type, index) => {
-      const x = startX + index * spacing;
-      const count = inventory[type] || 0;
+    const boosterTypes: BoosterSlot[] = [
+      { id: 'rocket_3pack', icon: '🚀', owned: inventory['rocket_3pack'] || 0, selected: false },
+      { id: 'bomb_3pack', icon: '💣', owned: inventory['bomb_3pack'] || 0, selected: false },
+      { id: 'colorBomb_1', icon: '🌈', owned: inventory['colorBomb_1'] || 0, selected: false },
+      { id: 'shuffle', icon: '🔀', owned: inventory['shuffle'] || 0, selected: false },
+    ];
 
-      this.add.circle(x, boosterY, 28, 0x3a3a4e)
-        .setStrokeStyle(2, count > 0 ? 0x4a90d9 : 0x444444);
+    const totalWidth = boosterTypes.length * slotSize + (boosterTypes.length - 1) * spacing;
+    const startX = width / 2 - totalWidth / 2 + slotSize / 2;
 
-      const emoji = this.getBoosterEmoji(type);
-      this.add.text(x, boosterY, emoji, {
-        fontSize: '24px',
-      }).setOrigin(0.5).setAlpha(count > 0 ? 1 : 0.3);
-
-      if (count > 0) {
-        this.add.text(x + 15, boosterY + 15, count.toString(), {
-          fontSize: '12px',
-          fontFamily: 'Arial Bold',
-          color: '#ffffff',
-          backgroundColor: '#4a90d9',
-          padding: { x: 4, y: 2 },
-        }).setOrigin(0.5);
-      }
+    boosterTypes.forEach((slot, index) => {
+      const x = startX + index * (slotSize + spacing);
+      const container = this.createBoosterSlot(x, slotY, slotSize, slot);
+      this.boosterSlots.push(container);
     });
   }
 
-  private getBoosterEmoji(type: string): string {
-    const emojiMap: Record<string, string> = {
-      rocket_3pack: '🚀',
-      bomb_3pack: '💣',
-      colorBomb_1: '🌈',
-      shuffle: '🔀',
-      extraMoves_5: '👟',
-      hint_3pack: '💡',
-    };
-    return emojiMap[type] || '📦';
+  private createBoosterSlot(
+    x: number,
+    y: number,
+    size: number,
+    slot: BoosterSlot
+  ): { container: Phaser.GameObjects.Container; slot: BoosterSlot; bg: Phaser.GameObjects.Graphics } {
+    const container = this.add.container(x, y);
+    const hasBooster = slot.owned > 0;
+
+    const bg = this.add.graphics();
+    bg.fillStyle(hasBooster ? 0x3a3a4e : 0x222222, 0.9);
+    bg.fillRoundedRect(-size / 2, -size / 2, size, size, 12);
+    bg.lineStyle(2, hasBooster ? 0x4a90d9 : 0x444444);
+    bg.strokeRoundedRect(-size / 2, -size / 2, size, size, 12);
+    container.add(bg);
+
+    const icon = this.add.text(0, -2, slot.icon, {
+      fontSize: '24px',
+    }).setOrigin(0.5).setAlpha(hasBooster ? 1 : 0.25);
+    container.add(icon);
+
+    if (hasBooster) {
+      const badgeBg = this.add.circle(size / 2 - 8, size / 2 - 8, 10, 0x4a90d9);
+      container.add(badgeBg);
+
+      const countText = this.add.text(size / 2 - 8, size / 2 - 8, slot.owned.toString(), {
+        fontSize: '11px',
+        fontFamily: 'Arial Bold',
+        color: '#ffffff',
+      }).setOrigin(0.5);
+      container.add(countText);
+
+      const hitArea = this.add.rectangle(0, 0, size, size, 0x000000, 0)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerdown', () => this.toggleBooster(slot, bg, container, size));
+      container.add(hitArea);
+    }
+
+    return { container, slot, bg };
+  }
+
+  private toggleBooster(
+    slot: BoosterSlot,
+    bg: Phaser.GameObjects.Graphics,
+    container: Phaser.GameObjects.Container,
+    size: number
+  ): void {
+    slot.selected = !slot.selected;
+
+    if (slot.selected) {
+      this.selectedBoosters.add(slot.id);
+    } else {
+      this.selectedBoosters.delete(slot.id);
+    }
+
+    bg.clear();
+    bg.fillStyle(slot.selected ? 0x4a5a3e : 0x3a3a4e, 0.9);
+    bg.fillRoundedRect(-size / 2, -size / 2, size, size, 12);
+    bg.lineStyle(3, slot.selected ? 0xffaa00 : 0x4a90d9);
+    bg.strokeRoundedRect(-size / 2, -size / 2, size, size, 12);
+
+    this.tweens.add({
+      targets: container,
+      scaleX: 1.12,
+      scaleY: 1.12,
+      duration: 90,
+      yoyo: true,
+    });
   }
 
   private createStartButton(): void {
@@ -340,10 +453,21 @@ export class PreLevelScene extends Phaser.Scene {
       }
     }
 
+    // Consume selected boosters from inventory
+    const inventoryManager = getInventoryManager();
+    const consumedBoosters: string[] = [];
+    this.selectedBoosters.forEach(boosterId => {
+      if (inventoryManager.useItem(boosterId)) {
+        consumedBoosters.push(boosterId);
+      }
+    });
+
     // Start game with charge data
     this.scene.start('GameScene', {
       levelId: this.levelId,
       heroChargePercent: selectedLevel.percentage,
+      selectedBoosters: consumedBoosters,
+      isReplay: this.isReplay,
     });
   }
 
@@ -352,7 +476,7 @@ export class PreLevelScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .on('pointerover', () => backBtn.setFillStyle(0x5a5a6e))
       .on('pointerout', () => backBtn.setFillStyle(0x4a4a5e))
-      .on('pointerdown', () => this.scene.start('LevelSelectScene'));
+      .on('pointerdown', () => this.scene.start(this.returnScene));
 
     this.add.text(60, this.scale.height - 50, '← Back', {
       fontSize: '16px',

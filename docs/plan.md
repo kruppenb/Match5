@@ -163,6 +163,30 @@ Key Deliverables:
 
 ---
 
+### [Phase 7: Title Screen](phases/phase-7-title-screen.md)
+**Goal:** Streamlined home screen focused on “Play Now” and meta features
+**Duration:** 1-2 weeks
+
+Key Deliverables:
+- Modern title screen with current level card
+- Booster selection before playing
+- Strong entry points for Shop / Mini-Games / Events
+- Replay levels access + daily replay bonuses
+
+---
+
+### [Phase 8: Mini-Games Expansion & Refresh](phases/phase-8-mini-games.md)
+**Goal:** Expand the mini-game rotation with short, mobile-friendly mini-games
+**Duration:** 1-2 weeks
+
+Key Deliverables:
+- Add 3+ new mini-games (puzzle/skill “one-screen” style)
+- Consistent tutorial + result/reward UI across mini-games
+- Expanded rotation pool (6+ total games)
+- Reward tuning so diamond spend feels worth it
+
+---
+
 ## Feature Overview
 
 | Feature | Phase | Priority | Document |

@@ -480,6 +480,6 @@ export class LevelSelectScene extends Phaser.Scene {
 
   private startLevel(levelId: number): void {
     console.log(`Starting Level ${levelId}`);
-    this.scene.start('GameScene', { levelId });
+    this.scene.start('PreLevelScene', { levelId, returnScene: 'LevelSelectScene' });
   }
 }
