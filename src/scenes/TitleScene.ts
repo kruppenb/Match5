@@ -19,6 +19,8 @@ export class TitleScene extends Phaser.Scene {
   private diamondsPillX!: number;
   private barY!: number;
   private backgroundEffects!: BackgroundEffects;
+  private eventBadgeGraphics?: Phaser.GameObjects.Graphics;
+  private eventBadgeText?: Phaser.GameObjects.Text;
 
   constructor() {
     super('TitleScene');
@@ -26,6 +28,11 @@ export class TitleScene extends Phaser.Scene {
 
   preload(): void {
     this.load.image('bg_title', 'assets/backgrounds/title_screen.jpg.jpeg');
+    // Load booster sprites for event rewards display
+    this.load.image('booster_hammer', 'assets/sprites/boosters/hammer.png');
+    this.load.image('booster_row_arrow', 'assets/sprites/boosters/arrow_h.png');
+    this.load.image('booster_col_arrow', 'assets/sprites/boosters/beam_v.png');
+    this.load.image('booster_shuffle', 'assets/sprites/boosters/lucky67.png');
   }
 
   create(data?: TitleSceneData): void {
@@ -333,9 +340,12 @@ export class TitleScene extends Phaser.Scene {
       this.scene.start('MiniGameHubScene');
     });
 
-    this.createIconTab(tabX, startY + 2 * (tabSize + spacing), tabSize, '⚡', 'Event', hasRewards ? '!' : null, () => {
+    // Event tab - create badge separately so it can be updated
+    const eventTabY = startY + 2 * (tabSize + spacing);
+    this.createIconTab(tabX, eventTabY, tabSize, '⚡', 'Event', null, () => {
       this.showEventProgress();
-    }, hasRewards);
+    }, false);
+    this.createEventBadge(tabX, eventTabY, tabSize, hasRewards);
 
     this.createIconTab(tabX, startY + 3 * (tabSize + spacing), tabSize, '📋', 'Levels', null, () => {
       this.scene.start('ReplayLevelsScene');
@@ -443,6 +453,59 @@ export class TitleScene extends Phaser.Scene {
         fontFamily: 'Arial Bold',
         color: '#ffffff',
       }).setOrigin(0.5);
+    }
+  }
+
+  private createEventBadge(tabX: number, tabY: number, tabSize: number, hasRewards: boolean): void {
+    // Clean up existing badge if any
+    this.eventBadgeGraphics?.destroy();
+    this.eventBadgeText?.destroy();
+
+    if (!hasRewards) {
+      this.eventBadgeGraphics = undefined;
+      this.eventBadgeText = undefined;
+      return;
+    }
+
+    const badgeWidth = 16;
+    const badgeX = tabX + tabSize / 2 - badgeWidth / 2 + 2;
+    const badgeY = tabY - tabSize / 2 + 8;
+
+    this.eventBadgeGraphics = this.add.graphics()
+      .fillStyle(0xff4444, 1)
+      .fillRoundedRect(badgeX - badgeWidth / 2, badgeY - 8, badgeWidth, 14, 7);
+
+    this.eventBadgeText = this.add.text(badgeX, badgeY, '!', {
+      fontSize: '9px',
+      fontFamily: 'Arial Bold',
+      color: '#ffffff',
+    }).setOrigin(0.5);
+  }
+
+  private updateEventBadge(): void {
+    const eventManager = getProgressionEventManager();
+    const hasRewards = eventManager.getAvailableCheckpoints().length > 0;
+
+    if (hasRewards && !this.eventBadgeGraphics) {
+      // Need to create badge - recalculate position
+      const { height } = this.scale;
+      const tabX = 45;
+      const tabSize = 52;
+      const spacing = 8;
+      const levelCardBottom = height / 2 - 120 + 100;
+      const topBound = levelCardBottom + 30;
+      const bottomBound = height - this.getBottomShowcasePadding() - 80;
+      const totalHeight = 4 * tabSize + 3 * spacing;
+      const usableHeight = Math.max(0, bottomBound - topBound);
+      const startY = topBound + Math.max(0, Math.floor((usableHeight - totalHeight) / 2));
+      const eventTabY = startY + 2 * (tabSize + spacing);
+      this.createEventBadge(tabX, eventTabY, tabSize, true);
+    } else if (!hasRewards && this.eventBadgeGraphics) {
+      // Remove badge
+      this.eventBadgeGraphics.destroy();
+      this.eventBadgeText?.destroy();
+      this.eventBadgeGraphics = undefined;
+      this.eventBadgeText = undefined;
     }
   }
 
@@ -888,14 +951,61 @@ export class TitleScene extends Phaser.Scene {
       barGraphics.strokeRoundedRect(width / 2 - barWidth / 2, y - barHeight / 2, barWidth, barHeight, 8);
       allElements.push(barGraphics);
 
-      // Reward icon
-      const rewardIcon = this.add.text(width / 2 - barWidth / 2 + 25, y, checkpoint.label.includes('Coins') ? '💰' : '💎', {
-        fontSize: '18px',
-      }).setOrigin(0.5);
-      allElements.push(rewardIcon);
+      // Reward icon based on actual reward type
+      const iconX = width / 2 - barWidth / 2 + 25;
+      if (checkpoint.reward.type === 'coins') {
+        // Draw coin icon (golden circle with $ symbol)
+        const coinGlow = this.add.circle(iconX, y, 14, 0xffd700, 0.3);
+        const coinOuter = this.add.circle(iconX, y, 11, 0xffd700);
+        const coinInner = this.add.circle(iconX, y, 7, 0xffec8b);
+        const coinSymbol = this.add.text(iconX, y, '$', {
+          fontSize: '10px',
+          fontFamily: 'Arial Black',
+          color: '#b8860b',
+        }).setOrigin(0.5);
+        allElements.push(coinGlow, coinOuter, coinInner, coinSymbol);
+      } else if (checkpoint.reward.type === 'diamonds') {
+        // Draw diamond icon (blue diamond shape)
+        const diamondGlow = this.add.circle(iconX, y, 13, 0x00bfff, 0.25);
+        const diamondGraphics = this.add.graphics();
+        diamondGraphics.fillStyle(0x00bfff, 1);
+        diamondGraphics.fillTriangle(iconX, y - 9, iconX + 7, y, iconX, y + 9);
+        diamondGraphics.fillTriangle(iconX, y - 9, iconX - 7, y, iconX, y + 9);
+        diamondGraphics.fillStyle(0x87ceeb, 1);
+        diamondGraphics.fillTriangle(iconX, y - 4, iconX + 3, y, iconX, y + 4);
+        diamondGraphics.fillTriangle(iconX, y - 4, iconX - 3, y, iconX, y + 4);
+        allElements.push(diamondGlow, diamondGraphics);
+      } else if (checkpoint.reward.type === 'booster') {
+        // Use actual booster sprite images
+        const boosterId = checkpoint.reward.id;
+        let textureKey = 'booster_hammer';
+        if (boosterId === 'hammer') textureKey = 'booster_hammer';
+        else if (boosterId === 'row_arrow') textureKey = 'booster_row_arrow';
+        else if (boosterId === 'col_arrow') textureKey = 'booster_col_arrow';
+        else if (boosterId === 'shuffle') textureKey = 'booster_shuffle';
 
-      // Label
-      const label = this.add.text(width / 2 - barWidth / 2 + 50, y, checkpoint.label, {
+        const boosterIcon = this.add.image(iconX, y, textureKey)
+          .setDisplaySize(24, 24);
+        allElements.push(boosterIcon);
+      }
+
+      // Reward description - show actual amount and type
+      let rewardText = checkpoint.label;
+      if (checkpoint.reward.type === 'coins') {
+        rewardText = `${checkpoint.reward.amount.toLocaleString()} Coins`;
+      } else if (checkpoint.reward.type === 'diamonds') {
+        rewardText = `${checkpoint.reward.amount} Diamonds`;
+      } else if (checkpoint.reward.type === 'booster') {
+        const boosterNames: Record<string, string> = {
+          'hammer': 'Hammer',
+          'row_arrow': 'Row Clear',
+          'col_arrow': 'Column Clear',
+          'shuffle': 'Shuffle',
+        };
+        const name = boosterNames[checkpoint.reward.id || ''] || checkpoint.reward.id;
+        rewardText = `${checkpoint.reward.amount}x ${name}`;
+      }
+      const label = this.add.text(width / 2 - barWidth / 2 + 50, y, rewardText, {
         fontSize: '13px',
         fontFamily: 'Arial Bold',
         color: isReached ? '#ffffff' : '#999999',
@@ -1037,6 +1147,7 @@ export class TitleScene extends Phaser.Scene {
       })
       .on('pointerdown', () => {
         allElements.forEach(o => o.destroy());
+        this.updateEventBadge();
       });
     allElements.push(closeBtn);
 
