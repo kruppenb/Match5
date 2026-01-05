@@ -22,6 +22,13 @@ export class TreasureHuntScene extends Phaser.Scene {
     super({ key: 'TreasureHuntScene' });
   }
 
+  preload(): void {
+    this.load.image('booster_hammer', 'assets/sprites/boosters/hammer.png');
+    this.load.image('booster_row_arrow', 'assets/sprites/boosters/arrow_h.png');
+    this.load.image('booster_col_arrow', 'assets/sprites/boosters/beam_v.png');
+    this.load.image('booster_shuffle', 'assets/sprites/boosters/lucky67.png');
+  }
+
   create(): void {
     const { width, height } = this.scale;
 
@@ -207,27 +214,31 @@ export class TreasureHuntScene extends Phaser.Scene {
 
     // Show reward
     this.time.delayedCall(300, () => {
+      const rewardContainer = this.add.container(0, 0);
+      this.createRewardDisplay(rewardContainer, chest.reward);
+
       const rewardText = this.getRewardText(chest.reward);
-      const reward = this.add.text(0, 0, rewardText, {
-        fontSize: '20px',
+      const rewardLabel = this.add.text(0, 10, rewardText, {
+        fontSize: '16px',
         fontFamily: 'Arial Black',
         color: '#44ff44',
         stroke: '#000000',
         strokeThickness: 3,
       }).setOrigin(0.5);
+      rewardContainer.add(rewardLabel);
 
-      container.add(reward);
+      container.add(rewardContainer);
 
       // Pop animation
       this.tweens.add({
-        targets: reward,
+        targets: rewardContainer,
         scale: { from: 0, to: 1.2 },
         duration: 300,
         yoyo: true,
         hold: 100,
         ease: 'Back.easeOut',
         onComplete: () => {
-          reward.setScale(1);
+          rewardContainer.setScale(1);
         },
       });
 
@@ -248,22 +259,50 @@ export class TreasureHuntScene extends Phaser.Scene {
       case 'coins':
         return `+${reward.amount}`;
       case 'diamonds':
-        return `💎${reward.amount}`;
+        return `+${reward.amount}`;
       case 'booster':
-        return this.getBoosterEmoji(reward.id || '');
+        return `x${reward.amount}`;
       default:
         return '???';
     }
   }
 
-  private getBoosterEmoji(id: string): string {
-    const emojiMap: Record<string, string> = {
-      hammer: '🔨',
-      row_arrow: '➡️',
-      col_arrow: '⬇️',
-      shuffle: '🔀',
+  private getBoosterName(id: string): string {
+    const nameMap: Record<string, string> = {
+      hammer: 'Hammer',
+      row_arrow: 'Row Arrow',
+      col_arrow: 'Col Arrow',
+      shuffle: 'Shuffle',
     };
-    return emojiMap[id] || '📦';
+    return nameMap[id] || 'Booster';
+  }
+
+  private createRewardDisplay(container: Phaser.GameObjects.Container, reward: Reward): void {
+    if (reward.type === 'coins') {
+      // Draw coin icon
+      const coinGraphics = this.add.graphics();
+      coinGraphics.fillStyle(0xffd700, 1);
+      coinGraphics.fillCircle(0, -10, 8);
+      coinGraphics.fillStyle(0xffec8b, 1);
+      coinGraphics.fillCircle(0, -12, 4);
+      container.add(coinGraphics);
+    } else if (reward.type === 'diamonds') {
+      // Draw diamond icon
+      const diamondGraphics = this.add.graphics();
+      diamondGraphics.fillStyle(0x00bfff, 1);
+      diamondGraphics.fillTriangle(0, -18, 5, -10, 0, -2);
+      diamondGraphics.fillTriangle(0, -18, -5, -10, 0, -2);
+      diamondGraphics.fillStyle(0x87ceeb, 1);
+      diamondGraphics.fillTriangle(0, -15, 2, -10, 0, -5);
+      container.add(diamondGraphics);
+    } else if (reward.type === 'booster' && reward.id) {
+      // Use booster image
+      const boosterKey = `booster_${reward.id}`;
+      if (this.textures.exists(boosterKey)) {
+        const icon = this.add.image(0, -10, boosterKey).setDisplaySize(20, 20);
+        container.add(icon);
+      }
+    }
   }
 
   private showResults(): void {
@@ -293,7 +332,7 @@ export class TreasureHuntScene extends Phaser.Scene {
     const rewardSummary = this.rewardsEarned.map(r => {
       if (r.type === 'coins') return `+${r.amount} coins`;
       if (r.type === 'diamonds') return `+${r.amount} diamonds`;
-      return `${r.amount}x ${this.getBoosterEmoji(r.id || '')}`;
+      return `${r.amount}x ${this.getBoosterName(r.id || '')}`;
     }).join('  |  ');
 
     this.add.text(width / 2, panelY + 10, rewardSummary, {

@@ -178,7 +178,7 @@ export class ShopScene extends Phaser.Scene {
     const items = inventoryManager.getShopItems();
 
     const itemWidth = 105;
-    const itemHeight = 145;
+    const itemHeight = 160;
     const cols = Math.min(items.length, 4);
     const gapX = 10;
     const totalWidth = cols * itemWidth + (cols - 1) * gapX;
@@ -253,36 +253,44 @@ export class ShopScene extends Phaser.Scene {
       align: 'center',
     }).setOrigin(0.5);
 
-    // Quantity badge
+    // Quantity badge (what you're buying)
     if (item.quantity > 1) {
       const qBadge = this.add.graphics();
       qBadge.fillStyle(0x4a90d9, 1);
-      qBadge.fillRoundedRect(x + cardWidth / 2 - 28, y - cardHeight / 2 + 6, 22, 16, 8);
-      this.add.text(x + cardWidth / 2 - 17, y - cardHeight / 2 + 14, `x${item.quantity}`, {
-        fontSize: '10px',
-        fontFamily: 'Arial Bold',
+      qBadge.fillRoundedRect(x + cardWidth / 2 - 38, y - cardHeight / 2 + 4, 34, 22, 11);
+      qBadge.lineStyle(1.5, 0x6ab0f9, 0.8);
+      qBadge.strokeRoundedRect(x + cardWidth / 2 - 38, y - cardHeight / 2 + 4, 34, 22, 11);
+      const qText = this.add.text(x + cardWidth / 2 - 21, y - cardHeight / 2 + 15, `x${item.quantity}`, {
+        fontSize: '16px',
+        fontFamily: 'Arial Black',
         color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 2,
       }).setOrigin(0.5);
-      this.itemsContainer.add(qBadge);
+      this.itemsContainer.add([qBadge, qText]);
     }
 
-    // Owned count
-    if (owned > 0) {
-      const oBadge = this.add.graphics();
-      oBadge.fillStyle(0x44aa44, 0.9);
-      oBadge.fillRoundedRect(x - cardWidth / 2 + 4, y - cardHeight / 2 + 6, 30, 16, 8);
-      this.add.text(x - cardWidth / 2 + 19, y - cardHeight / 2 + 14, `${owned}`, {
-        fontSize: '10px',
-        fontFamily: 'Arial Bold',
-        color: '#ffffff',
-      }).setOrigin(0.5);
-      this.itemsContainer.add(oBadge);
-    }
+    // Owned count (how many you have) - prominent display
+    const ownedY = y + 30;
+    const ownedBadge = this.add.graphics();
+    ownedBadge.fillStyle(0x2a3a4a, 0.95);
+    ownedBadge.fillRoundedRect(x - cardWidth / 2 + 6, ownedY - 10, cardWidth - 12, 20, 10);
+    ownedBadge.lineStyle(1, owned > 0 ? 0x44cc44 : 0x4a5a6a, 0.7);
+    ownedBadge.strokeRoundedRect(x - cardWidth / 2 + 6, ownedY - 10, cardWidth - 12, 20, 10);
+
+    const ownedText = this.add.text(x, ownedY, `Owned: ${owned}`, {
+      fontSize: '14px',
+      fontFamily: 'Arial Black',
+      color: owned > 0 ? '#44ff44' : '#888888',
+      stroke: '#000000',
+      strokeThickness: 1,
+    }).setOrigin(0.5);
+    this.itemsContainer.add([ownedBadge, ownedText]);
 
     // Price button
     const btnWidth = cardWidth - 16;
     const btnHeight = 30;
-    const btnY = y + 48;
+    const btnY = y + 55;
 
     const priceBtnGraphics = this.add.graphics();
 

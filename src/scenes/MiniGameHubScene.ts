@@ -207,9 +207,7 @@ export class MiniGameHubScene extends Phaser.Scene {
     iconContainerGraphics.lineStyle(2, canAfford ? 0x6ab0f9 : 0x4a5a6a, 0.6);
     iconContainerGraphics.strokeCircle(iconX, y, 32);
 
-    this.add.text(iconX, y, this.getGameEmoji(game.id), {
-      fontSize: '32px',
-    }).setOrigin(0.5);
+    this.drawGameIcon(game.id, iconX, y);
 
     // Game name
     const textStartX = x - cardWidth / 2 + 105;
@@ -331,9 +329,7 @@ export class MiniGameHubScene extends Phaser.Scene {
     iconGraphics.lineStyle(1.5, 0x3a4a5a, 0.5);
     iconGraphics.strokeCircle(iconX, y, 28);
 
-    this.add.text(iconX, y, '🔒', {
-      fontSize: '24px',
-    }).setOrigin(0.5).setAlpha(0.6);
+    this.drawLockIcon(iconX, y);
 
     // Game name
     const textStartX = x - cardWidth / 2 + 105;
@@ -351,13 +347,57 @@ export class MiniGameHubScene extends Phaser.Scene {
     }).setOrigin(0, 0.5);
   }
 
-  private getGameEmoji(gameId: string): string {
-    const emojiMap: Record<string, string> = {
-      spin_wheel: '🎡',
-      treasure_hunt: '💎',
-      lucky_match: '🃏',
-    };
-    return emojiMap[gameId] || '🎮';
+  private drawGameIcon(gameId: string, x: number, y: number): void {
+    const g = this.add.graphics();
+
+    if (gameId === 'spin_wheel') {
+      // Draw wheel icon
+      g.lineStyle(3, 0xffd700, 1);
+      g.strokeCircle(x, y, 16);
+      g.fillStyle(0xffd700, 1);
+      g.fillCircle(x, y, 4);
+      // Wheel spokes
+      for (let i = 0; i < 6; i++) {
+        const angle = (i * Math.PI * 2) / 6;
+        const x2 = x + Math.cos(angle) * 14;
+        const y2 = y + Math.sin(angle) * 14;
+        g.lineBetween(x, y, x2, y2);
+      }
+    } else if (gameId === 'treasure_hunt') {
+      // Draw treasure chest icon
+      g.fillStyle(0x8b4513, 1);
+      g.fillRect(x - 12, y - 4, 24, 16);
+      g.fillStyle(0xa0522d, 1);
+      g.fillRect(x - 13, y - 12, 26, 10);
+      g.fillStyle(0xffd700, 1);
+      g.fillCircle(x, y + 2, 4);
+    } else if (gameId === 'lucky_match') {
+      // Draw card icon
+      g.fillStyle(0x4169e1, 1);
+      g.fillRoundedRect(x - 10, y - 14, 20, 28, 3);
+      g.fillStyle(0xffffff, 1);
+      this.add.text(x, y, '?', {
+        fontSize: '18px',
+        fontFamily: 'Arial Black',
+        color: '#ffffff',
+      }).setOrigin(0.5);
+    } else {
+      // Default game icon
+      g.fillStyle(0x888888, 1);
+      g.fillCircle(x, y, 14);
+    }
+  }
+
+  private drawLockIcon(x: number, y: number): void {
+    const g = this.add.graphics();
+    // Lock body
+    g.fillStyle(0x666666, 1);
+    g.fillRoundedRect(x - 10, y - 4, 20, 16, 3);
+    // Lock shackle
+    g.lineStyle(3, 0x666666, 1);
+    g.beginPath();
+    g.arc(x, y - 8, 8, Math.PI, 0, false);
+    g.stroke();
   }
 
   private playGame(game: MiniGameConfig): void {

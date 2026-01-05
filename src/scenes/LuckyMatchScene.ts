@@ -28,6 +28,13 @@ export class LuckyMatchScene extends Phaser.Scene {
     super({ key: 'LuckyMatchScene' });
   }
 
+  preload(): void {
+    this.load.image('booster_hammer', 'assets/sprites/boosters/hammer.png');
+    this.load.image('booster_row_arrow', 'assets/sprites/boosters/arrow_h.png');
+    this.load.image('booster_col_arrow', 'assets/sprites/boosters/beam_v.png');
+    this.load.image('booster_shuffle', 'assets/sprites/boosters/lucky67.png');
+  }
+
   create(): void {
     const { width, height } = this.scale;
 
@@ -145,15 +152,14 @@ export class LuckyMatchScene extends Phaser.Scene {
     frontFace.setVisible(false);
     const frontBg = this.add.rectangle(0, 0, cardWidth, cardHeight, this.getRewardColor(card.reward))
       .setStrokeStyle(3, 0xffffff);
-    const rewardText = this.add.text(0, -15, this.getRewardEmoji(card.reward), {
-      fontSize: '32px',
-    }).setOrigin(0.5);
+    frontFace.add(frontBg);
+    this.createRewardIcon(frontFace, card.reward, -15);
     const amountText = this.add.text(0, 25, this.getRewardAmount(card.reward), {
       fontSize: '16px',
       fontFamily: 'Arial Bold',
       color: '#ffffff',
     }).setOrigin(0.5);
-    frontFace.add([frontBg, rewardText, amountText]);
+    frontFace.add(amountText);
 
     container.add([backFace, frontFace]);
     container.setSize(cardWidth, cardHeight);
@@ -206,22 +212,50 @@ export class LuckyMatchScene extends Phaser.Scene {
     }
   }
 
-  private getRewardEmoji(reward: Reward): string {
-    switch (reward.type) {
-      case 'coins':
-        return '🪙';
-      case 'diamonds':
-        return '💎';
-      case 'booster':
-        const emojiMap: Record<string, string> = {
-          hammer: '🔨',
-          row_arrow: '➡️',
-          col_arrow: '⬇️',
-          shuffle: '🔀',
-        };
-        return emojiMap[reward.id || ''] || '📦';
-      default:
-        return '❓';
+  private getBoosterName(id: string): string {
+    const nameMap: Record<string, string> = {
+      hammer: 'Hammer',
+      row_arrow: 'Row Arrow',
+      col_arrow: 'Col Arrow',
+      shuffle: 'Shuffle',
+    };
+    return nameMap[id] || 'Booster';
+  }
+
+  private createRewardIcon(container: Phaser.GameObjects.Container, reward: Reward, y: number): void {
+    if (reward.type === 'coins') {
+      // Draw coin icon
+      const coinGraphics = this.add.graphics();
+      coinGraphics.fillStyle(0xffd700, 1);
+      coinGraphics.fillCircle(0, y, 14);
+      coinGraphics.fillStyle(0xffec8b, 1);
+      coinGraphics.fillCircle(0, y - 3, 6);
+      coinGraphics.fillStyle(0xb8860b, 1);
+      const dollarSign = this.add.text(0, y, '$', {
+        fontSize: '12px',
+        fontFamily: 'Arial Black',
+        color: '#b8860b',
+      }).setOrigin(0.5);
+      container.add(coinGraphics);
+      container.add(dollarSign);
+    } else if (reward.type === 'diamonds') {
+      // Draw diamond icon
+      const diamondGraphics = this.add.graphics();
+      diamondGraphics.fillStyle(0x00bfff, 0.25);
+      diamondGraphics.fillCircle(0, y, 16);
+      diamondGraphics.fillStyle(0x00bfff, 1);
+      diamondGraphics.fillTriangle(0, y - 12, 9, y, 0, y + 12);
+      diamondGraphics.fillTriangle(0, y - 12, -9, y, 0, y + 12);
+      diamondGraphics.fillStyle(0x87ceeb, 1);
+      diamondGraphics.fillTriangle(0, y - 5, 4, y, 0, y + 5);
+      container.add(diamondGraphics);
+    } else if (reward.type === 'booster' && reward.id) {
+      // Use booster image
+      const boosterKey = `booster_${reward.id}`;
+      if (this.textures.exists(boosterKey)) {
+        const icon = this.add.image(0, y, boosterKey).setDisplaySize(28, 28);
+        container.add(icon);
+      }
     }
   }
 
@@ -378,7 +412,7 @@ export class LuckyMatchScene extends Phaser.Scene {
     const rewardSummary = this.rewardsEarned.map(r => {
       if (r.type === 'coins') return `+${r.amount} coins`;
       if (r.type === 'diamonds') return `+${r.amount} diamonds`;
-      return `1x ${this.getRewardEmoji(r)}`;
+      return `1x ${this.getBoosterName(r.id || '')}`;
     }).join('  |  ');
 
     this.add.text(width / 2, panelY + 10, rewardSummary, {

@@ -7,17 +7,19 @@ interface WheelSlice {
   weight: number;
   color: number;
   label: string;
+  iconType: 'coins' | 'diamonds' | 'booster';
+  boosterId?: string;
 }
 
 const WHEEL_SLICES: WheelSlice[] = [
-  { reward: { type: 'coins', amount: 100 }, weight: 25, color: 0xffd700, label: '100' },
-  { reward: { type: 'coins', amount: 250 }, weight: 20, color: 0xffa500, label: '250' },
-  { reward: { type: 'coins', amount: 500 }, weight: 10, color: 0xff6347, label: '500' },
-  { reward: { type: 'booster', amount: 2, id: 'hammer' }, weight: 15, color: 0x4169e1, label: '🔨' },
-  { reward: { type: 'booster', amount: 2, id: 'row_arrow' }, weight: 12, color: 0x8b0000, label: '➡️' },
-  { reward: { type: 'diamonds', amount: 5 }, weight: 8, color: 0x9400d3, label: '💎5' },
-  { reward: { type: 'diamonds', amount: 15 }, weight: 5, color: 0xff1493, label: '💎15' },
-  { reward: { type: 'booster', amount: 2, id: 'shuffle' }, weight: 5, color: 0x00ced1, label: '🔀' },
+  { reward: { type: 'coins', amount: 100 }, weight: 25, color: 0xffd700, label: '100', iconType: 'coins' },
+  { reward: { type: 'coins', amount: 250 }, weight: 20, color: 0xffa500, label: '250', iconType: 'coins' },
+  { reward: { type: 'coins', amount: 500 }, weight: 10, color: 0xff6347, label: '500', iconType: 'coins' },
+  { reward: { type: 'booster', amount: 2, id: 'hammer' }, weight: 15, color: 0x4169e1, label: 'x2', iconType: 'booster', boosterId: 'hammer' },
+  { reward: { type: 'booster', amount: 2, id: 'row_arrow' }, weight: 12, color: 0x8b0000, label: 'x2', iconType: 'booster', boosterId: 'row_arrow' },
+  { reward: { type: 'diamonds', amount: 5 }, weight: 8, color: 0x9400d3, label: '5', iconType: 'diamonds' },
+  { reward: { type: 'diamonds', amount: 15 }, weight: 5, color: 0xff1493, label: '15', iconType: 'diamonds' },
+  { reward: { type: 'booster', amount: 2, id: 'shuffle' }, weight: 5, color: 0x00ced1, label: 'x2', iconType: 'booster', boosterId: 'shuffle' },
 ];
 
 export class SpinWheelScene extends Phaser.Scene {
@@ -29,6 +31,12 @@ export class SpinWheelScene extends Phaser.Scene {
 
   constructor() {
     super({ key: 'SpinWheelScene' });
+  }
+
+  preload(): void {
+    this.load.image('booster_hammer', 'assets/sprites/boosters/hammer.png');
+    this.load.image('booster_row_arrow', 'assets/sprites/boosters/arrow_h.png');
+    this.load.image('booster_shuffle', 'assets/sprites/boosters/lucky67.png');
   }
 
   create(): void {
@@ -99,21 +107,67 @@ export class SpinWheelScene extends Phaser.Scene {
       graphics.closePath();
       graphics.stroke();
 
-      // Label
+      // Label with proper icons
       const labelAngle = startAngle + sliceAngle / 2;
       const labelRadius = radius * 0.65;
       const labelX = Math.cos(labelAngle) * labelRadius;
       const labelY = Math.sin(labelAngle) * labelRadius;
 
-      const label = this.add.text(labelX, labelY, slice.label, {
-        fontSize: slice.label.length > 2 ? '20px' : '16px',
-        fontFamily: 'Arial Bold',
-        color: '#ffffff',
-        stroke: '#000000',
-        strokeThickness: 2,
-      }).setOrigin(0.5).setRotation(labelAngle + Math.PI / 2);
-
-      this.wheel.add(label);
+      // Create icon based on type
+      if (slice.iconType === 'booster' && slice.boosterId) {
+        const boosterKey = `booster_${slice.boosterId}`;
+        if (this.textures.exists(boosterKey)) {
+          const icon = this.add.image(labelX, labelY - 8, boosterKey)
+            .setDisplaySize(24, 24)
+            .setRotation(labelAngle + Math.PI / 2);
+          this.wheel.add(icon);
+        }
+        const label = this.add.text(labelX, labelY + 12, slice.label, {
+          fontSize: '12px',
+          fontFamily: 'Arial Bold',
+          color: '#ffffff',
+          stroke: '#000000',
+          strokeThickness: 2,
+        }).setOrigin(0.5).setRotation(labelAngle + Math.PI / 2);
+        this.wheel.add(label);
+      } else if (slice.iconType === 'coins') {
+        // Draw coin icon
+        const coinGraphics = this.add.graphics();
+        coinGraphics.setPosition(labelX, labelY - 6);
+        coinGraphics.setRotation(labelAngle + Math.PI / 2);
+        coinGraphics.fillStyle(0xffd700, 1);
+        coinGraphics.fillCircle(0, 0, 10);
+        coinGraphics.fillStyle(0xffec8b, 1);
+        coinGraphics.fillCircle(0, -2, 5);
+        this.wheel.add(coinGraphics);
+        const label = this.add.text(labelX, labelY + 10, slice.label, {
+          fontSize: '12px',
+          fontFamily: 'Arial Bold',
+          color: '#ffffff',
+          stroke: '#000000',
+          strokeThickness: 2,
+        }).setOrigin(0.5).setRotation(labelAngle + Math.PI / 2);
+        this.wheel.add(label);
+      } else if (slice.iconType === 'diamonds') {
+        // Draw diamond icon
+        const diamondGraphics = this.add.graphics();
+        diamondGraphics.setPosition(labelX, labelY - 6);
+        diamondGraphics.setRotation(labelAngle + Math.PI / 2);
+        diamondGraphics.fillStyle(0x00bfff, 1);
+        diamondGraphics.fillTriangle(0, -8, 6, 0, 0, 8);
+        diamondGraphics.fillTriangle(0, -8, -6, 0, 0, 8);
+        diamondGraphics.fillStyle(0x87ceeb, 1);
+        diamondGraphics.fillTriangle(0, -3, 2, 0, 0, 3);
+        this.wheel.add(diamondGraphics);
+        const label = this.add.text(labelX, labelY + 10, slice.label, {
+          fontSize: '12px',
+          fontFamily: 'Arial Bold',
+          color: '#ffffff',
+          stroke: '#000000',
+          strokeThickness: 2,
+        }).setOrigin(0.5).setRotation(labelAngle + Math.PI / 2);
+        this.wheel.add(label);
+      }
     });
 
     this.wheel.add(graphics);
@@ -228,8 +282,14 @@ export class SpinWheelScene extends Phaser.Scene {
       case 'diamonds':
         resultMessage = `+${slice.reward.amount} Diamonds!`;
         break;
-      case 'powerup':
-        resultMessage = `Won ${slice.label}!`;
+      case 'booster':
+        const boosterNames: Record<string, string> = {
+          hammer: 'Hammer',
+          row_arrow: 'Row Arrow',
+          shuffle: 'Shuffle',
+        };
+        const name = boosterNames[slice.boosterId || ''] || 'Booster';
+        resultMessage = `Won ${slice.reward.amount}x ${name}!`;
         break;
     }
 
