@@ -5,6 +5,7 @@ import { getCurrencyManager } from '../meta/CurrencyManager';
 import { getProgressionEventManager } from '../meta/ProgressionEventManager';
 import { getMiniGameRotation } from '../meta/MiniGameRotation';
 import { MetaStorage } from '../storage/MetaStorage';
+import { BackgroundEffects } from '../utils/BackgroundEffects';
 
 export interface TitleSceneData {
   earnedCoins?: number;
@@ -17,6 +18,7 @@ export class TitleScene extends Phaser.Scene {
   private coinsPillX!: number;
   private diamondsPillX!: number;
   private barY!: number;
+  private backgroundEffects!: BackgroundEffects;
 
   constructor() {
     super('TitleScene');
@@ -64,10 +66,13 @@ export class TitleScene extends Phaser.Scene {
       bg.setScale(scale);
 
       this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.3).setDepth(-9);
-      return;
+    } else {
+      this.add.rectangle(width / 2, height / 2, width, height, CONFIG.UI.COLORS.BACKGROUND);
     }
 
-    this.add.rectangle(width / 2, height / 2, width, height, CONFIG.UI.COLORS.BACKGROUND);
+    // Add ambient background effects (sparkles + light overlay)
+    this.backgroundEffects = new BackgroundEffects(this, 'title');
+    this.backgroundEffects.create();
   }
 
   private createHeader(): void {

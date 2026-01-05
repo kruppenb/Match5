@@ -171,6 +171,23 @@ export const CONFIG = {
     } as Record<string, number>,
   },
 
+  EFFECTS: {
+    BACKGROUND_PARTICLES: {
+      ENABLED: true,
+      FREQUENCY: 300,           // New particle every 300ms
+      MAX_PARTICLES: 25,
+      SPEED_MIN: 10,
+      SPEED_MAX: 30,
+      LIFESPAN: 4000,
+      GRAVITY_Y: -15,           // Gentle float upward (negative = up)
+    },
+    LIGHT_OVERLAY: {
+      ENABLED: true,
+      PULSE_DURATION: 3000,
+      INTENSITY: 0.5,
+    },
+  },
+
   HERO_POWERS: {
     // Charge rates
     CHARGE_PER_TILE: 2,           // +2% per tile cleared

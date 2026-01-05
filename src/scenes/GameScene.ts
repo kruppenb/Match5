@@ -23,6 +23,7 @@ import { ComboDisplay } from '../utils/ComboDisplay';
 import { ScorePopup } from '../utils/ScorePopup';
 import { getAudioManager, AudioManager } from '../utils/AudioManager';
 import { getHapticFeedback, HapticFeedback } from '../utils/HapticFeedback';
+import { BackgroundEffects } from '../utils/BackgroundEffects';
 import { TileRenderer } from '../rendering/TileRenderer';
 import { ObstacleRenderer } from '../rendering/ObstacleRenderer';
 import { CelebrationManager } from './CelebrationManager';
@@ -78,6 +79,9 @@ export class GameScene extends Phaser.Scene {
 
   // Celebration system
   private celebrationManager!: CelebrationManager;
+
+  // Background effects
+  private backgroundEffects!: BackgroundEffects;
 
   // Rendering
   private obstacleRenderer!: ObstacleRenderer;
@@ -434,6 +438,10 @@ export class GameScene extends Phaser.Scene {
         bg.fillRect(-1, y, width + 2, stepHeight);
       }
     }
+
+    // Create ambient background effects (particles + light overlay)
+    this.backgroundEffects = new BackgroundEffects(this, this.level.id);
+    this.backgroundEffects.create();
   }
 
   private renderUI(): void {

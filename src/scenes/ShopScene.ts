@@ -3,11 +3,13 @@ import { CONFIG } from '../config';
 import { ShopItem } from '../types';
 import { getCurrencyManager } from '../meta/CurrencyManager';
 import { getInventoryManager } from '../meta/InventoryManager';
+import { BackgroundEffects } from '../utils/BackgroundEffects';
 
 export class ShopScene extends Phaser.Scene {
   private itemsContainer!: Phaser.GameObjects.Container;
   private coinsText!: Phaser.GameObjects.Text;
   private diamondsText!: Phaser.GameObjects.Text;
+  private backgroundEffects!: BackgroundEffects;
 
   constructor() {
     super({ key: 'ShopScene' });
@@ -55,6 +57,10 @@ export class ShopScene extends Phaser.Scene {
     } else {
       this.add.rectangle(width / 2, height / 2, width, height, CONFIG.UI.COLORS.BACKGROUND);
     }
+
+    // Add ambient background effects
+    this.backgroundEffects = new BackgroundEffects(this, 'title');
+    this.backgroundEffects.create();
   }
 
   private createHeader(): void {
