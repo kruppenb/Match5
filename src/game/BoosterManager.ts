@@ -1,48 +1,43 @@
 import { BoosterType, BoosterInventory, Position, Tile } from '../types';
 import { CONFIG } from '../config';
 import { Grid } from './Grid';
+import { MetaStorage } from '../storage/MetaStorage';
 
 export class BoosterManager {
-  private inventory: BoosterInventory;
   private activeBooster: BoosterType | null = null;
 
   constructor() {
-    this.inventory = this.createStartingInventory();
-  }
-
-  private createStartingInventory(): BoosterInventory {
-    const count = CONFIG.BOOSTERS.STARTING_COUNT;
-    return {
-      hammer: count,
-      row_arrow: count,
-      col_arrow: count,
-      shuffle: count,
-    };
+    // Boosters are loaded from persistent storage - no initialization needed
   }
 
   reset(): void {
-    this.inventory = this.createStartingInventory();
+    // Just clear active booster, inventory persists across levels
     this.activeBooster = null;
   }
 
   getInventory(): BoosterInventory {
-    return { ...this.inventory };
+    const stored = MetaStorage.getBoosterInventory();
+    return {
+      hammer: stored.hammer || 0,
+      row_arrow: stored.row_arrow || 0,
+      col_arrow: stored.col_arrow || 0,
+      shuffle: stored.shuffle || 0,
+    };
   }
 
   getCount(type: BoosterType): number {
-    return this.inventory[type];
+    return MetaStorage.getBoosterCount(type);
   }
 
   hasBooster(type: BoosterType): boolean {
-    return this.inventory[type] > 0;
+    return this.getCount(type) > 0;
   }
 
   useBooster(type: BoosterType): boolean {
     if (!this.hasBooster(type)) {
       return false;
     }
-    this.inventory[type]--;
-    return true;
+    return MetaStorage.useBooster(type);
   }
 
   getActiveBooster(): BoosterType | null {

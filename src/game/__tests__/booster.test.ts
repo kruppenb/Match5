@@ -1,36 +1,59 @@
 import { Grid } from '../Grid';
 import { BoosterManager } from '../BoosterManager';
 import { Tile } from '../../types';
+import { MetaStorage } from '../../storage/MetaStorage';
 
 describe('BoosterManager', () => {
-  test('starts with correct inventory', () => {
+  beforeEach(() => {
+    // Reset storage before each test to get clean default state
+    MetaStorage.reset();
+  });
+
+  test('loads inventory from persistent storage with starting amounts', () => {
     const manager = new BoosterManager();
     const inventory = manager.getInventory();
 
-    expect(inventory.hammer).toBe(1);
-    expect(inventory.row_arrow).toBe(1);
-    expect(inventory.col_arrow).toBe(1);
-    expect(inventory.shuffle).toBe(1);
+    // Default starting amounts from CONFIG.META.STARTING_BOOSTERS
+    expect(inventory.hammer).toBe(3);
+    expect(inventory.row_arrow).toBe(3);
+    expect(inventory.col_arrow).toBe(3);
+    expect(inventory.shuffle).toBe(3);
   });
 
-  test('useBooster decrements inventory', () => {
+  test('useBooster decrements persistent inventory', () => {
     const manager = new BoosterManager();
 
+    // Start with 3 of each
     expect(manager.hasBooster('hammer')).toBe(true);
+    expect(manager.getCount('hammer')).toBe(3);
+
+    expect(manager.useBooster('hammer')).toBe(true);
+    expect(manager.getCount('hammer')).toBe(2);
+
+    expect(manager.useBooster('hammer')).toBe(true);
     expect(manager.useBooster('hammer')).toBe(true);
     expect(manager.hasBooster('hammer')).toBe(false);
     expect(manager.useBooster('hammer')).toBe(false);
   });
 
-  test('reset restores inventory', () => {
+  test('reset clears active booster but preserves inventory', () => {
     const manager = new BoosterManager();
 
+    // Use some boosters
     manager.useBooster('hammer');
     manager.useBooster('shuffle');
-    manager.reset();
 
-    expect(manager.hasBooster('hammer')).toBe(true);
-    expect(manager.hasBooster('shuffle')).toBe(true);
+    // Set an active booster
+    manager.setActiveBooster('row_arrow');
+    expect(manager.getActiveBooster()).toBe('row_arrow');
+
+    // Reset only clears the active booster
+    manager.reset();
+    expect(manager.getActiveBooster()).toBeNull();
+
+    // Inventory should remain depleted (persistent)
+    expect(manager.getCount('hammer')).toBe(2);
+    expect(manager.getCount('shuffle')).toBe(2);
   });
 
   test('getAffectedTiles for hammer returns single tile', () => {

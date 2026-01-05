@@ -7,7 +7,7 @@ const DEFAULT_META: MetaSaveData = {
   version: 1,
   coins: CONFIG.META.STARTING_COINS,
   diamonds: CONFIG.META.STARTING_DIAMONDS,
-  inventory: {},
+  inventory: { ...CONFIG.META.STARTING_BOOSTERS },
   currentEvent: null,
   miniGames: {
     lastPlayedDate: {},
@@ -63,7 +63,19 @@ export class MetaStorage {
   }
 
   static reset(): void {
-    this.data = { ...DEFAULT_META };
+    // Deep copy to avoid reference sharing issues
+    this.data = {
+      ...DEFAULT_META,
+      inventory: { ...CONFIG.META.STARTING_BOOSTERS },
+      miniGames: {
+        lastPlayedDate: {},
+        totalPlays: {},
+      },
+      dailyReplay: {
+        lastResetDate: '',
+        replaysCompleted: 0,
+      },
+    };
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch (e) {
@@ -251,5 +263,28 @@ export class MetaStorage {
   static getRemainingReplayBonuses(): number {
     const replayData = this.getDailyReplayData();
     return Math.max(0, 3 - replayData.replaysCompleted);
+  }
+
+  // Booster-specific methods
+  static getBoosterCount(boosterId: string): number {
+    return this.getInventoryCount(boosterId);
+  }
+
+  static useBooster(boosterId: string): boolean {
+    return this.useInventoryItem(boosterId);
+  }
+
+  static addBooster(boosterId: string, quantity: number = 1): void {
+    this.addInventoryItem(boosterId, quantity);
+  }
+
+  static getBoosterInventory(): Record<string, number> {
+    const inventory = this.getInventory();
+    const boosterTypes = ['hammer', 'row_arrow', 'col_arrow', 'shuffle'];
+    const boosters: Record<string, number> = {};
+    for (const type of boosterTypes) {
+      boosters[type] = inventory[type] || 0;
+    }
+    return boosters;
   }
 }

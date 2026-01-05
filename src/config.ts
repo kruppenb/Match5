@@ -81,14 +81,14 @@ export const CONFIG = {
         requiresTarget: true,
       },
       row_arrow: {
-        name: 'Row Arrow',
+        name: 'Bow',
         description: 'Clear an entire row',
         icon: '➡️',
         sprite: 'booster_row_arrow',
         requiresTarget: true,
       },
       col_arrow: {
-        name: 'Column Arrow',
+        name: 'Laser',
         description: 'Clear an entire column',
         icon: '⬇️',
         sprite: 'booster_col_arrow',
@@ -128,12 +128,10 @@ export const CONFIG = {
 
     // Shop items
     SHOP_ITEMS: [
-      { id: 'rocket_3pack', name: 'Rocket Pack', description: 'Start with 3 rockets', icon: 'rocket', coinCost: 150, category: 'powerup', quantity: 3 },
-      { id: 'bomb_3pack', name: 'Bomb Pack', description: 'Start with 3 bombs', icon: 'bomb', coinCost: 200, category: 'powerup', quantity: 3 },
-      { id: 'colorBomb_1', name: 'Color Bomb', description: 'Start with a color bomb', icon: 'colorBomb', coinCost: 250, category: 'powerup', quantity: 1 },
-      { id: 'extraMoves_5', name: '+5 Moves', description: '5 extra moves', icon: 'moves', coinCost: 300, category: 'booster', quantity: 1 },
-      { id: 'shuffle', name: 'Free Shuffle', description: 'One free shuffle', icon: 'shuffle', coinCost: 100, category: 'booster', quantity: 1 },
-      { id: 'hint_3pack', name: 'Hint Pack', description: '3 hints', icon: 'hint', coinCost: 75, category: 'booster', quantity: 3 },
+      { id: 'hammer', name: 'Hammer', description: 'Destroy a single tile', icon: 'hammer', coinCost: 50, category: 'booster', quantity: 1 },
+      { id: 'row_arrow', name: 'Bow', description: 'Clear an entire row', icon: 'row_arrow', coinCost: 75, category: 'booster', quantity: 1 },
+      { id: 'col_arrow', name: 'Laser', description: 'Clear an entire column', icon: 'col_arrow', coinCost: 75, category: 'booster', quantity: 1 },
+      { id: 'shuffle', name: 'Shuffle', description: 'Reshuffle all tiles', icon: 'shuffle', coinCost: 100, category: 'booster', quantity: 1 },
     ],
 
     // Hero charging levels
@@ -165,6 +163,12 @@ export const CONFIG = {
     // Starting resources for new players
     STARTING_COINS: 500,
     STARTING_DIAMONDS: 20,
+    STARTING_BOOSTERS: {
+      hammer: 3,
+      row_arrow: 3,
+      col_arrow: 3,
+      shuffle: 3,
+    } as Record<string, number>,
   },
 
   HERO_POWERS: {

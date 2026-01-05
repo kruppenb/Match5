@@ -28,7 +28,7 @@ export class ObstacleRenderer {
 
     switch (obstacle.type) {
       case 'grass':
-        this.drawGrass(graphics, pos, size, halfSize);
+        this.drawGrass(graphics, pos, size, halfSize, obstacle.layers >= 2);
         break;
 
       case 'ice':
@@ -63,10 +63,14 @@ export class ObstacleRenderer {
     graphics: Phaser.GameObjects.Graphics,
     pos: { x: number; y: number },
     size: number,
-    halfSize: number
+    halfSize: number,
+    isDouble: boolean
   ): void {
     graphics.setDepth(0);
-    graphics.fillStyle(CONFIG.UI.COLORS.GRASS, 1);
+    // Double grass is much darker to clearly show it needs 2 matches
+    const grassColor = isDouble ? 0x2a5c13 : CONFIG.UI.COLORS.GRASS;
+    const grassDarkColor = isDouble ? 0x1a4c03 : CONFIG.UI.COLORS.GRASS_DARK;
+    graphics.fillStyle(grassColor, 1);
     graphics.fillRoundedRect(
       pos.x - halfSize + CONFIG.GRID.GAP / 2,
       pos.y - halfSize + CONFIG.GRID.GAP / 2,
@@ -74,15 +78,27 @@ export class ObstacleRenderer {
       size - CONFIG.GRID.GAP,
       8
     );
-    // Grass pattern lines
-    graphics.lineStyle(2, CONFIG.UI.COLORS.GRASS_DARK, 0.6);
-    for (let i = 0; i < 4; i++) {
-      const offsetX = (i - 1.5) * 12;
+    // Grass pattern lines - more lines for double grass
+    graphics.lineStyle(2, grassDarkColor, isDouble ? 0.8 : 0.6);
+    const lineCount = isDouble ? 6 : 4;
+    for (let i = 0; i < lineCount; i++) {
+      const offsetX = (i - (lineCount - 1) / 2) * (isDouble ? 10 : 12);
       graphics.lineBetween(
         pos.x + offsetX,
         pos.y + halfSize * 0.4,
         pos.x + offsetX + 4,
         pos.y - halfSize * 0.3
+      );
+    }
+    // Add extra visual indicator for double grass - darker border
+    if (isDouble) {
+      graphics.lineStyle(2, 0x1a4c03, 0.9);
+      graphics.strokeRoundedRect(
+        pos.x - halfSize + CONFIG.GRID.GAP / 2,
+        pos.y - halfSize + CONFIG.GRID.GAP / 2,
+        size - CONFIG.GRID.GAP,
+        size - CONFIG.GRID.GAP,
+        8
       );
     }
   }
@@ -96,8 +112,12 @@ export class ObstacleRenderer {
   ): void {
     graphics.setDepth(1);
 
-    // Main ice block
-    graphics.fillStyle(isDouble ? 0x66ccee : 0x99ddff, 1);
+    // Main ice block - double ice is MUCH darker (deep blue vs light cyan)
+    const iceColor = isDouble ? 0x3388aa : 0x99ddff;
+    const iceBorderColor = isDouble ? 0x226688 : 0x77bbdd;
+    const iceHighlightColor = isDouble ? 0x66aacc : 0xccf4ff;
+
+    graphics.fillStyle(iceColor, 1);
     graphics.fillRoundedRect(
       pos.x - halfSize + CONFIG.GRID.GAP / 2,
       pos.y - halfSize + CONFIG.GRID.GAP / 2,
@@ -106,8 +126,8 @@ export class ObstacleRenderer {
       8
     );
 
-    // Highlight on top edge
-    graphics.fillStyle(0xccf4ff, 0.8);
+    // Highlight on top edge - dimmer for double ice
+    graphics.fillStyle(iceHighlightColor, isDouble ? 0.5 : 0.8);
     graphics.fillRoundedRect(
       pos.x - halfSize + CONFIG.GRID.GAP / 2 + 4,
       pos.y - halfSize + CONFIG.GRID.GAP / 2 + 4,
@@ -116,8 +136,8 @@ export class ObstacleRenderer {
       4
     );
 
-    // Border
-    graphics.lineStyle(2, isDouble ? 0x4499bb : 0x77bbdd, 1);
+    // Border - thicker and darker for double ice
+    graphics.lineStyle(isDouble ? 3 : 2, iceBorderColor, 1);
     graphics.strokeRoundedRect(
       pos.x - halfSize + CONFIG.GRID.GAP / 2,
       pos.y - halfSize + CONFIG.GRID.GAP / 2,
@@ -126,8 +146,8 @@ export class ObstacleRenderer {
       8
     );
 
-    // Ice crack pattern
-    graphics.lineStyle(isDouble ? 2 : 1.5, 0xffffff, isDouble ? 0.6 : 0.4);
+    // Ice crack pattern - more visible on double ice
+    graphics.lineStyle(isDouble ? 2 : 1.5, 0xffffff, isDouble ? 0.5 : 0.4);
     graphics.lineBetween(
       pos.x - halfSize * 0.3, pos.y - halfSize * 0.1,
       pos.x + halfSize * 0.2, pos.y + halfSize * 0.4
@@ -137,6 +157,7 @@ export class ObstacleRenderer {
       pos.x + halfSize * 0.4, pos.y + halfSize * 0.1
     );
     if (isDouble) {
+      // Extra crack lines for double ice
       graphics.lineBetween(
         pos.x - halfSize * 0.5, pos.y + halfSize * 0.2,
         pos.x + halfSize * 0.1, pos.y + halfSize * 0.5

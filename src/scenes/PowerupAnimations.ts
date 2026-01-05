@@ -445,6 +445,89 @@ export class PowerupAnimations {
   }
 
   /**
+   * Animate triple propeller (color bomb + propeller) - 3 propellers fly to 3 targets
+   */
+  async animateTriplePropeller(
+    originRow: number,
+    originCol: number,
+    targets: Position[],
+    color: number
+  ): Promise<void> {
+    if (targets.length === 0) return;
+
+    const startPos = this.cellToScreen(originRow, originCol);
+
+    // Flash effect at origin
+    this.flashScreen(color, 80);
+    this.screenShake(8, 200);
+
+    // Launch propellers in sequence with slight delay between each
+    const promises: Promise<void>[] = [];
+
+    for (let i = 0; i < targets.length; i++) {
+      const target = targets[i];
+      const endPos = this.cellToScreen(target.row, target.col);
+
+      // Stagger launch times slightly
+      const launchDelay = i * 100;
+
+      promises.push(
+        new Promise<void>(resolve => {
+          this.scene.time.delayedCall(launchDelay, () => {
+            this.animateSinglePropellerFlight(startPos, endPos, color).then(resolve);
+          });
+        })
+      );
+    }
+
+    await Promise.all(promises);
+  }
+
+  /**
+   * Helper to animate a single propeller flying from start to end with impact
+   */
+  private async animateSinglePropellerFlight(
+    startPos: { x: number; y: number },
+    endPos: { x: number; y: number },
+    color: number
+  ): Promise<void> {
+    // Create propeller sprite
+    const propeller = this.createPropellerSprite(startPos.x, startPos.y, color);
+
+    // Spin the propeller while flying
+    const spinTween = this.scene.tweens.add({
+      targets: propeller,
+      angle: 360 * 3,
+      duration: 800,
+      repeat: -1,
+      ease: 'Linear',
+    });
+
+    // Fly to target
+    await new Promise<void>(resolve => {
+      this.scene.tweens.add({
+        targets: propeller,
+        x: endPos.x,
+        y: endPos.y,
+        duration: 500,
+        ease: 'Quad.easeOut',
+        onUpdate: () => {
+          if (Math.random() > 0.5) {
+            this.emitTrailParticle(propeller.x, propeller.y, color);
+          }
+        },
+        onComplete: () => {
+          spinTween.stop();
+          propeller.destroy();
+          // Impact particles at target
+          this.emitImpactParticles(endPos.x, endPos.y, color);
+          resolve();
+        },
+      });
+    });
+  }
+
+  /**
    * Animate powerup creation (when match creates a powerup)
    */
   async animatePowerupCreation(row: number, col: number, _powerupType: PowerupType, color: number): Promise<void> {

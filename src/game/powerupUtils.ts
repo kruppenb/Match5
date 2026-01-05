@@ -281,6 +281,60 @@ export function getPropellerTargets(grid: Grid, powerup: Tile): { main: Position
   return { main: mainTarget, bonus: null };
 }
 
+// Get multiple propeller targets for color_bomb+propeller combo (up to 3 targets)
+export function getColorBombPropellerTargets(grid: Grid, excludeIds: Set<string> = new Set()): Position[] {
+  // Priority 1: Cells with obstacles
+  const obstacleTargets: Position[] = [];
+  grid.forEachCell(cell => {
+    if (cell.obstacle && cell.tile && !excludeIds.has(cell.tile.id)) {
+      obstacleTargets.push({ row: cell.row, col: cell.col });
+    }
+  });
+
+  // Shuffle and pick up to 3
+  const shuffled = obstacleTargets.sort(() => Math.random() - 0.5);
+  if (shuffled.length >= 3) {
+    return shuffled.slice(0, 3);
+  }
+
+  // If less than 3 obstacles, fill with random tiles
+  const targets = [...shuffled];
+  const existingKeys = new Set(targets.map(t => `${t.row},${t.col}`));
+
+  const remainingTiles: Position[] = [];
+  grid.forEachCell(cell => {
+    if (cell.tile && !excludeIds.has(cell.tile.id)) {
+      const key = `${cell.row},${cell.col}`;
+      if (!existingKeys.has(key)) {
+        remainingTiles.push({ row: cell.row, col: cell.col });
+      }
+    }
+  });
+
+  const shuffledRemaining = remainingTiles.sort(() => Math.random() - 0.5);
+  while (targets.length < 3 && shuffledRemaining.length > 0) {
+    targets.push(shuffledRemaining.shift()!);
+  }
+
+  return targets;
+}
+
+// Store multiple propeller targets (for color_bomb+propeller combo with 3 targets)
+const multiPropellerTargetCache: Map<string, Position[]> = new Map();
+
+export function setMultiPropellerTargets(comboKey: string, targets: Position[]): void {
+  multiPropellerTargetCache.set(comboKey, targets);
+}
+
+export function getAndClearMultiPropellerTargets(comboKey: string): Position[] | undefined {
+  if (multiPropellerTargetCache.has(comboKey)) {
+    const targets = multiPropellerTargetCache.get(comboKey);
+    multiPropellerTargetCache.delete(comboKey);
+    return targets;
+  }
+  return undefined;
+}
+
 // Check if two powerups can be combined
 export function canCombinePowerups(powerup1: Tile, powerup2: Tile): boolean {
   return powerup1.isPowerup && powerup2.isPowerup &&
@@ -458,26 +512,17 @@ export function combinePowerups(
 
     // Propeller + Color Bomb = 3 propellers target obstacles
     case 'color_bomb+propeller':
-      // Find 3 obstacle targets and clear 3x3 around each
-      const obstacleTargets: Position[] = [];
-      grid.forEachCell(cell => {
-        if (cell.obstacle && cell.tile) {
-          obstacleTargets.push({ row: cell.row, col: cell.col });
-        }
-      });
-      // Pick up to 3 random targets
-      const shuffled = obstacleTargets.sort(() => Math.random() - 0.5);
-      const targets = shuffled.slice(0, 3);
-      // If no obstacles, pick random tiles
-      if (targets.length === 0) {
-        grid.forEachCell(cell => {
-          if (cell.tile && !alreadyActivated.has(cell.tile.id)) {
-            targets.push({ row: cell.row, col: cell.col });
-          }
-        });
-        targets.splice(3);
+      // Check for cached targets first (set by animation system)
+      const comboId = `${powerup1.id}_${powerup2.id}`;
+      let colorBombPropTargets = getAndClearMultiPropellerTargets(comboId);
+
+      if (!colorBombPropTargets || colorBombPropTargets.length === 0) {
+        // Calculate targets if not cached
+        colorBombPropTargets = getColorBombPropellerTargets(grid, alreadyActivated);
       }
-      for (const target of targets) {
+
+      // Clear 3x3 around each target
+      for (const target of colorBombPropTargets) {
         for (let dr = -1; dr <= 1; dr++) {
           for (let dc = -1; dc <= 1; dc++) {
             const tile = grid.getTile(target.row + dr, target.col + dc);
@@ -656,16 +701,29 @@ export function getCombinationAffectedPositions(grid: Grid, powerup1: Tile, powe
       });
       break;
 
-    // Propeller combinations - include target positions
+    // Color bomb + propeller = 3 propellers with 3x3 each
+    case 'color_bomb+propeller':
+      // Check for cached multi-targets
+      const cbpComboId = `${powerup1.id}_${powerup2.id}`;
+      const cbpTargets = multiPropellerTargetCache.get(cbpComboId) || [];
+      for (const target of cbpTargets) {
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            addPosition(target.row + dr, target.col + dc);
+          }
+        }
+      }
+      break;
+
+    // Other propeller combinations - include target positions
     case 'propeller+rocket_h':
     case 'propeller+rocket_v':
     case 'bomb+propeller':
-    case 'color_bomb+propeller':
     case 'propeller+propeller':
       // For propeller combos, include the cached targets and their blast areas
       const cachedTarget1 = propellerTargetCache.get(powerup1.id);
       const cachedTarget2 = propellerTargetCache.get(powerup2.id);
-      
+
       if (cachedTarget1) {
         // Add 3x3 or cross around target depending on combo
         if (comboKey.includes('rocket')) {
@@ -692,7 +750,7 @@ export function getCombinationAffectedPositions(grid: Grid, powerup1: Tile, powe
           }
         }
       }
-      
+
       if (cachedTarget2 && comboKey === 'propeller+propeller') {
         // Second propeller target 3x3
         for (let dr = -1; dr <= 1; dr++) {

@@ -115,7 +115,7 @@ export interface Reward {
 }
 
 // Shop items
-export type ShopCategory = 'powerup' | 'booster';
+export type ShopCategory = 'booster';
 
 export interface ShopItem {
   id: string;

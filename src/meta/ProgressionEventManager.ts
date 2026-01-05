@@ -10,19 +10,19 @@ type EventListener = (data: { points?: number; checkpointIndex?: number; reward?
 const POWER_SURGE_EVENT: ProgressionEvent = {
   id: 'power_surge',
   name: 'Power Surge',
-  description: 'Play levels to charge up and earn powerups!',
+  description: 'Play levels to charge up and earn boosters!',
   icon: 'lightning',
   duration: 7,
   checkpoints: [
-    { pointsRequired: 100, reward: { type: 'powerup', amount: 2, id: 'rocket_3pack' }, label: 'First Spark' },
-    { pointsRequired: 300, reward: { type: 'powerup', amount: 2, id: 'bomb_3pack' }, label: 'Building Power' },
+    { pointsRequired: 100, reward: { type: 'booster', amount: 2, id: 'hammer' }, label: 'First Spark' },
+    { pointsRequired: 300, reward: { type: 'booster', amount: 2, id: 'row_arrow' }, label: 'Building Power' },
     { pointsRequired: 600, reward: { type: 'coins', amount: 1000 }, label: 'Energy Boost' },
-    { pointsRequired: 1000, reward: { type: 'powerup', amount: 2, id: 'colorBomb_1' }, label: 'Surge Master' },
+    { pointsRequired: 1000, reward: { type: 'booster', amount: 3, id: 'shuffle' }, label: 'Surge Master' },
     { pointsRequired: 1500, reward: { type: 'diamonds', amount: 50 }, label: 'Maximum Power!' },
   ],
   completionBonus: [
     { type: 'coins', amount: 2000 },
-    { type: 'powerup', amount: 3, id: 'colorBomb_1' },
+    { type: 'booster', amount: 3, id: 'col_arrow' },
   ],
 };
 

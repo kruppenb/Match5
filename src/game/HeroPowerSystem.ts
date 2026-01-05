@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { CONFIG } from '../config';
 import { HeroType, HeroPowerBarState, Position, Tile } from '../types';
 import { Grid } from './Grid';
+import { getObstacleBehavior } from './Obstacle';
 
 interface HeroPowerCallbacks {
   cellToScreen: (row: number, col: number) => { x: number; y: number };
@@ -13,6 +14,16 @@ interface HeroPowerCallbacks {
   shake: (intensity: 'light' | 'medium' | 'heavy') => void;
   haptic: (type: string) => void;
   emitParticles: (x: number, y: number, color: number, count: number) => void;
+  // Obstacle callbacks
+  removeObstacleSprite: (row: number, col: number) => void;
+  updateObstacleSprite: (row: number, col: number) => void;
+  updateObstacleObjectives: (clearedByType: Record<string, number>) => void;
+}
+
+interface ChargeSource {
+  x: number;
+  y: number;
+  color: number;
 }
 
 export class HeroPowerSystem {
@@ -44,8 +55,11 @@ export class HeroPowerSystem {
   // Bar dimensions
   private readonly barX: number;
   private readonly barY: number;
-  private readonly barWidth = 160;
-  private readonly barHeight = 20;
+  private readonly barWidth = 180;
+  private readonly barHeight = 32;
+
+  // Flash animation state
+  private isFlashing = false;
 
   constructor(
     scene: Phaser.Scene,
@@ -93,14 +107,14 @@ export class HeroPowerSystem {
     this.barContainer.add(this.barFrame);
 
     // Hero icon on left
-    this.heroIcon = this.scene.add.text(-this.barWidth / 2 + 14, this.barHeight / 2, '⚡', {
-      fontSize: '14px',
+    this.heroIcon = this.scene.add.text(-this.barWidth / 2 + 18, this.barHeight / 2, '⚡', {
+      fontSize: '18px',
     }).setOrigin(0.5);
     this.barContainer.add(this.heroIcon);
 
     // Charge percentage text
-    this.chargeText = this.scene.add.text(this.barWidth / 2 - 8, this.barHeight / 2, '0%', {
-      fontSize: '11px',
+    this.chargeText = this.scene.add.text(this.barWidth / 2 - 10, this.barHeight / 2, '0%', {
+      fontSize: '14px',
       fontFamily: 'Arial Bold',
       color: '#ffffff',
     }).setOrigin(1, 0.5);
@@ -108,11 +122,11 @@ export class HeroPowerSystem {
 
     // "READY!" text (hidden until full)
     this.readyText = this.scene.add.text(0, this.barHeight / 2, 'READY!', {
-      fontSize: '12px',
+      fontSize: '16px',
       fontFamily: 'Arial Black',
       color: '#ffaa00',
       stroke: '#000000',
-      strokeThickness: 2,
+      strokeThickness: 3,
     }).setOrigin(0.5).setAlpha(0);
     this.barContainer.add(this.readyText);
 
@@ -204,7 +218,7 @@ export class HeroPowerSystem {
     }
   }
 
-  addCharge(tilesCleared: number, cascadeLevel: number = 0, powerupActivated: boolean = false): void {
+  addCharge(tilesCleared: number, cascadeLevel: number = 0, powerupActivated: boolean = false, sources?: ChargeSource[]): void {
     if (this.state.isReady || this.state.isActivating) return;
 
     let chargeGain = tilesCleared * CONFIG.HERO_POWERS.CHARGE_PER_TILE;
@@ -217,12 +231,154 @@ export class HeroPowerSystem {
       chargeGain += CONFIG.HERO_POWERS.CHARGE_PER_POWERUP;
     }
 
+    const previousCharge = this.state.currentCharge;
     this.state.currentCharge = Math.min(
       CONFIG.HERO_POWERS.MAX_CHARGE,
       this.state.currentCharge + chargeGain
     );
 
+    // Animate flying energy sprites if sources provided
+    if (sources && sources.length > 0 && chargeGain > 0) {
+      this.animateFlyingEnergy(sources);
+    }
+
+    // Flash the bar when charging
+    if (chargeGain > 0 && previousCharge < CONFIG.HERO_POWERS.MAX_CHARGE) {
+      this.flashBar();
+    }
+
     this.updateBarVisual();
+  }
+
+  private animateFlyingEnergy(sources: ChargeSource[]): void {
+    // Target position is the bar
+    const targetX = this.barX;
+    const targetY = this.barY + this.barHeight / 2;
+
+    // Limit number of energy sprites to avoid performance issues
+    const maxSprites = Math.min(sources.length, 8);
+    const selectedSources = sources.slice(0, maxSprites);
+
+    selectedSources.forEach((source, index) => {
+      // Stagger the spawn slightly
+      this.scene.time.delayedCall(index * 30, () => {
+        this.createEnergySprite(source.x, source.y, targetX, targetY, source.color);
+      });
+    });
+  }
+
+  private createEnergySprite(startX: number, startY: number, targetX: number, targetY: number, color: number): void {
+    // Create glowing energy orb
+    const container = this.scene.add.container(startX, startY);
+    container.setDepth(150);
+
+    // Glow background
+    const glow = this.scene.add.graphics();
+    glow.fillStyle(color, 0.4);
+    glow.fillCircle(0, 0, 12);
+    container.add(glow);
+
+    // Core orb
+    const orb = this.scene.add.graphics();
+    orb.fillStyle(color, 1);
+    orb.fillCircle(0, 0, 6);
+    container.add(orb);
+
+    // White center
+    const center = this.scene.add.graphics();
+    center.fillStyle(0xffffff, 0.8);
+    center.fillCircle(0, 0, 3);
+    container.add(center);
+
+    // Animate to target with curved path
+    const distance = Phaser.Math.Distance.Between(startX, startY, targetX, targetY);
+    const duration = Math.min(400, 200 + distance * 0.3);
+
+    // Calculate control point for bezier curve (arc upward)
+    const midX = (startX + targetX) / 2;
+    const midY = Math.min(startY, targetY) - 40;
+
+    // Use path for curved motion
+    const path = new Phaser.Curves.QuadraticBezier(
+      new Phaser.Math.Vector2(startX, startY),
+      new Phaser.Math.Vector2(midX, midY),
+      new Phaser.Math.Vector2(targetX, targetY)
+    );
+
+    // Create follower
+    const startPoint = { t: 0 };
+    this.scene.tweens.add({
+      targets: startPoint,
+      t: 1,
+      duration: duration,
+      ease: 'Quad.easeIn',
+      onUpdate: () => {
+        const point = path.getPoint(startPoint.t);
+        container.setPosition(point.x, point.y);
+        // Scale down as it approaches
+        const scale = 1 - startPoint.t * 0.3;
+        container.setScale(scale);
+      },
+      onComplete: () => {
+        // Flash at target
+        const flash = this.scene.add.circle(targetX, targetY, 15, 0xffffff, 0.8);
+        flash.setDepth(151);
+        this.scene.tweens.add({
+          targets: flash,
+          alpha: 0,
+          scale: 0.5,
+          duration: 100,
+          onComplete: () => flash.destroy(),
+        });
+        container.destroy();
+      },
+    });
+
+    // Pulsing glow animation
+    this.scene.tweens.add({
+      targets: glow,
+      alpha: { from: 0.4, to: 0.8 },
+      duration: 80,
+      yoyo: true,
+      repeat: -1,
+    });
+  }
+
+  private flashBar(): void {
+    // Don't start a new flash if already flashing
+    if (this.isFlashing) return;
+
+    this.isFlashing = true;
+
+    // Create flash overlay
+    const flashOverlay = this.scene.add.graphics();
+    flashOverlay.fillStyle(0xffffff, 0.6);
+    flashOverlay.fillRoundedRect(-this.barWidth / 2, 0, this.barWidth, this.barHeight, 10);
+    this.barContainer.add(flashOverlay);
+
+    // Flash animation
+    this.scene.tweens.add({
+      targets: flashOverlay,
+      alpha: 0,
+      duration: 200,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        flashOverlay.destroy();
+        this.isFlashing = false;
+      },
+    });
+
+    // Also pulse the bar slightly
+    if (!this.state.isReady) {
+      this.scene.tweens.add({
+        targets: this.barContainer,
+        scaleX: 1.08,
+        scaleY: 1.08,
+        duration: 100,
+        yoyo: true,
+        ease: 'Quad.easeOut',
+      });
+    }
   }
 
   private showHeroSelection(): void {
@@ -515,20 +671,32 @@ export class HeroPowerSystem {
     const { min, max } = CONFIG.HERO_POWERS.THOR_STRIKE_COUNT;
     const strikeCount = min + Math.floor(Math.random() * (max - min + 1));
 
-    // Get random tile positions
-    const validPositions: Position[] = [];
+    // PRIORITIZE blocking obstacles (ice, box, barrel, ice_bucket)
+    const blockingObstacles = this.getBlockingObstaclePositions();
+
+    // Get positions with tiles (for remaining strikes)
+    const tilePositions: Position[] = [];
     for (let row = 0; row < this.grid.rows; row++) {
       for (let col = 0; col < this.grid.cols; col++) {
         const cell = this.grid.getCell(row, col);
         if (cell && cell.tile && !cell.blocked) {
-          validPositions.push({ row, col });
+          tilePositions.push({ row, col });
         }
       }
     }
 
-    // Shuffle and pick strike positions
-    const shuffled = validPositions.sort(() => Math.random() - 0.5);
-    const strikePositions = shuffled.slice(0, Math.min(strikeCount, shuffled.length));
+    // Shuffle both lists
+    const shuffledObstacles = blockingObstacles.sort(() => Math.random() - 0.5);
+    const shuffledTiles = tilePositions.sort(() => Math.random() - 0.5);
+
+    // Prioritize obstacles: use up to half of strikes on obstacles, rest on tiles
+    const obstacleStrikeCount = Math.min(Math.ceil(strikeCount / 2), shuffledObstacles.length);
+    const tileStrikeCount = Math.min(strikeCount - obstacleStrikeCount, shuffledTiles.length);
+
+    const strikePositions: Position[] = [
+      ...shuffledObstacles.slice(0, obstacleStrikeCount),
+      ...shuffledTiles.slice(0, tileStrikeCount),
+    ];
 
     // Collect tiles to clear
     const tilesToClear: Tile[] = [];
@@ -548,6 +716,9 @@ export class HeroPowerSystem {
     for (const pos of strikePositions) {
       await this.createLightningBolt(pos.row, pos.col);
     }
+
+    // Damage obstacles at strike positions
+    this.damageObstaclesAt(strikePositions);
 
     // Clear tiles
     if (tilesToClear.length > 0) {
@@ -622,18 +793,60 @@ export class HeroPowerSystem {
     const missileCount = CONFIG.HERO_POWERS.IRONMAN_MISSILE_COUNT;
     const explosionSize = CONFIG.HERO_POWERS.IRONMAN_EXPLOSION_SIZE;
 
-    // Get random target positions (avoiding duplicates)
-    const validPositions: Position[] = [];
-    for (let row = 0; row < this.grid.rows - 1; row++) {
-      for (let col = 0; col < this.grid.cols - 1; col++) {
-        validPositions.push({ row, col });
+    // Find positions with blocking obstacles and score them
+    const positionsWithObstacles: { pos: Position; obstacleCount: number }[] = [];
+    const allValidPositions: Position[] = [];
+
+    for (let row = 0; row < this.grid.rows - (explosionSize - 1); row++) {
+      for (let col = 0; col < this.grid.cols - (explosionSize - 1); col++) {
+        let obstacleCount = 0;
+        for (let dr = 0; dr < explosionSize; dr++) {
+          for (let dc = 0; dc < explosionSize; dc++) {
+            const cell = this.grid.getCell(row + dr, col + dc);
+            if (cell?.obstacle) {
+              const behavior = getObstacleBehavior(cell.obstacle.type);
+              if (behavior.blocksTile && !behavior.isIndestructible) {
+                obstacleCount++;
+              }
+            }
+          }
+        }
+        allValidPositions.push({ row, col });
+        if (obstacleCount > 0) {
+          positionsWithObstacles.push({ pos: { row, col }, obstacleCount });
+        }
       }
     }
 
-    const shuffled = validPositions.sort(() => Math.random() - 0.5);
-    const targetPositions = shuffled.slice(0, missileCount);
+    // Sort by obstacle count (more obstacles = higher priority)
+    positionsWithObstacles.sort((a, b) => b.obstacleCount - a.obstacleCount);
 
-    // Collect all tiles in explosion areas
+    // Prioritize positions with obstacles
+    const targetPositions: Position[] = [];
+    const usedPositions: Set<string> = new Set();
+
+    // First, pick positions with obstacles (up to missileCount)
+    for (const { pos } of positionsWithObstacles) {
+      if (targetPositions.length >= missileCount) break;
+      const key = `${pos.row},${pos.col}`;
+      if (!usedPositions.has(key)) {
+        targetPositions.push(pos);
+        usedPositions.add(key);
+      }
+    }
+
+    // Fill remaining with random positions
+    const shuffledRemaining = allValidPositions
+      .filter(p => !usedPositions.has(`${p.row},${p.col}`))
+      .sort(() => Math.random() - 0.5);
+
+    for (const pos of shuffledRemaining) {
+      if (targetPositions.length >= missileCount) break;
+      targetPositions.push(pos);
+    }
+
+    // Collect all positions in explosion areas
+    const explosionPositions: Position[] = [];
     const tilesToClear: Set<string> = new Set();
     const allTiles: Tile[] = [];
 
@@ -642,6 +855,7 @@ export class HeroPowerSystem {
         for (let dc = 0; dc < explosionSize; dc++) {
           const row = target.row + dr;
           const col = target.col + dc;
+          explosionPositions.push({ row, col });
           const cell = this.grid.getCell(row, col);
           if (cell?.tile && !tilesToClear.has(cell.tile.id)) {
             tilesToClear.add(cell.tile.id);
@@ -664,6 +878,9 @@ export class HeroPowerSystem {
     });
 
     await Promise.all(missilePromises);
+
+    // Damage obstacles in explosion areas
+    this.damageObstaclesAt(explosionPositions);
 
     // Clear all tiles
     if (allTiles.length > 0) {
@@ -753,17 +970,73 @@ export class HeroPowerSystem {
   private async executeElsaPower(): Promise<void> {
     const lineCount = CONFIG.HERO_POWERS.ELSA_LINES_COUNT;
 
-    // Randomly choose rows or columns
-    const useRows = Math.random() > 0.5;
+    // Count obstacles in each row and column
+    const rowObstacleCounts: number[] = [];
+    const colObstacleCounts: number[] = [];
+
+    for (let row = 0; row < this.grid.rows; row++) {
+      let count = 0;
+      for (let col = 0; col < this.grid.cols; col++) {
+        const cell = this.grid.getCell(row, col);
+        if (cell?.obstacle) {
+          const behavior = getObstacleBehavior(cell.obstacle.type);
+          if (behavior.blocksTile && !behavior.isIndestructible) {
+            count++;
+          }
+        }
+      }
+      rowObstacleCounts.push(count);
+    }
+
+    for (let col = 0; col < this.grid.cols; col++) {
+      let count = 0;
+      for (let row = 0; row < this.grid.rows; row++) {
+        const cell = this.grid.getCell(row, col);
+        if (cell?.obstacle) {
+          const behavior = getObstacleBehavior(cell.obstacle.type);
+          if (behavior.blocksTile && !behavior.isIndestructible) {
+            count++;
+          }
+        }
+      }
+      colObstacleCounts.push(count);
+    }
+
+    // Determine whether to use rows or columns based on obstacle density
+    const totalRowObstacles = rowObstacleCounts.reduce((a, b) => a + b, 0);
+    const totalColObstacles = colObstacleCounts.reduce((a, b) => a + b, 0);
+
+    // Prefer direction with more obstacles, or random if equal
+    let useRows: boolean;
+    if (totalRowObstacles > totalColObstacles) {
+      useRows = true;
+    } else if (totalColObstacles > totalRowObstacles) {
+      useRows = false;
+    } else {
+      useRows = Math.random() > 0.5;
+    }
+
+    const obstacleCounts = useRows ? rowObstacleCounts : colObstacleCounts;
     const maxLines = useRows ? this.grid.rows : this.grid.cols;
 
-    // Pick random lines
-    const allLines = Array.from({ length: maxLines }, (_, i) => i);
-    const shuffled = allLines.sort(() => Math.random() - 0.5);
-    const selectedLines = shuffled.slice(0, Math.min(lineCount, maxLines));
+    // Sort lines by obstacle count (descending), then shuffle within same count
+    const linesWithCounts = Array.from({ length: maxLines }, (_, i) => ({
+      index: i,
+      count: obstacleCounts[i],
+    }));
+    linesWithCounts.sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return Math.random() - 0.5;
+    });
 
-    // Collect tiles
+    // Pick lines, prioritizing those with obstacles
+    const selectedLines = linesWithCounts
+      .slice(0, Math.min(lineCount, maxLines))
+      .map(l => l.index);
+
+    // Collect tiles and positions for obstacles
     const tilesToClear: Tile[] = [];
+    const obstaclePositions: Position[] = [];
 
     for (const lineIndex of selectedLines) {
       if (useRows) {
@@ -772,12 +1045,18 @@ export class HeroPowerSystem {
           if (cell?.tile) {
             tilesToClear.push(cell.tile);
           }
+          if (cell?.obstacle) {
+            obstaclePositions.push({ row: lineIndex, col });
+          }
         }
       } else {
         for (let row = 0; row < this.grid.rows; row++) {
           const cell = this.grid.getCell(row, lineIndex);
           if (cell?.tile) {
             tilesToClear.push(cell.tile);
+          }
+          if (cell?.obstacle) {
+            obstaclePositions.push({ row, col: lineIndex });
           }
         }
       }
@@ -789,6 +1068,9 @@ export class HeroPowerSystem {
     for (const lineIndex of selectedLines) {
       await this.createFreezeWave(lineIndex, useRows);
     }
+
+    // Damage obstacles in frozen lines
+    this.damageObstaclesAt(obstaclePositions);
 
     // Shatter effect
     await this.createShatterEffect(tilesToClear);
@@ -964,6 +1246,63 @@ export class HeroPowerSystem {
 
   isSelectionOpen(): boolean {
     return this.state.isSelectionOpen;
+  }
+
+  /**
+   * Damage obstacles at the given positions
+   * Returns the count of each obstacle type that was fully cleared
+   */
+  private damageObstaclesAt(positions: Position[]): Record<string, number> {
+    const clearedByType: Record<string, number> = {};
+
+    for (const pos of positions) {
+      const cell = this.grid.getCell(pos.row, pos.col);
+      if (!cell?.obstacle) continue;
+
+      // Skip indestructible obstacles
+      const behavior = getObstacleBehavior(cell.obstacle.type);
+      if (behavior.isIndestructible) continue;
+
+      const obstacleType = cell.obstacle.type;
+      const clearedObstacle = this.grid.clearObstacle(pos.row, pos.col);
+
+      if (clearedObstacle) {
+        // Fully destroyed
+        clearedByType[obstacleType] = (clearedByType[obstacleType] || 0) + 1;
+        this.callbacks.removeObstacleSprite(pos.row, pos.col);
+      } else if (cell.obstacle) {
+        // Just damaged, update sprite to show reduced layers
+        this.callbacks.updateObstacleSprite(pos.row, pos.col);
+      }
+    }
+
+    // Update objectives
+    if (Object.keys(clearedByType).length > 0) {
+      this.callbacks.updateObstacleObjectives(clearedByType);
+    }
+
+    return clearedByType;
+  }
+
+  /**
+   * Get positions with blocking obstacles (ice, box, barrel, ice_bucket)
+   * These should be prioritized by hero powers
+   */
+  private getBlockingObstaclePositions(): Position[] {
+    const positions: Position[] = [];
+    for (let row = 0; row < this.grid.rows; row++) {
+      for (let col = 0; col < this.grid.cols; col++) {
+        const cell = this.grid.getCell(row, col);
+        if (cell?.obstacle) {
+          const behavior = getObstacleBehavior(cell.obstacle.type);
+          // Prioritize obstacles that block tiles and are destructible
+          if (behavior.blocksTile && !behavior.isIndestructible) {
+            positions.push({ row, col });
+          }
+        }
+      }
+    }
+    return positions;
   }
 
   destroy(): void {

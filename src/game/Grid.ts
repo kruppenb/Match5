@@ -69,6 +69,7 @@ export class Grid {
     // Parse layout codes:
     // '.' = normal cell (random tile)
     // 'G' = grass obstacle underneath (random tile on top) - 1 layer
+    // 'g' = double grass (2 layers, needs 2 matches to clear)
     // 'X' = blocked cell (no tile)
     // 'R' = pre-placed horizontal rocket
     // 'V' = pre-placed vertical rocket
@@ -98,7 +99,13 @@ export class Grid {
             break;
           case 'G':
             cell.blocked = false;
-            cell.obstacle = createGrass();
+            cell.obstacle = createGrass(1);
+            cell.tile = this.createRandomTile(row, col);
+            break;
+          case 'g':
+            // Double grass (2 layers, needs 2 matches to clear)
+            cell.blocked = false;
+            cell.obstacle = createGrass(2);
             cell.tile = this.createRandomTile(row, col);
             break;
           case 'I':

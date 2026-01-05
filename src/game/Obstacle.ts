@@ -66,8 +66,9 @@ export function createObstacle(type: ObstacleType, layers: number = 1): Obstacle
   };
 }
 
-export function createGrass(): Obstacle {
-  return createObstacle('grass', 1);
+export function createGrass(layers: number = 1): Obstacle {
+  // Grass can have 1-2 layers (double grass needs 2 matches to clear)
+  return createObstacle('grass', Math.min(Math.max(layers, 1), 2));
 }
 
 export function createIce(layers: number = 1): Obstacle {

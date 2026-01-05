@@ -1,12 +1,11 @@
 import Phaser from 'phaser';
 import { CONFIG } from '../config';
-import { ShopItem, ShopCategory } from '../types';
+import { ShopItem } from '../types';
 import { getCurrencyManager } from '../meta/CurrencyManager';
 import { getInventoryManager } from '../meta/InventoryManager';
 
 export class ShopScene extends Phaser.Scene {
   private itemsContainer!: Phaser.GameObjects.Container;
-  private currentCategory: ShopCategory = 'powerup';
   private coinsText!: Phaser.GameObjects.Text;
   private diamondsText!: Phaser.GameObjects.Text;
 
@@ -16,6 +15,12 @@ export class ShopScene extends Phaser.Scene {
 
   preload(): void {
     this.load.image('bg_title', 'assets/backgrounds/title_screen.jpg.jpeg');
+
+    // Load booster sprites to match game UI
+    this.load.image('booster_hammer', 'assets/sprites/boosters/hammer.png');
+    this.load.image('booster_row_arrow', 'assets/sprites/boosters/arrow_h.png');
+    this.load.image('booster_col_arrow', 'assets/sprites/boosters/beam_v.png');
+    this.load.image('booster_shuffle', 'assets/sprites/boosters/lucky67.png');
   }
 
   create(): void {
@@ -28,10 +33,7 @@ export class ShopScene extends Phaser.Scene {
     // Currency display
     this.createCurrencyDisplay();
 
-    // Category tabs
-    this.createCategoryTabs();
-
-    // Items grid
+    // Items grid (boosters only)
     this.itemsContainer = this.add.container(0, 0);
     this.displayItems();
 
@@ -72,7 +74,7 @@ export class ShopScene extends Phaser.Scene {
     headerGraphics.lineBetween(width / 2 - 70, 28, width / 2 - 40, 28);
     headerGraphics.lineBetween(width / 2 + 40, 28, width / 2 + 70, 28);
 
-    this.add.text(width / 2, 28, 'SHOP', {
+    this.add.text(width / 2, 28, 'BOOSTERS', {
       fontSize: '26px',
       fontFamily: 'Arial Black',
       color: '#ffffff',
@@ -162,98 +164,20 @@ export class ShopScene extends Phaser.Scene {
     graphics.strokeRoundedRect(x - width / 2, y - height / 2, width, height, height / 2);
   }
 
-  private createCategoryTabs(): void {
-    const { width } = this.scale;
-    const categories: { id: ShopCategory; label: string }[] = [
-      { id: 'powerup', label: 'Powerups' },
-      { id: 'booster', label: 'Boosters' },
-    ];
-
-    const tabWidth = 130;
-    const tabHeight = 40;
-    const tabY = 120;
-    const gap = 12;
-    const startX = width / 2 - ((categories.length * tabWidth) + (categories.length - 1) * gap) / 2 + tabWidth / 2;
-
-    categories.forEach((cat, index) => {
-      const x = startX + index * (tabWidth + gap);
-      const isActive = cat.id === this.currentCategory;
-
-      const tabGraphics = this.add.graphics();
-
-      // Shadow
-      tabGraphics.fillStyle(0x000000, 0.3);
-      tabGraphics.fillRoundedRect(x - tabWidth / 2 + 2, tabY - tabHeight / 2 + 2, tabWidth, tabHeight, 20);
-
-      // Tab background
-      const bgColor = isActive ? 0x4a90d9 : 0x1e2a3a;
-      tabGraphics.fillStyle(bgColor, 0.95);
-      tabGraphics.fillRoundedRect(x - tabWidth / 2, tabY - tabHeight / 2, tabWidth, tabHeight, 20);
-
-      // Top highlight
-      tabGraphics.fillStyle(isActive ? 0x6ab0f9 : 0x3a5a7e, 0.4);
-      tabGraphics.fillRoundedRect(x - tabWidth / 2 + 3, tabY - tabHeight / 2 + 3, tabWidth - 6, tabHeight / 2 - 3, { tl: 17, tr: 17, bl: 0, br: 0 });
-
-      // Border
-      const borderColor = isActive ? 0x6ab0f9 : 0x4a6a8a;
-      tabGraphics.lineStyle(1.5, borderColor, isActive ? 0.9 : 0.5);
-      tabGraphics.strokeRoundedRect(x - tabWidth / 2, tabY - tabHeight / 2, tabWidth, tabHeight, 20);
-
-      this.add.rectangle(x, tabY, tabWidth, tabHeight, 0x000000, 0)
-        .setInteractive({ useHandCursor: true })
-        .on('pointerover', () => {
-          if (!isActive) {
-            tabGraphics.clear();
-            tabGraphics.fillStyle(0x000000, 0.3);
-            tabGraphics.fillRoundedRect(x - tabWidth / 2 + 2, tabY - tabHeight / 2 + 2, tabWidth, tabHeight, 20);
-            tabGraphics.fillStyle(0x2a3a4a, 0.95);
-            tabGraphics.fillRoundedRect(x - tabWidth / 2, tabY - tabHeight / 2, tabWidth, tabHeight, 20);
-            tabGraphics.fillStyle(0x4a6a8e, 0.4);
-            tabGraphics.fillRoundedRect(x - tabWidth / 2 + 3, tabY - tabHeight / 2 + 3, tabWidth - 6, tabHeight / 2 - 3, { tl: 17, tr: 17, bl: 0, br: 0 });
-            tabGraphics.lineStyle(1.5, 0x5a8aaa, 0.7);
-            tabGraphics.strokeRoundedRect(x - tabWidth / 2, tabY - tabHeight / 2, tabWidth, tabHeight, 20);
-          }
-        })
-        .on('pointerout', () => {
-          if (!isActive) {
-            tabGraphics.clear();
-            tabGraphics.fillStyle(0x000000, 0.3);
-            tabGraphics.fillRoundedRect(x - tabWidth / 2 + 2, tabY - tabHeight / 2 + 2, tabWidth, tabHeight, 20);
-            tabGraphics.fillStyle(0x1e2a3a, 0.95);
-            tabGraphics.fillRoundedRect(x - tabWidth / 2, tabY - tabHeight / 2, tabWidth, tabHeight, 20);
-            tabGraphics.fillStyle(0x3a5a7e, 0.4);
-            tabGraphics.fillRoundedRect(x - tabWidth / 2 + 3, tabY - tabHeight / 2 + 3, tabWidth - 6, tabHeight / 2 - 3, { tl: 17, tr: 17, bl: 0, br: 0 });
-            tabGraphics.lineStyle(1.5, 0x4a6a8a, 0.5);
-            tabGraphics.strokeRoundedRect(x - tabWidth / 2, tabY - tabHeight / 2, tabWidth, tabHeight, 20);
-          }
-        })
-        .on('pointerdown', () => {
-          this.currentCategory = cat.id;
-          this.scene.restart();
-        });
-
-      this.add.text(x, tabY, cat.label, {
-        fontSize: '14px',
-        fontFamily: 'Arial Bold',
-        color: isActive ? '#ffffff' : '#8ab4d9',
-      }).setOrigin(0.5);
-    });
-  }
-
   private displayItems(): void {
     this.itemsContainer.removeAll(true);
 
     const { width } = this.scale;
     const inventoryManager = getInventoryManager();
-    const items = inventoryManager.getShopItemsByCategory(this.currentCategory);
+    const items = inventoryManager.getShopItems();
 
     const itemWidth = 105;
     const itemHeight = 145;
-    const cols = 3;
+    const cols = Math.min(items.length, 4);
     const gapX = 10;
     const totalWidth = cols * itemWidth + (cols - 1) * gapX;
     const startX = (width - totalWidth) / 2 + itemWidth / 2;
-    const startY = 235;
+    const startY = 180;
 
     items.forEach((item, index) => {
       const col = index % cols;
@@ -292,15 +216,27 @@ export class ShopScene extends Phaser.Scene {
     const iconY = y - 30;
     const iconGraphics = this.add.graphics();
     iconGraphics.fillStyle(canAfford ? 0x4a90d9 : 0x3a4a5a, 0.2);
-    iconGraphics.fillCircle(x, iconY, 30);
+    iconGraphics.fillCircle(x, iconY, 38);
     iconGraphics.fillStyle(0x1a2a3a, 0.9);
-    iconGraphics.fillCircle(x, iconY, 25);
+    iconGraphics.fillCircle(x, iconY, 33);
     iconGraphics.lineStyle(1.5, canAfford ? 0x6ab0f9 : 0x4a5a6a, 0.5);
-    iconGraphics.strokeCircle(x, iconY, 25);
+    iconGraphics.strokeCircle(x, iconY, 33);
 
-    const iconText = this.add.text(x, iconY, this.getItemEmoji(item.icon), {
-      fontSize: '24px',
-    }).setOrigin(0.5);
+    // Use sprite if available, otherwise fall back to emoji
+    const spriteKey = this.getBoosterSpriteKey(item.icon);
+    let iconElement: Phaser.GameObjects.Sprite | Phaser.GameObjects.Text;
+
+    if (spriteKey && this.textures.exists(spriteKey)) {
+      const sprite = this.add.sprite(x, iconY, spriteKey);
+      const iconSize = 52;
+      const spriteSize = Math.max(sprite.width, sprite.height);
+      sprite.setScale(iconSize / spriteSize);
+      iconElement = sprite;
+    } else {
+      iconElement = this.add.text(x, iconY, this.getItemEmoji(item.icon), {
+        fontSize: '32px',
+      }).setOrigin(0.5);
+    }
 
     // Name
     const nameText = this.add.text(x, y + 12, item.name, {
@@ -401,16 +337,29 @@ export class ShopScene extends Phaser.Scene {
       this.itemsContainer.add(priceBtn);
     }
 
-    this.itemsContainer.add([cardGraphics, iconGraphics, iconText, nameText, priceBtnGraphics, priceText]);
+    this.itemsContainer.add([cardGraphics, iconGraphics, iconElement, nameText, priceBtnGraphics, priceText]);
+  }
+
+  private getBoosterSpriteKey(icon: string): string | null {
+    const spriteMap: Record<string, string> = {
+      hammer: 'booster_hammer',
+      row_arrow: 'booster_row_arrow',
+      col_arrow: 'booster_col_arrow',
+      shuffle: 'booster_shuffle',
+    };
+    return spriteMap[icon] || null;
   }
 
   private getItemEmoji(icon: string): string {
     const emojiMap: Record<string, string> = {
+      hammer: '🔨',
+      row_arrow: '➡️',
+      col_arrow: '⬇️',
+      shuffle: '🔀',
       rocket: '🚀',
       bomb: '💣',
       colorBomb: '🌈',
       moves: '👟',
-      shuffle: '🔀',
       hint: '💡',
     };
     return emojiMap[icon] || '📦';

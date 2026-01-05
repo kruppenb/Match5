@@ -73,8 +73,8 @@ export class LuckyMatchScene extends Phaser.Scene {
     const rewards: Reward[] = [
       { type: 'coins', amount: 200 },
       { type: 'coins', amount: 400 },
-      { type: 'powerup', amount: 1, id: 'rocket_3pack' },
-      { type: 'powerup', amount: 1, id: 'bomb_3pack' },
+      { type: 'booster', amount: 2, id: 'hammer' },
+      { type: 'booster', amount: 2, id: 'row_arrow' },
       { type: 'diamonds', amount: 8 },
       { type: 'coins', amount: 300 },
     ];
@@ -212,11 +212,12 @@ export class LuckyMatchScene extends Phaser.Scene {
         return '🪙';
       case 'diamonds':
         return '💎';
-      case 'powerup':
+      case 'booster':
         const emojiMap: Record<string, string> = {
-          rocket_3pack: '🚀',
-          bomb_3pack: '💣',
-          colorBomb_1: '🌈',
+          hammer: '🔨',
+          row_arrow: '➡️',
+          col_arrow: '⬇️',
+          shuffle: '🔀',
         };
         return emojiMap[reward.id || ''] || '📦';
       default:

@@ -13,11 +13,11 @@ const WHEEL_SLICES: WheelSlice[] = [
   { reward: { type: 'coins', amount: 100 }, weight: 25, color: 0xffd700, label: '100' },
   { reward: { type: 'coins', amount: 250 }, weight: 20, color: 0xffa500, label: '250' },
   { reward: { type: 'coins', amount: 500 }, weight: 10, color: 0xff6347, label: '500' },
-  { reward: { type: 'powerup', amount: 1, id: 'rocket_3pack' }, weight: 15, color: 0x4169e1, label: '🚀' },
-  { reward: { type: 'powerup', amount: 1, id: 'bomb_3pack' }, weight: 12, color: 0x8b0000, label: '💣' },
+  { reward: { type: 'booster', amount: 2, id: 'hammer' }, weight: 15, color: 0x4169e1, label: '🔨' },
+  { reward: { type: 'booster', amount: 2, id: 'row_arrow' }, weight: 12, color: 0x8b0000, label: '➡️' },
   { reward: { type: 'diamonds', amount: 5 }, weight: 8, color: 0x9400d3, label: '💎5' },
   { reward: { type: 'diamonds', amount: 15 }, weight: 5, color: 0xff1493, label: '💎15' },
-  { reward: { type: 'powerup', amount: 1, id: 'colorBomb_1' }, weight: 5, color: 0x00ced1, label: '🌈' },
+  { reward: { type: 'booster', amount: 2, id: 'shuffle' }, weight: 5, color: 0x00ced1, label: '🔀' },
 ];
 
 export class SpinWheelScene extends Phaser.Scene {

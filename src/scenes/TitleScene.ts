@@ -6,9 +6,17 @@ import { getProgressionEventManager } from '../meta/ProgressionEventManager';
 import { getMiniGameRotation } from '../meta/MiniGameRotation';
 import { MetaStorage } from '../storage/MetaStorage';
 
+export interface TitleSceneData {
+  earnedCoins?: number;
+  earnedDiamonds?: number;
+}
+
 export class TitleScene extends Phaser.Scene {
   private coinsText!: Phaser.GameObjects.Text;
   private diamondsText!: Phaser.GameObjects.Text;
+  private coinsPillX!: number;
+  private diamondsPillX!: number;
+  private barY!: number;
 
   constructor() {
     super('TitleScene');
@@ -18,7 +26,7 @@ export class TitleScene extends Phaser.Scene {
     this.load.image('bg_title', 'assets/backgrounds/title_screen.jpg.jpeg');
   }
 
-  create(): void {
+  create(data?: TitleSceneData): void {
     console.log('Title Scene Created');
 
     this.checkDailyLogin();
@@ -28,6 +36,13 @@ export class TitleScene extends Phaser.Scene {
     this.createCurrencyBar();
     this.createLevelCard();
     this.createLeftTabs();
+
+    // Show currency earned animation if returning from a completed level
+    if (data?.earnedCoins || data?.earnedDiamonds) {
+      this.time.delayedCall(300, () => {
+        this.showCurrencyEarnedAnimation(data.earnedCoins || 0, data.earnedDiamonds || 0);
+      });
+    }
   }
 
   private getBottomShowcasePadding(): number {
@@ -70,29 +85,29 @@ export class TitleScene extends Phaser.Scene {
   private createCurrencyBar(): void {
     const { width } = this.scale;
     const currencyManager = getCurrencyManager();
-    const barY = 100;
+    this.barY = 100;
     const pillWidth = 90;
     const pillHeight = 36;
     const gap = 12;
     const iconOffset = 18; // Distance from left edge to icon center
 
     // Coins pill
-    const coinsPillX = width / 2 - gap / 2 - pillWidth / 2;
-    this.createCurrencyPill(coinsPillX, barY, pillWidth, pillHeight, 'coin');
+    this.coinsPillX = width / 2 - gap / 2 - pillWidth / 2;
+    this.createCurrencyPill(this.coinsPillX, this.barY, pillWidth, pillHeight, 'coin');
 
     // Coin icon with glow - centered vertically
-    const coinIconX = coinsPillX - pillWidth / 2 + iconOffset;
-    this.add.circle(coinIconX, barY, 14, 0xffd700, 0.3);
-    this.add.circle(coinIconX, barY, 11, 0xffd700);
-    this.add.circle(coinIconX, barY, 7, 0xffec8b);
-    this.add.text(coinIconX, barY, '$', {
+    const coinIconX = this.coinsPillX - pillWidth / 2 + iconOffset;
+    this.add.circle(coinIconX, this.barY, 14, 0xffd700, 0.3);
+    this.add.circle(coinIconX, this.barY, 11, 0xffd700);
+    this.add.circle(coinIconX, this.barY, 7, 0xffec8b);
+    this.add.text(coinIconX, this.barY, '$', {
       fontSize: '10px',
       fontFamily: 'Arial Black',
       color: '#b8860b',
     }).setOrigin(0.5);
 
     // Coins text - centered in remaining space
-    this.coinsText = this.add.text(coinsPillX + 8, barY, currencyManager.formatCoins(currencyManager.getCoins()), {
+    this.coinsText = this.add.text(this.coinsPillX + 8, this.barY, currencyManager.formatCoins(currencyManager.getCoins()), {
       fontSize: '16px',
       fontFamily: 'Arial Black',
       color: '#ffffff',
@@ -101,25 +116,25 @@ export class TitleScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Diamonds pill
-    const diamondsPillX = width / 2 + gap / 2 + pillWidth / 2;
-    this.createCurrencyPill(diamondsPillX, barY, pillWidth, pillHeight, 'diamond');
+    this.diamondsPillX = width / 2 + gap / 2 + pillWidth / 2;
+    this.createCurrencyPill(this.diamondsPillX, this.barY, pillWidth, pillHeight, 'diamond');
 
     // Diamond icon with glow - use circle positioning like coins
-    const diamondIconX = diamondsPillX - pillWidth / 2 + iconOffset;
+    const diamondIconX = this.diamondsPillX - pillWidth / 2 + iconOffset;
     // Outer glow
-    this.add.circle(diamondIconX, barY, 13, 0x00bfff, 0.25);
+    this.add.circle(diamondIconX, this.barY, 13, 0x00bfff, 0.25);
     // Main diamond shape - draw relative to center
     const dg = this.add.graphics();
     dg.fillStyle(0x00bfff, 1);
-    dg.fillTriangle(diamondIconX, barY - 9, diamondIconX + 7, barY, diamondIconX, barY + 9);
-    dg.fillTriangle(diamondIconX, barY - 9, diamondIconX - 7, barY, diamondIconX, barY + 9);
+    dg.fillTriangle(diamondIconX, this.barY - 9, diamondIconX + 7, this.barY, diamondIconX, this.barY + 9);
+    dg.fillTriangle(diamondIconX, this.barY - 9, diamondIconX - 7, this.barY, diamondIconX, this.barY + 9);
     // Inner highlight
     dg.fillStyle(0x87ceeb, 1);
-    dg.fillTriangle(diamondIconX, barY - 4, diamondIconX + 3, barY, diamondIconX, barY + 4);
-    dg.fillTriangle(diamondIconX, barY - 4, diamondIconX - 3, barY, diamondIconX, barY + 4);
+    dg.fillTriangle(diamondIconX, this.barY - 4, diamondIconX + 3, this.barY, diamondIconX, this.barY + 4);
+    dg.fillTriangle(diamondIconX, this.barY - 4, diamondIconX - 3, this.barY, diamondIconX, this.barY + 4);
 
     // Diamonds text - centered in remaining space
-    this.diamondsText = this.add.text(diamondsPillX + 8, barY, currencyManager.getDiamonds().toString(), {
+    this.diamondsText = this.add.text(this.diamondsPillX + 8, this.barY, currencyManager.getDiamonds().toString(), {
       fontSize: '16px',
       fontFamily: 'Arial Black',
       color: '#ffffff',
@@ -529,6 +544,176 @@ export class TitleScene extends Phaser.Scene {
     this.diamondsText.setText(currencyManager.getDiamonds().toString());
   }
 
+  private showCurrencyEarnedAnimation(earnedCoins: number, earnedDiamonds: number): void {
+    const currencyManager = getCurrencyManager();
+    const { width, height } = this.scale;
+
+    // Starting point for the floating icons (center of screen, slightly below)
+    const startY = height / 2;
+
+    // Animate coins if earned
+    if (earnedCoins > 0) {
+      // Create floating +coins text
+      const plusCoinsText = this.add.text(width / 2 - 40, startY, `+${earnedCoins}`, {
+        fontSize: '28px',
+        fontFamily: 'Arial Black',
+        color: '#ffd700',
+        stroke: '#000000',
+        strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(100);
+
+      // Create a small coin icon that will fly to the currency bar
+      const coinIcon = this.add.circle(width / 2 - 40, startY - 30, 12, 0xffd700).setDepth(100);
+      const coinInner = this.add.circle(width / 2 - 40, startY - 30, 8, 0xffec8b).setDepth(101);
+
+      // Animate the plus text floating up and fading
+      this.tweens.add({
+        targets: plusCoinsText,
+        y: startY - 80,
+        alpha: 0,
+        duration: 1500,
+        ease: 'Power2',
+        onComplete: () => plusCoinsText.destroy(),
+      });
+
+      // Animate coin icon flying to the currency bar
+      this.tweens.add({
+        targets: [coinIcon, coinInner],
+        x: this.coinsPillX,
+        y: this.barY,
+        scale: 0.5,
+        duration: 800,
+        ease: 'Power2',
+        delay: 200,
+        onComplete: () => {
+          coinIcon.destroy();
+          coinInner.destroy();
+
+          // Flash the coins text green and animate the count
+          this.animateCurrencyCountUp(
+            this.coinsText,
+            currencyManager.getCoins() - earnedCoins,
+            currencyManager.getCoins(),
+            true
+          );
+        },
+      });
+    }
+
+    // Animate diamonds if earned
+    if (earnedDiamonds > 0) {
+      // Create floating +diamonds text
+      const plusDiamondsText = this.add.text(width / 2 + 40, startY, `+${earnedDiamonds}`, {
+        fontSize: '28px',
+        fontFamily: 'Arial Black',
+        color: '#00bfff',
+        stroke: '#000000',
+        strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(100);
+
+      // Create a small diamond icon that will fly to the currency bar
+      const diamondGraphics = this.add.graphics().setDepth(100);
+      const diamondX = width / 2 + 40;
+      const diamondY = startY - 30;
+      diamondGraphics.fillStyle(0x00bfff, 1);
+      diamondGraphics.fillTriangle(diamondX, diamondY - 10, diamondX + 8, diamondY, diamondX, diamondY + 10);
+      diamondGraphics.fillTriangle(diamondX, diamondY - 10, diamondX - 8, diamondY, diamondX, diamondY + 10);
+
+      // Animate the plus text floating up and fading
+      this.tweens.add({
+        targets: plusDiamondsText,
+        y: startY - 80,
+        alpha: 0,
+        duration: 1500,
+        ease: 'Power2',
+        onComplete: () => plusDiamondsText.destroy(),
+      });
+
+      // Animate diamond icon flying to the currency bar
+      // Since graphics can't be tweened directly, we'll use a container
+      const diamondContainer = this.add.container(diamondX, diamondY).setDepth(100);
+      // Recreate diamond in container at origin
+      const dg = this.add.graphics();
+      dg.fillStyle(0x00bfff, 1);
+      dg.fillTriangle(0, -10, 8, 0, 0, 10);
+      dg.fillTriangle(0, -10, -8, 0, 0, 10);
+      diamondContainer.add(dg);
+      diamondGraphics.destroy();
+
+      this.tweens.add({
+        targets: diamondContainer,
+        x: this.diamondsPillX,
+        y: this.barY,
+        scale: 0.5,
+        duration: 800,
+        ease: 'Power2',
+        delay: 200,
+        onComplete: () => {
+          diamondContainer.destroy();
+
+          // Flash the diamonds text green and animate the count
+          this.animateCurrencyCountUp(
+            this.diamondsText,
+            currencyManager.getDiamonds() - earnedDiamonds,
+            currencyManager.getDiamonds(),
+            false
+          );
+        },
+      });
+    }
+  }
+
+  private animateCurrencyCountUp(
+    textObj: Phaser.GameObjects.Text,
+    fromValue: number,
+    toValue: number,
+    isCoins: boolean
+  ): void {
+    const currencyManager = getCurrencyManager();
+    const duration = 600;
+    const originalColor = '#ffffff';
+    const flashColor = '#44ff44';
+
+    // Flash green
+    textObj.setColor(flashColor);
+
+    // Pulse animation
+    this.tweens.add({
+      targets: textObj,
+      scale: 1.3,
+      duration: 150,
+      yoyo: true,
+      ease: 'Back.easeOut',
+    });
+
+    // Count up animation
+    const startTime = this.time.now;
+    const countUpEvent = this.time.addEvent({
+      delay: 16, // ~60fps
+      callback: () => {
+        const elapsed = this.time.now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+        const currentValue = Math.round(fromValue + (toValue - fromValue) * easeProgress);
+
+        if (isCoins) {
+          textObj.setText(currencyManager.formatCoins(currentValue));
+        } else {
+          textObj.setText(currentValue.toString());
+        }
+
+        if (progress >= 1) {
+          countUpEvent.destroy();
+          // Restore original color after a brief delay
+          this.time.delayedCall(300, () => {
+            textObj.setColor(originalColor);
+          });
+        }
+      },
+      loop: true,
+    });
+  }
+
   private showEventProgress(): void {
     const { width, height } = this.scale;
     const eventManager = getProgressionEventManager();
@@ -802,7 +987,7 @@ export class TitleScene extends Phaser.Scene {
     });
 
     // Close button - positioned with proper spacing
-    const closeBtnY = panelY + panelHeight / 2 - 45;
+    const closeBtnY = panelY + panelHeight / 2 - 30;
     const closeBtnWidth = 120;
     const closeBtnHeight = 42;
 

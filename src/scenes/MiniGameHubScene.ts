@@ -153,7 +153,7 @@ export class MiniGameHubScene extends Phaser.Scene {
 
     const cardWidth = width - 32;
     const cardHeight = 140;
-    let y = 160;
+    let y = 200;
 
     currentGames.forEach((game) => {
       this.createGameCard(game, width / 2, y, cardWidth, cardHeight);

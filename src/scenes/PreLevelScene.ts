@@ -2,16 +2,8 @@ import Phaser from 'phaser';
 import { CONFIG } from '../config';
 import { ChargeLevel } from '../types';
 import { getCurrencyManager } from '../meta/CurrencyManager';
-import { getInventoryManager } from '../meta/InventoryManager';
 import { LEVELS } from '../data/levels';
 import { LevelConfig } from '../types';
-
-interface BoosterSlot {
-  id: string;
-  icon: string;
-  owned: number;
-  selected: boolean;
-}
 
 export class PreLevelScene extends Phaser.Scene {
   private levelId: number = 1;
@@ -22,9 +14,6 @@ export class PreLevelScene extends Phaser.Scene {
   private costText!: Phaser.GameObjects.Text;
   private isReplay: boolean = false;
   private returnScene: string = 'TitleScene';
-
-  private selectedBoosters: Set<string> = new Set();
-  private boosterSlots: { container: Phaser.GameObjects.Container; slot: BoosterSlot; bg: Phaser.GameObjects.Graphics }[] = [];
   private chargeButtons: Phaser.GameObjects.Arc[] = [];
 
   constructor() {
@@ -42,9 +31,12 @@ export class PreLevelScene extends Phaser.Scene {
     this.selectedChargeIndex = 0;
     this.isReplay = data.isReplay ?? false;
     this.returnScene = data.returnScene ?? 'TitleScene';
-    this.selectedBoosters.clear();
-    this.boosterSlots = [];
     this.chargeButtons = [];
+    // Reset text references to avoid calling methods on destroyed objects
+    this.chargeLabel = undefined!;
+    this.costText = undefined!;
+    this.chargeMeter = undefined!;
+    this.chargeMeterFill = undefined!;
   }
 
   create(): void {
@@ -59,9 +51,6 @@ export class PreLevelScene extends Phaser.Scene {
 
     // Hero section with charging
     this.createHeroSection();
-
-    // Booster selection
-    this.createBoosterSection();
 
     // Start button
     this.createStartButton();
@@ -313,108 +302,6 @@ export class PreLevelScene extends Phaser.Scene {
     }
   }
 
-  private createBoosterSection(): void {
-    const { width } = this.scale;
-    const inventoryManager = getInventoryManager();
-    const inventory = inventoryManager.getInventory();
-
-    this.add.text(width / 2, 520, 'Select Boosters', {
-      fontSize: '18px',
-      fontFamily: 'Arial Black',
-      color: '#ffffff',
-    }).setOrigin(0.5);
-
-    const slotY = 575;
-    const slotSize = 52;
-    const spacing = 16;
-
-    const boosterTypes: BoosterSlot[] = [
-      { id: 'rocket_3pack', icon: '🚀', owned: inventory['rocket_3pack'] || 0, selected: false },
-      { id: 'bomb_3pack', icon: '💣', owned: inventory['bomb_3pack'] || 0, selected: false },
-      { id: 'colorBomb_1', icon: '🌈', owned: inventory['colorBomb_1'] || 0, selected: false },
-      { id: 'shuffle', icon: '🔀', owned: inventory['shuffle'] || 0, selected: false },
-    ];
-
-    const totalWidth = boosterTypes.length * slotSize + (boosterTypes.length - 1) * spacing;
-    const startX = width / 2 - totalWidth / 2 + slotSize / 2;
-
-    boosterTypes.forEach((slot, index) => {
-      const x = startX + index * (slotSize + spacing);
-      const container = this.createBoosterSlot(x, slotY, slotSize, slot);
-      this.boosterSlots.push(container);
-    });
-  }
-
-  private createBoosterSlot(
-    x: number,
-    y: number,
-    size: number,
-    slot: BoosterSlot
-  ): { container: Phaser.GameObjects.Container; slot: BoosterSlot; bg: Phaser.GameObjects.Graphics } {
-    const container = this.add.container(x, y);
-    const hasBooster = slot.owned > 0;
-
-    const bg = this.add.graphics();
-    bg.fillStyle(hasBooster ? 0x3a3a4e : 0x222222, 0.9);
-    bg.fillRoundedRect(-size / 2, -size / 2, size, size, 12);
-    bg.lineStyle(2, hasBooster ? 0x4a90d9 : 0x444444);
-    bg.strokeRoundedRect(-size / 2, -size / 2, size, size, 12);
-    container.add(bg);
-
-    const icon = this.add.text(0, -2, slot.icon, {
-      fontSize: '24px',
-    }).setOrigin(0.5).setAlpha(hasBooster ? 1 : 0.25);
-    container.add(icon);
-
-    if (hasBooster) {
-      const badgeBg = this.add.circle(size / 2 - 8, size / 2 - 8, 10, 0x4a90d9);
-      container.add(badgeBg);
-
-      const countText = this.add.text(size / 2 - 8, size / 2 - 8, slot.owned.toString(), {
-        fontSize: '11px',
-        fontFamily: 'Arial Bold',
-        color: '#ffffff',
-      }).setOrigin(0.5);
-      container.add(countText);
-
-      const hitArea = this.add.rectangle(0, 0, size, size, 0x000000, 0)
-        .setInteractive({ useHandCursor: true })
-        .on('pointerdown', () => this.toggleBooster(slot, bg, container, size));
-      container.add(hitArea);
-    }
-
-    return { container, slot, bg };
-  }
-
-  private toggleBooster(
-    slot: BoosterSlot,
-    bg: Phaser.GameObjects.Graphics,
-    container: Phaser.GameObjects.Container,
-    size: number
-  ): void {
-    slot.selected = !slot.selected;
-
-    if (slot.selected) {
-      this.selectedBoosters.add(slot.id);
-    } else {
-      this.selectedBoosters.delete(slot.id);
-    }
-
-    bg.clear();
-    bg.fillStyle(slot.selected ? 0x4a5a3e : 0x3a3a4e, 0.9);
-    bg.fillRoundedRect(-size / 2, -size / 2, size, size, 12);
-    bg.lineStyle(3, slot.selected ? 0xffaa00 : 0x4a90d9);
-    bg.strokeRoundedRect(-size / 2, -size / 2, size, size, 12);
-
-    this.tweens.add({
-      targets: container,
-      scaleX: 1.12,
-      scaleY: 1.12,
-      duration: 90,
-      yoyo: true,
-    });
-  }
-
   private createStartButton(): void {
     const { width, height } = this.scale;
     const chargeLevels = CONFIG.META.CHARGE_LEVELS as ChargeLevel[];
@@ -451,20 +338,10 @@ export class PreLevelScene extends Phaser.Scene {
       }
     }
 
-    // Consume selected boosters from inventory
-    const inventoryManager = getInventoryManager();
-    const consumedBoosters: string[] = [];
-    this.selectedBoosters.forEach(boosterId => {
-      if (inventoryManager.useItem(boosterId)) {
-        consumedBoosters.push(boosterId);
-      }
-    });
-
     // Start game with charge data
     this.scene.start('GameScene', {
       levelId: this.levelId,
       heroChargePercent: selectedLevel.percentage,
-      selectedBoosters: consumedBoosters,
       isReplay: this.isReplay,
     });
   }

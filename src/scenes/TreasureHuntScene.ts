@@ -67,11 +67,11 @@ export class TreasureHuntScene extends Phaser.Scene {
       { type: 'coins', amount: 500 },
       { type: 'coins', amount: 400 },
       { type: 'coins', amount: 300 },
-      { type: 'powerup', amount: 2, id: 'rocket_3pack' },
-      { type: 'powerup', amount: 1, id: 'bomb_3pack' },
+      { type: 'booster', amount: 2, id: 'hammer' },
+      { type: 'booster', amount: 2, id: 'row_arrow' },
       { type: 'diamonds', amount: 10 },
       { type: 'coins', amount: 200 },
-      { type: 'powerup', amount: 1, id: 'colorBomb_1' },
+      { type: 'booster', amount: 2, id: 'shuffle' },
       { type: 'coins', amount: 150 },
     ];
 
@@ -249,18 +249,19 @@ export class TreasureHuntScene extends Phaser.Scene {
         return `+${reward.amount}`;
       case 'diamonds':
         return `💎${reward.amount}`;
-      case 'powerup':
-        return this.getPowerupEmoji(reward.id || '');
+      case 'booster':
+        return this.getBoosterEmoji(reward.id || '');
       default:
         return '???';
     }
   }
 
-  private getPowerupEmoji(id: string): string {
+  private getBoosterEmoji(id: string): string {
     const emojiMap: Record<string, string> = {
-      rocket_3pack: '🚀',
-      bomb_3pack: '💣',
-      colorBomb_1: '🌈',
+      hammer: '🔨',
+      row_arrow: '➡️',
+      col_arrow: '⬇️',
+      shuffle: '🔀',
     };
     return emojiMap[id] || '📦';
   }
@@ -292,7 +293,7 @@ export class TreasureHuntScene extends Phaser.Scene {
     const rewardSummary = this.rewardsEarned.map(r => {
       if (r.type === 'coins') return `+${r.amount} coins`;
       if (r.type === 'diamonds') return `+${r.amount} diamonds`;
-      return `1x ${this.getPowerupEmoji(r.id || '')}`;
+      return `${r.amount}x ${this.getBoosterEmoji(r.id || '')}`;
     }).join('  |  ');
 
     this.add.text(width / 2, panelY + 10, rewardSummary, {

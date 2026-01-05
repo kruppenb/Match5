@@ -200,7 +200,6 @@ export class EndScreen {
   private scene: Phaser.Scene;
   private container: Phaser.GameObjects.Container;
   private onRetry?: () => void;
-  private onNext?: () => void;
   private onMenu?: () => void;
 
   constructor(scene: Phaser.Scene) {
@@ -210,9 +209,8 @@ export class EndScreen {
     this.container.setDepth(1000);
   }
 
-  showWin(score: number, stars: number, bonus: number, callbacks: { onRetry: () => void; onNext: () => void; onMenu: () => void }): void {
+  showWin(score: number, stars: number, bonus: number, callbacks: { onRetry: () => void; onMenu: () => void }): void {
     this.onRetry = callbacks.onRetry;
-    this.onNext = callbacks.onNext;
     this.onMenu = callbacks.onMenu;
     this.createWinContent(score, stars, bonus);
     this.container.setVisible(true);
@@ -236,16 +234,16 @@ export class EndScreen {
     bg.fillRect(-CONFIG.SCREEN.WIDTH / 2, -CONFIG.SCREEN.HEIGHT / 2, CONFIG.SCREEN.WIDTH, CONFIG.SCREEN.HEIGHT);
     this.container.add(bg);
 
-    // Panel - adjusted to fit all content
+    // Panel - adjusted for 2 buttons instead of 3
     const panel = this.scene.add.graphics();
     panel.fillStyle(0x2a4a2a, 1);
-    panel.fillRoundedRect(-150, -160, 300, 320, 16);
+    panel.fillRoundedRect(-150, -150, 300, 280, 16);
     panel.lineStyle(4, 0x44ff44, 1);
-    panel.strokeRoundedRect(-150, -160, 300, 320, 16);
+    panel.strokeRoundedRect(-150, -150, 300, 280, 16);
     this.container.add(panel);
 
     // Title
-    const title = this.scene.add.text(0, -130, 'LEVEL COMPLETE!', {
+    const title = this.scene.add.text(0, -120, 'LEVEL COMPLETE!', {
       fontSize: '24px',
       fontStyle: 'bold',
       color: '#44ff44',
@@ -263,29 +261,28 @@ export class EndScreen {
         star.fillStyle(0x444444, 1);
       }
       this.drawStarShape(star, 18);
-      star.setPosition(x, -70);
+      star.setPosition(x, -60);
       this.container.add(star);
     }
 
     // Score
-    const scoreText = this.scene.add.text(0, -20, `Score: ${score}`, {
+    const scoreText = this.scene.add.text(0, -10, `Score: ${score}`, {
       fontSize: '22px',
       color: '#ffffff',
     }).setOrigin(0.5);
     this.container.add(scoreText);
 
     if (bonus > 0) {
-      const bonusText = this.scene.add.text(0, 10, `Bonus: +${bonus}`, {
+      const bonusText = this.scene.add.text(0, 20, `Bonus: +${bonus}`, {
         fontSize: '16px',
         color: '#88ff88',
       }).setOrigin(0.5);
       this.container.add(bonusText);
     }
 
-    // Buttons - more compact spacing
-    this.createButton(0, 55, 'NEXT LEVEL', 0x44aa44, () => this.onNext?.());
-    this.createButton(0, 95, 'RETRY', 0x666666, () => this.onRetry?.());
-    this.createButton(0, 135, 'MENU', 0x444466, () => this.onMenu?.());
+    // Buttons - Continue (green, prominent) and Retry
+    this.createButton(0, 65, 'CONTINUE', 0x44aa44, () => this.onMenu?.());
+    this.createButton(0, 105, 'RETRY', 0x666666, () => this.onRetry?.());
   }
 
   private createLoseContent(score: number): void {
@@ -449,14 +446,14 @@ export class BoosterBar {
       // Use sprite icon
       const iconSprite = this.scene.add.sprite(0, -2, spriteKey);
       // Scale sprite to fit within the button (leaving some padding)
-      const iconSize = size * 0.6;
+      const iconSize = size * 0.8;
       const spriteSize = Math.max(iconSprite.width, iconSprite.height);
       iconSprite.setScale(iconSize / spriteSize);
       buttonContainer.add(iconSprite);
     } else {
       // Fallback to emoji
       const icon = this.scene.add.text(0, -5, config.icon, {
-        fontSize: '24px',
+        fontSize: '30px',
       }).setOrigin(0.5);
       buttonContainer.add(icon);
     }
