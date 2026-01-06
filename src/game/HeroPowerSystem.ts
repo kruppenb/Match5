@@ -671,8 +671,8 @@ export class HeroPowerSystem {
     const { min, max } = CONFIG.HERO_POWERS.THOR_STRIKE_COUNT;
     const strikeCount = min + Math.floor(Math.random() * (max - min + 1));
 
-    // PRIORITIZE blocking obstacles (ice, box, barrel, ice_bucket)
-    const blockingObstacles = this.getBlockingObstaclePositions();
+    // PRIORITIZE destructible obstacles (grass, ice, box, barrel, ice_bucket, chain)
+    const destructibleObstacles = this.getDestructibleObstaclePositions();
 
     // Get positions with tiles (for remaining strikes)
     const tilePositions: Position[] = [];
@@ -686,11 +686,11 @@ export class HeroPowerSystem {
     }
 
     // Shuffle both lists
-    const shuffledObstacles = blockingObstacles.sort(() => Math.random() - 0.5);
+    const shuffledObstacles = destructibleObstacles.sort(() => Math.random() - 0.5);
     const shuffledTiles = tilePositions.sort(() => Math.random() - 0.5);
 
-    // Prioritize obstacles: use up to half of strikes on obstacles, rest on tiles
-    const obstacleStrikeCount = Math.min(Math.ceil(strikeCount / 2), shuffledObstacles.length);
+    // Prioritize obstacles: use as many strikes on obstacles as possible
+    const obstacleStrikeCount = Math.min(strikeCount, shuffledObstacles.length);
     const tileStrikeCount = Math.min(strikeCount - obstacleStrikeCount, shuffledTiles.length);
 
     const strikePositions: Position[] = [
@@ -1285,18 +1285,18 @@ export class HeroPowerSystem {
   }
 
   /**
-   * Get positions with blocking obstacles (ice, box, barrel, ice_bucket)
+   * Get positions with destructible obstacles (grass, ice, box, barrel, ice_bucket, chain)
    * These should be prioritized by hero powers
    */
-  private getBlockingObstaclePositions(): Position[] {
+  private getDestructibleObstaclePositions(): Position[] {
     const positions: Position[] = [];
     for (let row = 0; row < this.grid.rows; row++) {
       for (let col = 0; col < this.grid.cols; col++) {
         const cell = this.grid.getCell(row, col);
         if (cell?.obstacle) {
           const behavior = getObstacleBehavior(cell.obstacle.type);
-          // Prioritize obstacles that block tiles and are destructible
-          if (behavior.blocksTile && !behavior.isIndestructible) {
+          // Prioritize any destructible obstacle (including grass, ice, chain, box, etc.)
+          if (!behavior.isIndestructible) {
             positions.push({ row, col });
           }
         }

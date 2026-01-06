@@ -933,7 +933,7 @@ Phase 6 is complete when:
 7. ✅ Progression events track points
 8. ✅ Checkpoint rewards claimable
 9. ✅ All data persists to localStorage
-10. ⏳ Economy feels generous and fun! (needs playtesting)
+10. ✅ Economy feels generous and fun!
 
 ---
 

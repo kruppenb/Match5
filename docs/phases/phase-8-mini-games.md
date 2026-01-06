@@ -1,6 +1,6 @@
 # Phase 8: Mini-Games Expansion & Refresh
 
-**Status:** 🔵 Planned
+**Status:** ✅ Complete
 **Prerequisites:** [Phase 6: Meta Game](phase-6-meta.md) (and ideally [Phase 7: Title Screen](phase-7-title-screen.md) so the “Games” entry point is polished)
 **Goal:** Expand the mini-game rotation with short, snackable mini-games that feel like the “ad-style” side games seen in Royal Match–type puzzle games, while staying quick to build and mobile-friendly.
 
@@ -33,21 +33,21 @@ We’ll implement our own original variants (not copies) of these patterns.
 ## Deliverables Checklist
 
 ### System / UX
-- [ ] Expand rotation pool from 3 to 6–9 mini-games
-- [ ] Update mini-game hub cards to support “New!” and “Recommended” tags
-- [ ] Add a lightweight tutorial overlay (first-time only per mini-game)
-- [ ] Add consistent result screen: reward summary + “Play again” + “Back to hub”
-- [ ] Improve reward pacing so diamond spend always feels worth it
+- [x] Expand rotation pool from 3 to 6–9 mini-games (now have 11 total!)
+- [x] Update mini-game hub cards to support "New!" and "Recommended" tags
+- [x] Add a lightweight tutorial overlay (first-time only per mini-game)
+- [x] Add consistent result screen: reward summary + "Play again" + "Back to hub"
+- [x] Improve reward pacing so diamond spend always feels worth it
 
 ### Tech
-- [ ] Create a tiny shared mini-game contract (start, end, reward, telemetry hooks)
-- [ ] Add a shared “MiniGameRewardPresenter” UI component for consistency
-- [ ] Add a shared input helper (tap/drag) with mobile-first defaults
-- [ ] Add an easy way to drop new scenes into rotation via `CONFIG.META.MINI_GAMES`
+- [x] Create a tiny shared mini-game contract (start, end, reward, telemetry hooks)
+- [x] Add a shared "MiniGameRewardPresenter" UI component for consistency
+- [x] Add a shared input helper (tap/drag) with mobile-first defaults
+- [x] Add an easy way to drop new scenes into rotation via `CONFIG.META.MINI_GAMES`
 
 ### Content
-- [ ] Ship at least **3 new mini-games** (minimum viable refresh)
-- [ ] Add placeholder art + SFX hooks so they feel alive
+- [x] Ship at least **3 new mini-games** (shipped 8 new games!)
+- [x] Add placeholder art + SFX hooks so they feel alive
 
 ---
 
@@ -179,8 +179,8 @@ Example reward bands:
 ## Success Criteria
 
 Phase 8 is complete when:
-- At least **3 new mini-games** are playable end-to-end
-- Rotation pool contains **6+** total mini-games
-- Mini-game UI feels consistent (tutorial, play, result)
-- Rewards feel fair and fun (no “I spent diamonds for nothing” feeling)
-- Mini-games run smoothly on mobile (touch + performance)
+- ✅ At least **3 new mini-games** are playable end-to-end (shipped 8!)
+- ✅ Rotation pool contains **6+** total mini-games (now 11 total)
+- ✅ Mini-game UI feels consistent (tutorial, play, result)
+- ✅ Rewards feel fair and fun (no "I spent diamonds for nothing" feeling)
+- ✅ Mini-games run smoothly on mobile (touch + performance)

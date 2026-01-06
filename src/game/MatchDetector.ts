@@ -4,23 +4,44 @@ import { CONFIG } from '../config';
 
 export class MatchDetector {
   findAllMatches(grid: Grid): Match[] {
-    // Find all horizontal and vertical matches first (don't exclude any tiles)
-    const horizontalMatches = this.findHorizontalMatches(grid);
-    const verticalMatches = this.findVerticalMatches(grid);
+    // STEP 1: Find 2x2 square matches first (propellers have high priority)
+    const squareMatches = this.findSquareMatches(grid, new Set());
+    
+    // Get all tile IDs that are part of square matches
+    const squareTileIds = new Set<string>();
+    squareMatches.forEach(m => m.tiles.forEach(t => squareTileIds.add(t.id)));
+
+    // STEP 2: Find all horizontal and vertical line matches, excluding square tiles
+    const horizontalMatches = this.findHorizontalMatches(grid, squareTileIds);
+    const verticalMatches = this.findVerticalMatches(grid, squareTileIds);
 
     // Merge overlapping line matches to detect L/T shapes (bombs)
     const mergedLineMatches = this.mergeMatches(grid, horizontalMatches, verticalMatches);
 
-    // Get all tile IDs that are part of line matches (including L/T shapes)
-    const lineTileIds = new Set<string>();
-    mergedLineMatches.forEach(m => m.tiles.forEach(t => lineTileIds.add(t.id)));
+    // STEP 3: Check if any line matches create bombs (L/T shapes with 5+ tiles)
+    // Bombs should take priority over propellers, so we need to re-evaluate
+    const bombMatches: Match[] = [];
+    const regularLineMatches: Match[] = [];
+    
+    for (const match of mergedLineMatches) {
+      if (match.powerupType === 'bomb' || match.tiles.length >= CONFIG.MATCH.BOMB_SHAPE_MATCH) {
+        bombMatches.push(match);
+      } else {
+        regularLineMatches.push(match);
+      }
+    }
 
-    // Find 2x2 square matches, but only for tiles NOT already in line matches
-    // This ensures bombs (L/T shapes) take priority over propellers (squares)
-    const squareMatches = this.findSquareMatches(grid, lineTileIds);
+    // Get tile IDs from bomb matches - these override squares
+    const bombTileIds = new Set<string>();
+    bombMatches.forEach(m => m.tiles.forEach(t => bombTileIds.add(t.id)));
 
-    // Combine: line matches first (higher priority), then remaining squares
-    return [...mergedLineMatches, ...squareMatches];
+    // Filter out squares that overlap with bomb matches
+    const validSquareMatches = squareMatches.filter(square => {
+      return !square.tiles.some(t => bombTileIds.has(t.id));
+    });
+
+    // Combine: bombs first, then squares, then regular line matches
+    return [...bombMatches, ...validSquareMatches, ...regularLineMatches];
   }
 
   private findSquareMatches(grid: Grid, excludeTileIds: Set<string> = new Set()): Match[] {

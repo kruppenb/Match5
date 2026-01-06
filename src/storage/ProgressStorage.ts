@@ -59,9 +59,9 @@ export class ProgressStorage {
       progress.completedLevels.push(levelId);
     }
 
-    // Update highest level
+    // Update highest level - unlock the next level
     if (levelId >= progress.highestLevel) {
-      progress.highestLevel = levelId;
+      progress.highestLevel = levelId + 1;
     }
 
     // Update stars (only if better)

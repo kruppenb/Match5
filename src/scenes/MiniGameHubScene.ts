@@ -211,13 +211,34 @@ export class MiniGameHubScene extends Phaser.Scene {
 
     // Game name
     const textStartX = x - cardWidth / 2 + 105;
-    this.add.text(textStartX, y - 28, game.name, {
+    const nameText = this.add.text(textStartX, y - 28, game.name, {
       fontSize: '18px',
       fontFamily: 'Arial Black',
       color: '#ffffff',
       stroke: '#000000',
       strokeThickness: 1,
     }).setOrigin(0, 0.5);
+
+    // Add "New!" or "Recommended" badge
+    if (game.isNew || game.isRecommended) {
+      const badgeX = textStartX + nameText.width + 10;
+      const badgeY = y - 28;
+      const badgeText = game.isRecommended ? 'HOT' : 'NEW';
+      const badgeColor = game.isRecommended ? 0xff6b35 : 0x44dd44;
+      const badgeWidth = game.isRecommended ? 36 : 38;
+
+      const badgeGraphics = this.add.graphics();
+      badgeGraphics.fillStyle(badgeColor, 1);
+      badgeGraphics.fillRoundedRect(badgeX - 2, badgeY - 10, badgeWidth, 20, 10);
+      badgeGraphics.lineStyle(1, 0xffffff, 0.5);
+      badgeGraphics.strokeRoundedRect(badgeX - 2, badgeY - 10, badgeWidth, 20, 10);
+
+      this.add.text(badgeX + badgeWidth / 2 - 2, badgeY, badgeText, {
+        fontSize: '10px',
+        fontFamily: 'Arial Black',
+        color: '#ffffff',
+      }).setOrigin(0.5);
+    }
 
     // Description
     this.add.text(textStartX, y + 2, game.description, {
@@ -381,6 +402,96 @@ export class MiniGameHubScene extends Phaser.Scene {
         fontFamily: 'Arial Black',
         color: '#ffffff',
       }).setOrigin(0.5);
+    } else if (gameId === 'stack_sort') {
+      // Draw tube/stack icon
+      g.fillStyle(0x4a6a8a, 1);
+      g.fillRoundedRect(x - 14, y - 16, 10, 32, { tl: 2, tr: 2, bl: 5, br: 5 });
+      g.fillRoundedRect(x + 4, y - 16, 10, 32, { tl: 2, tr: 2, bl: 5, br: 5 });
+      // Balls
+      g.fillStyle(0xff4444, 1);
+      g.fillCircle(x - 9, y + 10, 4);
+      g.fillStyle(0x4488ff, 1);
+      g.fillCircle(x - 9, y + 2, 4);
+      g.fillStyle(0x44ff44, 1);
+      g.fillCircle(x + 9, y + 10, 4);
+      g.fillStyle(0xff4444, 1);
+      g.fillCircle(x + 9, y + 2, 4);
+    } else if (gameId === 'treasure_dig') {
+      // Draw shovel icon
+      g.fillStyle(0x8b4513, 1);
+      g.fillRect(x - 2, y - 5, 4, 20);
+      g.fillStyle(0x808080, 1);
+      g.fillRoundedRect(x - 8, y - 14, 16, 12, 2);
+      g.fillStyle(0xa0a0a0, 1);
+      g.fillRect(x - 6, y - 10, 12, 3);
+      // Dirt pile
+      g.fillStyle(0x5a4020, 1);
+      g.fillTriangle(x - 12, y + 14, x, y + 4, x + 12, y + 14);
+    } else if (gameId === 'bridge_builder') {
+      // Draw bridge icon
+      g.fillStyle(0x3a4a5e, 1);
+      g.fillRect(x - 18, y + 4, 14, 14);
+      g.fillRect(x + 4, y + 4, 14, 14);
+      g.fillStyle(0x8b4513, 1);
+      g.fillRect(x - 6, y + 2, 12, 4);
+      // Character
+      g.fillStyle(0x4488ff, 1);
+      g.fillRect(x - 14, y - 10, 6, 12);
+      g.fillStyle(0xffcc99, 1);
+      g.fillCircle(x - 11, y - 14, 4);
+    } else if (gameId === 'pin_pull') {
+      // Draw pin icon
+      g.fillStyle(0x888888, 1);
+      g.fillRect(x - 15, y - 2, 30, 6);
+      g.fillStyle(0xdd4444, 1);
+      g.fillCircle(x + 18, y + 1, 8);
+      // Character below
+      g.fillStyle(0x4488ff, 1);
+      g.fillCircle(x - 5, y + 15, 8);
+      g.fillStyle(0xffcc99, 1);
+      g.fillCircle(x - 5, y + 6, 5);
+    } else if (gameId === 'pipe_connect') {
+      // Draw pipe icon
+      g.fillStyle(0x4488ff, 1);
+      g.fillRect(x - 18, y - 4, 16, 8);
+      g.fillRect(x - 6, y - 14, 8, 28);
+      g.fillRect(x + 2, y - 4, 16, 8);
+      g.fillStyle(0x2266cc, 1);
+      g.fillCircle(x - 2, y, 6);
+    } else if (gameId === 'save_room') {
+      // Draw hazard/room icon
+      g.fillStyle(0xff6644, 1);
+      g.fillTriangle(x, y - 16, x - 14, y + 12, x + 14, y + 12);
+      g.fillStyle(0xffaa44, 1);
+      g.fillTriangle(x, y - 8, x - 8, y + 8, x + 8, y + 8);
+      g.fillStyle(0x000000, 1);
+      g.fillRect(x - 2, y - 4, 4, 8);
+      g.fillCircle(x, y + 8, 2);
+    } else if (gameId === 'parking_jam') {
+      // Draw car icon
+      g.fillStyle(0xff4444, 1);
+      g.fillRoundedRect(x - 14, y - 8, 28, 16, 4);
+      g.fillStyle(0xcc2222, 1);
+      g.fillRoundedRect(x - 10, y - 12, 20, 8, { tl: 4, tr: 4, bl: 0, br: 0 });
+      g.fillStyle(0x88ccff, 0.8);
+      g.fillRoundedRect(x - 6, y - 10, 12, 5, 2);
+      // Wheels
+      g.fillStyle(0x333333, 1);
+      g.fillCircle(x - 8, y + 8, 4);
+      g.fillCircle(x + 8, y + 8, 4);
+    } else if (gameId === 'slingshot') {
+      // Draw slingshot icon
+      g.fillStyle(0x8b4513, 1);
+      g.fillRect(x - 2, y - 5, 4, 20);
+      g.fillRect(x - 10, y - 16, 6, 14);
+      g.fillRect(x + 4, y - 16, 6, 14);
+      // Rubber band
+      g.lineStyle(3, 0x654321, 1);
+      g.lineBetween(x - 7, y - 14, x, y - 2);
+      g.lineBetween(x + 7, y - 14, x, y - 2);
+      // Ball
+      g.fillStyle(0xffaa00, 1);
+      g.fillCircle(x, y - 2, 6);
     } else {
       // Default game icon
       g.fillStyle(0x888888, 1);
@@ -416,6 +527,14 @@ export class MiniGameHubScene extends Phaser.Scene {
       spin_wheel: 'SpinWheelScene',
       treasure_hunt: 'TreasureHuntScene',
       lucky_match: 'LuckyMatchScene',
+      stack_sort: 'StackSortScene',
+      treasure_dig: 'TreasureDigScene',
+      bridge_builder: 'BridgeBuilderScene',
+      pin_pull: 'PinPullScene',
+      pipe_connect: 'PipeConnectScene',
+      save_room: 'SaveTheRoomScene',
+      parking_jam: 'ParkingJamScene',
+      slingshot: 'SlingshotScene',
     };
 
     const sceneName = sceneMap[game.id];

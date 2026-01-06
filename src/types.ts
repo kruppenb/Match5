@@ -135,7 +135,7 @@ export interface ChargeLevel {
 }
 
 // Mini-games
-export type MiniGameId = 'spin_wheel' | 'treasure_hunt' | 'lucky_match';
+export type MiniGameId = 'spin_wheel' | 'treasure_hunt' | 'lucky_match' | 'stack_sort' | 'treasure_dig' | 'bridge_builder' | 'pin_pull' | 'pipe_connect' | 'save_room' | 'parking_jam' | 'slingshot';
 
 export interface MiniGameConfig {
   id: MiniGameId;
@@ -143,6 +143,8 @@ export interface MiniGameConfig {
   description: string;
   diamondCost: number;
   icon: string;
+  isNew?: boolean;        // Show "New!" badge
+  isRecommended?: boolean; // Show "Recommended" badge
 }
 
 // Progression events
@@ -183,6 +185,7 @@ export interface MetaSaveData {
   miniGames: {
     lastPlayedDate: Record<string, string>;
     totalPlays: Record<string, number>;
+    rotationOffset: number;
   };
   totalLevelsPlayed: number;
   lastDailyLogin: string | null;

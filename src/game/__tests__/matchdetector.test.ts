@@ -234,7 +234,7 @@ describe('MatchDetector', () => {
     expect(lineMatch).toBeDefined();
   });
 
-  test('line matches take priority over square matches (propellers)', () => {
+  test('square matches (propellers) take priority over simple line matches', () => {
     const grid = new Grid(5, 5);
     // Fill with unique colors
     const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
@@ -251,25 +251,25 @@ describe('MatchDetector', () => {
     grid.setTile(3, 1, { id: 's3', type: 'orange', row: 3, col: 1, isPowerup: false });
     grid.setTile(3, 2, { id: 's4', type: 'orange', row: 3, col: 2, isPowerup: false });
 
-    // Add one more orange tile adjacent - this SHOULD form a line match
-    // because line matches now take priority over square matches
+    // Add one more orange tile adjacent - this would form a 3-in-a-row
+    // BUT squares (propellers) take priority, so the 2x2 is matched first
     grid.setTile(2, 3, { id: 'extra', type: 'orange', row: 2, col: 3, isPowerup: false });
 
     const detector = new MatchDetector();
     const matches = detector.findAllMatches(grid);
 
-    // Should have a 3-in-a-row horizontal match (line matches take priority)
+    // Should have a propeller from the 2x2 square (squares take priority over simple 3-matches)
+    const propellerMatch = matches.find(m => m.powerupType === 'propeller');
+    expect(propellerMatch).toBeDefined();
+    expect(propellerMatch!.tiles.length).toBe(4);
+
+    // The extra tile is excluded from forming a line match since only 1 tile remains
+    // after the square tiles are removed
     const orangeLineMatch = matches.find(m =>
       m.type === 'horizontal' &&
       m.tiles.every(t => t.type === 'orange')
     );
-    expect(orangeLineMatch).toBeDefined();
-    expect(orangeLineMatch!.tiles.length).toBe(3);
-
-    // The propeller should NOT be created because its tiles are part of the line match
-    // (only 2 of the 4 square tiles remain after the line takes priority)
-    const propellerMatch = matches.find(m => m.powerupType === 'propeller');
-    expect(propellerMatch).toBeUndefined();
+    expect(orangeLineMatch).toBeUndefined();
   });
 
   test('color bomb takes priority over bomb (5 in row + perpendicular)', () => {

@@ -12,6 +12,7 @@ const DEFAULT_META: MetaSaveData = {
   miniGames: {
     lastPlayedDate: {},
     totalPlays: {},
+    rotationOffset: 0,
   },
   totalLevelsPlayed: 0,
   lastDailyLogin: null,
@@ -70,6 +71,7 @@ export class MetaStorage {
       miniGames: {
         lastPlayedDate: {},
         totalPlays: {},
+        rotationOffset: 0,
       },
       dailyReplay: {
         lastResetDate: '',
@@ -286,5 +288,17 @@ export class MetaStorage {
       boosters[type] = inventory[type] || 0;
     }
     return boosters;
+  }
+
+  // Mini-game rotation offset (for dev testing)
+  static getRotationOffset(): number {
+    return this.load().miniGames.rotationOffset || 0;
+  }
+
+  static incrementRotationOffset(): number {
+    const data = this.load();
+    data.miniGames.rotationOffset = (data.miniGames.rotationOffset || 0) + 1;
+    this.save(data);
+    return data.miniGames.rotationOffset;
   }
 }

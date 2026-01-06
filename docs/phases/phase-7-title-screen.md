@@ -1,6 +1,6 @@
 # Phase 7: Title Screen Redesign
 
-**Status:** 🟡 In Progress
+**Status:** ✅ Complete
 **Prerequisites:** [Phase 6: Meta Game](phase-6-meta.md)
 **Goal:** Streamlined home screen focused on "Play Now" with prominent meta features
 
@@ -99,7 +99,7 @@ Replace the level selection grid with a clean, focused home screen. Players shou
 - [x] "All Levels" text button (opens level grid)
 - [x] "Replay" button (opens replay past levels screen)
 - [x] Settings gear icon
-- [ ] Both small and unobtrusive
+- [x] Both small and unobtrusive
 
 ### Level Grid (Separate Screen)
 - [x] Moved to its own scene (LevelGridScene)
@@ -383,17 +383,17 @@ Alternatively, keep PreLevelScene for:
 
 Phase 7 is complete when:
 
-1. New TitleScene is the first scene shown
-2. One tap to play current level
-3. Currency prominently displayed
-4. Boosters selectable before playing
-5. Shop/Games/Event easily accessible
-6. All Levels grid still accessible
-7. **Replay Past Levels screen accessible with daily bonus**
-8. **Daily bonus awards gems for up to 3 replays per day**
-9. **Bonus resets at midnight and persists across sessions**
-10. Clean, uncluttered appearance
-11. Smooth transitions between scenes
+1. ✅ New TitleScene is the first scene shown
+2. ✅ One tap to play current level
+3. ✅ Currency prominently displayed
+4. ✅ Boosters selectable before playing
+5. ✅ Shop/Games/Event easily accessible
+6. ✅ All Levels grid still accessible
+7. ✅ **Replay Past Levels screen accessible with daily bonus**
+8. ✅ **Daily bonus awards gems for up to 3 replays per day**
+9. ✅ **Bonus resets at midnight and persists across sessions**
+10. ✅ Clean, uncluttered appearance
+11. ✅ Smooth transitions between scenes
 
 ---
 

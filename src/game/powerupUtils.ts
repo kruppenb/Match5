@@ -145,8 +145,9 @@ export function getPowerupAffectedPositions(grid: Grid, powerup: Tile, targetCol
       break;
 
     case 'color_bomb':
-      // Color bomb only affects cells with tiles of a specific color
-      // So no positions without tiles are affected
+      // Color bomb affects its own position (for obstacle clearing when swapped)
+      // and all cells with tiles of the target color
+      addPosition(powerup.row, powerup.col);
       let chosenColor = targetColor ?? powerup.type;
       if (chosenColor) {
         grid.forEachCell(cell => {

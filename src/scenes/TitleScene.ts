@@ -353,21 +353,7 @@ export class TitleScene extends Phaser.Scene {
 
     // Settings button at bottom left
     const gearY = height - 50;
-    this.createSettingsButton(tabX, gearY);
-
-    // Reset button (dev only)
-    const resetBtn = this.add.text(16, height - 16, 'Reset', {
-      fontSize: '10px',
-      color: '#333333',
-    }).setOrigin(0, 1)
-      .setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => {
-        ProgressStorage.reset();
-        MetaStorage.reset();
-        this.scene.restart();
-      })
-      .on('pointerover', () => resetBtn.setColor('#ff6666'))
-      .on('pointerout', () => resetBtn.setColor('#333333'));
+    this.createSettingsButton(35, gearY);
   }
 
   private createIconTab(
@@ -510,13 +496,17 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private createSettingsButton(x: number, y: number): void {
-    const size = 40;
+    const size = 48;
     const graphics = this.add.graphics();
 
     graphics.fillStyle(0x1a1a2e, 0.8);
     graphics.fillCircle(x, y, size / 2);
     graphics.lineStyle(1.5, 0x4a6a8a, 0.6);
     graphics.strokeCircle(x, y, size / 2);
+
+    // Draw gear icon
+    const gearGraphics = this.add.graphics();
+    this.drawGearIcon(gearGraphics, x, y, 0x8ab4d9);
 
     this.add.circle(x, y, size / 2, 0x000000, 0)
       .setInteractive({ useHandCursor: true })
@@ -526,6 +516,8 @@ export class TitleScene extends Phaser.Scene {
         graphics.fillCircle(x, y, size / 2);
         graphics.lineStyle(1.5, 0x6a8aaa, 0.8);
         graphics.strokeCircle(x, y, size / 2);
+        gearGraphics.clear();
+        this.drawGearIcon(gearGraphics, x, y, 0xaaccee);
       })
       .on('pointerout', () => {
         graphics.clear();
@@ -533,12 +525,51 @@ export class TitleScene extends Phaser.Scene {
         graphics.fillCircle(x, y, size / 2);
         graphics.lineStyle(1.5, 0x4a6a8a, 0.6);
         graphics.strokeCircle(x, y, size / 2);
+        gearGraphics.clear();
+        this.drawGearIcon(gearGraphics, x, y, 0x8ab4d9);
       })
       .on('pointerdown', () => this.showSettings());
+  }
 
-    this.add.text(x, y, '⚙️', {
-      fontSize: '18px',
-    }).setOrigin(0.5);
+  private drawGearIcon(graphics: Phaser.GameObjects.Graphics, x: number, y: number, color: number): void {
+    const outerRadius = 14;
+    const innerRadius = 6;
+    const toothDepth = 4;
+    const numTeeth = 8;
+
+    // Draw gear teeth
+    graphics.fillStyle(color, 1);
+    for (let i = 0; i < numTeeth; i++) {
+      const angle = (i / numTeeth) * Math.PI * 2 - Math.PI / 2;
+      const nextAngle = ((i + 0.4) / numTeeth) * Math.PI * 2 - Math.PI / 2;
+
+      const x1 = x + Math.cos(angle) * (outerRadius - toothDepth);
+      const y1 = y + Math.sin(angle) * (outerRadius - toothDepth);
+      const x2 = x + Math.cos(angle) * outerRadius;
+      const y2 = y + Math.sin(angle) * outerRadius;
+      const x3 = x + Math.cos(nextAngle) * outerRadius;
+      const y3 = y + Math.sin(nextAngle) * outerRadius;
+      const x4 = x + Math.cos(nextAngle) * (outerRadius - toothDepth);
+      const y4 = y + Math.sin(nextAngle) * (outerRadius - toothDepth);
+
+      graphics.fillPoints([
+        { x: x1, y: y1 },
+        { x: x2, y: y2 },
+        { x: x3, y: y3 },
+        { x: x4, y: y4 },
+      ], true);
+    }
+
+    // Draw main gear body
+    graphics.fillCircle(x, y, outerRadius - toothDepth);
+
+    // Draw center hole
+    graphics.fillStyle(0x1a1a2e, 1);
+    graphics.fillCircle(x, y, innerRadius);
+
+    // Center dot
+    graphics.fillStyle(color, 1);
+    graphics.fillCircle(x, y, 3);
   }
 
   private startCurrentLevel(): void {
@@ -1161,40 +1192,102 @@ export class TitleScene extends Phaser.Scene {
 
   private showSettings(): void {
     const { width, height } = this.scale;
+    const allElements: Phaser.GameObjects.GameObject[] = [];
 
     const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.7)
       .setInteractive();
+    allElements.push(overlay);
 
-    const panel = this.add.rectangle(width / 2, height / 2, 250, 150, 0x2a2a3e)
+    const panelWidth = 280;
+    const panelHeight = 250;
+    const panel = this.add.rectangle(width / 2, height / 2, panelWidth, panelHeight, 0x2a2a3e)
       .setStrokeStyle(3, 0x4a90d9);
+    allElements.push(panel);
 
-    const title = this.add.text(width / 2, height / 2 - 50, 'Settings', {
+    const title = this.add.text(width / 2, height / 2 - 100, 'Settings', {
       fontSize: '24px',
       fontFamily: 'Arial Black',
       color: '#ffffff',
     }).setOrigin(0.5);
+    allElements.push(title);
 
-    const comingSoon = this.add.text(width / 2, height / 2, 'Coming soon...', {
-      fontSize: '14px',
-      fontFamily: 'Arial',
-      color: '#888888',
-    }).setOrigin(0.5);
+    // Feedback text area (above buttons)
+    const feedbackY = height / 2 - 55;
+    let feedbackText: Phaser.GameObjects.Text | null = null;
 
-    const closeBtn = this.add.rectangle(width / 2, height / 2 + 45, 80, 30, 0x4a4a5e)
+    const btnWidth = 200;
+    const btnHeight = 40;
+
+    // Cycle Mini-Games button
+    const cycleBtn = this.add.rectangle(width / 2, height / 2 - 10, btnWidth, btnHeight, 0x7722cc)
       .setInteractive({ useHandCursor: true })
+      .on('pointerover', () => cycleBtn.setFillStyle(0x8833dd))
+      .on('pointerout', () => cycleBtn.setFillStyle(0x7722cc))
       .on('pointerdown', () => {
-        overlay.destroy();
-        panel.destroy();
-        title.destroy();
-        comingSoon.destroy();
-        closeBtn.destroy();
-        closeText.destroy();
+        getMiniGameRotation().cycleRotation();
+        // Show feedback above buttons
+        if (feedbackText) feedbackText.destroy();
+        feedbackText = this.add.text(width / 2, feedbackY, 'Mini-games cycled!', {
+          fontSize: '14px',
+          fontFamily: 'Arial Bold',
+          color: '#44ff44',
+        }).setOrigin(0.5);
+        allElements.push(feedbackText);
+        this.tweens.add({
+          targets: feedbackText,
+          alpha: 0,
+          duration: 1500,
+          onComplete: () => {
+            if (feedbackText) {
+              feedbackText.destroy();
+              feedbackText = null;
+            }
+          },
+        });
       });
+    allElements.push(cycleBtn);
 
-    const closeText = this.add.text(width / 2, height / 2 + 45, 'Close', {
-      fontSize: '12px',
-      fontFamily: 'Arial',
+    const cycleBtnText = this.add.text(width / 2, height / 2 - 10, 'Cycle Mini-Games', {
+      fontSize: '14px',
+      fontFamily: 'Arial Bold',
       color: '#ffffff',
     }).setOrigin(0.5);
+    allElements.push(cycleBtnText);
+
+    // Reset Progress button
+    const resetBtn = this.add.rectangle(width / 2, height / 2 + 40, btnWidth, btnHeight, 0xcc4444)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerover', () => resetBtn.setFillStyle(0xdd5555))
+      .on('pointerout', () => resetBtn.setFillStyle(0xcc4444))
+      .on('pointerdown', () => {
+        ProgressStorage.reset();
+        MetaStorage.reset();
+        this.scene.restart();
+      });
+    allElements.push(resetBtn);
+
+    const resetBtnText = this.add.text(width / 2, height / 2 + 40, 'Reset Progress', {
+      fontSize: '14px',
+      fontFamily: 'Arial Bold',
+      color: '#ffffff',
+    }).setOrigin(0.5);
+    allElements.push(resetBtnText);
+
+    // Close button
+    const closeBtn = this.add.rectangle(width / 2, height / 2 + 95, 100, 34, 0x4a4a5e)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerover', () => closeBtn.setFillStyle(0x5a5a6e))
+      .on('pointerout', () => closeBtn.setFillStyle(0x4a4a5e))
+      .on('pointerdown', () => {
+        allElements.forEach(el => el.destroy());
+      });
+    allElements.push(closeBtn);
+
+    const closeText = this.add.text(width / 2, height / 2 + 95, 'Close', {
+      fontSize: '14px',
+      fontFamily: 'Arial Bold',
+      color: '#ffffff',
+    }).setOrigin(0.5);
+    allElements.push(closeText);
   }
 }

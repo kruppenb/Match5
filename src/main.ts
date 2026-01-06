@@ -9,6 +9,14 @@ import { MiniGameHubScene } from './scenes/MiniGameHubScene';
 import { SpinWheelScene } from './scenes/SpinWheelScene';
 import { TreasureHuntScene } from './scenes/TreasureHuntScene';
 import { LuckyMatchScene } from './scenes/LuckyMatchScene';
+import { StackSortScene } from './scenes/StackSortScene';
+import { TreasureDigScene } from './scenes/TreasureDigScene';
+import { BridgeBuilderScene } from './scenes/BridgeBuilderScene';
+import { PinPullScene } from './scenes/PinPullScene';
+import { PipeConnectScene } from './scenes/PipeConnectScene';
+import { SaveTheRoomScene } from './scenes/SaveTheRoomScene';
+import { ParkingJamScene } from './scenes/ParkingJamScene';
+import { SlingshotScene } from './scenes/SlingshotScene';
 import { CONFIG } from './config';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -38,6 +46,14 @@ const config: Phaser.Types.Core.GameConfig = {
     SpinWheelScene,
     TreasureHuntScene,
     LuckyMatchScene,
+    StackSortScene,
+    TreasureDigScene,
+    BridgeBuilderScene,
+    PinPullScene,
+    PipeConnectScene,
+    SaveTheRoomScene,
+    ParkingJamScene,
+    SlingshotScene,
   ],
 };
 

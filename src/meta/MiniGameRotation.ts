@@ -24,12 +24,18 @@ export class MiniGameRotation {
   getCurrentGames(): MiniGameConfig[] {
     const allGames = this.getAllGames();
     const daysSinceEpoch = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
-    const rotationIndex = Math.floor(daysSinceEpoch / CONFIG.META.MINI_GAME_ROTATION_DAYS);
+    const rotationOffset = MetaStorage.getRotationOffset();
+    const rotationIndex = Math.floor(daysSinceEpoch / CONFIG.META.MINI_GAME_ROTATION_DAYS) + rotationOffset;
 
     const game1Index = rotationIndex % allGames.length;
     const game2Index = (rotationIndex + 1) % allGames.length;
 
     return [allGames[game1Index], allGames[game2Index]];
+  }
+
+  // Cycle to next rotation (for dev/testing)
+  cycleRotation(): void {
+    MetaStorage.incrementRotationOffset();
   }
 
   // Get time until next rotation (in milliseconds)
