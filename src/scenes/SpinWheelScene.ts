@@ -37,6 +37,11 @@ export class SpinWheelScene extends Phaser.Scene {
     this.load.image('booster_hammer', 'assets/sprites/boosters/hammer.png');
     this.load.image('booster_row_arrow', 'assets/sprites/boosters/arrow_h.png');
     this.load.image('booster_shuffle', 'assets/sprites/boosters/lucky67.png');
+    // Load UI assets
+    this.load.image('ui_coin', 'assets/sprites/ui/coin.png');
+    this.load.image('ui_diamond', 'assets/sprites/ui/diamond.png');
+    this.load.image('ui_wheel_bg', 'assets/sprites/ui/wheel_bg.png');
+    this.load.image('ui_wheel_pointer', 'assets/sprites/ui/wheel_pointer.png');
   }
 
   create(): void {
@@ -131,15 +136,22 @@ export class SpinWheelScene extends Phaser.Scene {
         }).setOrigin(0.5).setRotation(labelAngle + Math.PI / 2);
         this.wheel.add(label);
       } else if (slice.iconType === 'coins') {
-        // Draw coin icon
-        const coinGraphics = this.add.graphics();
-        coinGraphics.setPosition(labelX, labelY - 6);
-        coinGraphics.setRotation(labelAngle + Math.PI / 2);
-        coinGraphics.fillStyle(0xffd700, 1);
-        coinGraphics.fillCircle(0, 0, 10);
-        coinGraphics.fillStyle(0xffec8b, 1);
-        coinGraphics.fillCircle(0, -2, 5);
-        this.wheel.add(coinGraphics);
+        // Use generated asset if available
+        if (this.textures.exists('ui_coin')) {
+          const coinImg = this.add.image(labelX, labelY - 6, 'ui_coin')
+            .setDisplaySize(20, 20)
+            .setRotation(labelAngle + Math.PI / 2);
+          this.wheel.add(coinImg);
+        } else {
+          const coinGraphics = this.add.graphics();
+          coinGraphics.setPosition(labelX, labelY - 6);
+          coinGraphics.setRotation(labelAngle + Math.PI / 2);
+          coinGraphics.fillStyle(0xffd700, 1);
+          coinGraphics.fillCircle(0, 0, 10);
+          coinGraphics.fillStyle(0xffec8b, 1);
+          coinGraphics.fillCircle(0, -2, 5);
+          this.wheel.add(coinGraphics);
+        }
         const label = this.add.text(labelX, labelY + 10, slice.label, {
           fontSize: '12px',
           fontFamily: 'Arial Bold',
@@ -149,16 +161,23 @@ export class SpinWheelScene extends Phaser.Scene {
         }).setOrigin(0.5).setRotation(labelAngle + Math.PI / 2);
         this.wheel.add(label);
       } else if (slice.iconType === 'diamonds') {
-        // Draw diamond icon
-        const diamondGraphics = this.add.graphics();
-        diamondGraphics.setPosition(labelX, labelY - 6);
-        diamondGraphics.setRotation(labelAngle + Math.PI / 2);
-        diamondGraphics.fillStyle(0x00bfff, 1);
-        diamondGraphics.fillTriangle(0, -8, 6, 0, 0, 8);
-        diamondGraphics.fillTriangle(0, -8, -6, 0, 0, 8);
-        diamondGraphics.fillStyle(0x87ceeb, 1);
-        diamondGraphics.fillTriangle(0, -3, 2, 0, 0, 3);
-        this.wheel.add(diamondGraphics);
+        // Use generated asset if available
+        if (this.textures.exists('ui_diamond')) {
+          const diamondImg = this.add.image(labelX, labelY - 6, 'ui_diamond')
+            .setDisplaySize(20, 20)
+            .setRotation(labelAngle + Math.PI / 2);
+          this.wheel.add(diamondImg);
+        } else {
+          const diamondGraphics = this.add.graphics();
+          diamondGraphics.setPosition(labelX, labelY - 6);
+          diamondGraphics.setRotation(labelAngle + Math.PI / 2);
+          diamondGraphics.fillStyle(0x00bfff, 1);
+          diamondGraphics.fillTriangle(0, -8, 6, 0, 0, 8);
+          diamondGraphics.fillTriangle(0, -8, -6, 0, 0, 8);
+          diamondGraphics.fillStyle(0x87ceeb, 1);
+          diamondGraphics.fillTriangle(0, -3, 2, 0, 0, 3);
+          this.wheel.add(diamondGraphics);
+        }
         const label = this.add.text(labelX, labelY + 10, slice.label, {
           fontSize: '12px',
           fontFamily: 'Arial Bold',

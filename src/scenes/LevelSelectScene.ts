@@ -14,6 +14,12 @@ export class LevelSelectScene extends Phaser.Scene {
     super('LevelSelectScene');
   }
 
+  preload(): void {
+    // Load UI assets
+    this.load.image('ui_coin', 'assets/sprites/ui/coin.png');
+    this.load.image('ui_diamond', 'assets/sprites/ui/diamond.png');
+  }
+
   create(): void {
     console.log('Level Select Scene Created');
 
@@ -138,17 +144,25 @@ export class LevelSelectScene extends Phaser.Scene {
     const currencyManager = getCurrencyManager();
     const currencyY = 36; // Same line as title
 
-    // Coins - positioned with background pill
+    // Coins - use generated asset if available
     const coinsValue = currencyManager.formatCoins(currencyManager.getCoins());
-    this.add.circle(CONFIG.SCREEN.WIDTH - 95, currencyY, 8, 0xffd700);
+    if (this.textures.exists('ui_coin')) {
+      this.add.image(CONFIG.SCREEN.WIDTH - 95, currencyY, 'ui_coin').setDisplaySize(16, 16);
+    } else {
+      this.add.circle(CONFIG.SCREEN.WIDTH - 95, currencyY, 8, 0xffd700);
+    }
     this.coinsText = this.add.text(CONFIG.SCREEN.WIDTH - 83, currencyY, coinsValue, {
       fontSize: '12px',
       fontFamily: 'Arial Bold',
       color: '#ffffff',
     }).setOrigin(0, 0.5);
 
-    // Diamonds - right edge
-    this.add.polygon(CONFIG.SCREEN.WIDTH - 30, currencyY, [[0, -6], [5, 0], [0, 6], [-5, 0]], 0x00bfff);
+    // Diamonds - use generated asset if available
+    if (this.textures.exists('ui_diamond')) {
+      this.add.image(CONFIG.SCREEN.WIDTH - 30, currencyY, 'ui_diamond').setDisplaySize(16, 16);
+    } else {
+      this.add.polygon(CONFIG.SCREEN.WIDTH - 30, currencyY, [[0, -6], [5, 0], [0, 6], [-5, 0]], 0x00bfff);
+    }
     this.diamondsText = this.add.text(CONFIG.SCREEN.WIDTH - 20, currencyY, currencyManager.getDiamonds().toString(), {
       fontSize: '12px',
       fontFamily: 'Arial Bold',

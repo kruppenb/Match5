@@ -33,6 +33,9 @@ export class TitleScene extends Phaser.Scene {
     this.load.image('booster_row_arrow', 'assets/sprites/boosters/arrow_h.png');
     this.load.image('booster_col_arrow', 'assets/sprites/boosters/beam_v.png');
     this.load.image('booster_shuffle', 'assets/sprites/boosters/lucky67.png');
+    // Load UI assets
+    this.load.image('ui_coin', 'assets/sprites/ui/coin.png');
+    this.load.image('ui_diamond', 'assets/sprites/ui/diamond.png');
   }
 
   create(data?: TitleSceneData): void {
@@ -107,16 +110,21 @@ export class TitleScene extends Phaser.Scene {
     this.coinsPillX = width / 2 - gap / 2 - pillWidth / 2;
     this.createCurrencyPill(this.coinsPillX, this.barY, pillWidth, pillHeight, 'coin');
 
-    // Coin icon with glow - centered vertically
+    // Coin icon - use generated asset if available
     const coinIconX = this.coinsPillX - pillWidth / 2 + iconOffset;
-    this.add.circle(coinIconX, this.barY, 14, 0xffd700, 0.3);
-    this.add.circle(coinIconX, this.barY, 11, 0xffd700);
-    this.add.circle(coinIconX, this.barY, 7, 0xffec8b);
-    this.add.text(coinIconX, this.barY, '$', {
-      fontSize: '10px',
-      fontFamily: 'Arial Black',
-      color: '#b8860b',
-    }).setOrigin(0.5);
+    if (this.textures.exists('ui_coin')) {
+      this.add.image(coinIconX, this.barY, 'ui_coin').setDisplaySize(24, 24);
+    } else {
+      // Fallback to programmatic drawing
+      this.add.circle(coinIconX, this.barY, 14, 0xffd700, 0.3);
+      this.add.circle(coinIconX, this.barY, 11, 0xffd700);
+      this.add.circle(coinIconX, this.barY, 7, 0xffec8b);
+      this.add.text(coinIconX, this.barY, '$', {
+        fontSize: '10px',
+        fontFamily: 'Arial Black',
+        color: '#b8860b',
+      }).setOrigin(0.5);
+    }
 
     // Coins text - centered in remaining space
     this.coinsText = this.add.text(this.coinsPillX + 8, this.barY, currencyManager.formatCoins(currencyManager.getCoins()), {
@@ -131,19 +139,21 @@ export class TitleScene extends Phaser.Scene {
     this.diamondsPillX = width / 2 + gap / 2 + pillWidth / 2;
     this.createCurrencyPill(this.diamondsPillX, this.barY, pillWidth, pillHeight, 'diamond');
 
-    // Diamond icon with glow - use circle positioning like coins
+    // Diamond icon - use generated asset if available
     const diamondIconX = this.diamondsPillX - pillWidth / 2 + iconOffset;
-    // Outer glow
-    this.add.circle(diamondIconX, this.barY, 13, 0x00bfff, 0.25);
-    // Main diamond shape - draw relative to center
-    const dg = this.add.graphics();
-    dg.fillStyle(0x00bfff, 1);
-    dg.fillTriangle(diamondIconX, this.barY - 9, diamondIconX + 7, this.barY, diamondIconX, this.barY + 9);
-    dg.fillTriangle(diamondIconX, this.barY - 9, diamondIconX - 7, this.barY, diamondIconX, this.barY + 9);
-    // Inner highlight
-    dg.fillStyle(0x87ceeb, 1);
-    dg.fillTriangle(diamondIconX, this.barY - 4, diamondIconX + 3, this.barY, diamondIconX, this.barY + 4);
-    dg.fillTriangle(diamondIconX, this.barY - 4, diamondIconX - 3, this.barY, diamondIconX, this.barY + 4);
+    if (this.textures.exists('ui_diamond')) {
+      this.add.image(diamondIconX, this.barY, 'ui_diamond').setDisplaySize(24, 24);
+    } else {
+      // Fallback to programmatic drawing
+      this.add.circle(diamondIconX, this.barY, 13, 0x00bfff, 0.25);
+      const dg = this.add.graphics();
+      dg.fillStyle(0x00bfff, 1);
+      dg.fillTriangle(diamondIconX, this.barY - 9, diamondIconX + 7, this.barY, diamondIconX, this.barY + 9);
+      dg.fillTriangle(diamondIconX, this.barY - 9, diamondIconX - 7, this.barY, diamondIconX, this.barY + 9);
+      dg.fillStyle(0x87ceeb, 1);
+      dg.fillTriangle(diamondIconX, this.barY - 4, diamondIconX + 3, this.barY, diamondIconX, this.barY + 4);
+      dg.fillTriangle(diamondIconX, this.barY - 4, diamondIconX - 3, this.barY, diamondIconX, this.barY + 4);
+    }
 
     // Diamonds text - centered in remaining space
     this.diamondsText = this.add.text(this.diamondsPillX + 8, this.barY, currencyManager.getDiamonds().toString(), {

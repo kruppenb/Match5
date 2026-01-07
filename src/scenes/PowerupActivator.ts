@@ -106,6 +106,17 @@ export class PowerupActivator {
       positions.forEach(p => affectedPositions.add(`${p.row},${p.col}`));
     }
 
+    // For propellers, ensure target position is included for obstacle clearing
+    // (the cache may have been cleared during activatePowerup above)
+    for (const powerup of powerups) {
+      if (powerup.powerupType === 'propeller') {
+        const target = propellerTargetsMap.get(powerup.id);
+        if (target) {
+          affectedPositions.add(`${target.row},${target.col}`);
+        }
+      }
+    }
+
     // Clear obstacles at all affected positions (not just under tiles)
     const obstaclesClearedByType: Record<string, number> = {};
     affectedPositions.forEach(key => {
@@ -169,6 +180,32 @@ export class PowerupActivator {
     tilesToClear.add(powerup1);
     tilesToClear.add(powerup2);
 
+    // For propeller combinations, pre-calculate and cache targets BEFORE animation
+    // This ensures both animation and game logic use the same targets
+    const type1 = powerup1.powerupType!;
+    const type2 = powerup2.powerupType!;
+    const types = [type1, type2].sort();
+    const comboKey = types.join('+');
+    const propellerTargetsMap = new Map<string, Position | null>();
+    let colorBombPropellerTargets: Position[] = [];
+
+    if (comboKey === 'propeller+rocket_h' || comboKey === 'propeller+rocket_v' ||
+        comboKey === 'bomb+propeller' || comboKey === 'propeller+propeller') {
+      const propTargets = getPropellerTargets(this.grid, powerup1);
+      propellerTargetsMap.set(powerup1.id, propTargets.main);
+      setPropellerTarget(powerup1.id, propTargets.main);
+
+      if (comboKey === 'propeller+propeller' && propTargets.bonus) {
+        propellerTargetsMap.set(powerup2.id, propTargets.bonus);
+        setPropellerTarget(powerup2.id, propTargets.bonus);
+      }
+    } else if (comboKey === 'color_bomb+propeller') {
+      // Get 3 targets for the triple propeller effect
+      colorBombPropellerTargets = getColorBombPropellerTargets(this.grid, new Set([powerup1.id, powerup2.id]));
+      const comboId = `${powerup1.id}_${powerup2.id}`;
+      setMultiPropellerTargets(comboId, colorBombPropellerTargets);
+    }
+
     // Play combination animation FIRST
     await this.playCombinationAnimation(powerup1, powerup2);
 
@@ -179,6 +216,19 @@ export class PowerupActivator {
     // Get all positions affected by the combination (including cells without tiles like ice blocks)
     const affectedPositions = getCombinationAffectedPositions(this.grid, powerup1, powerup2);
     const affectedPositionSet = new Set<string>(affectedPositions.map(p => `${p.row},${p.col}`));
+
+    // For propeller combinations, ensure target positions are included for obstacle clearing
+    // (the cache may have been cleared during combinePowerups above)
+    propellerTargetsMap.forEach((target) => {
+      if (target) {
+        affectedPositionSet.add(`${target.row},${target.col}`);
+      }
+    });
+
+    // For color_bomb+propeller, add all 3 targets
+    for (const target of colorBombPropellerTargets) {
+      affectedPositionSet.add(`${target.row},${target.col}`);
+    }
 
     // Clear obstacles at all affected positions (not just under tiles)
     const obstaclesClearedByType: Record<string, number> = {};

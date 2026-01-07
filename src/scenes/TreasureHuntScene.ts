@@ -27,6 +27,11 @@ export class TreasureHuntScene extends Phaser.Scene {
     this.load.image('booster_row_arrow', 'assets/sprites/boosters/arrow_h.png');
     this.load.image('booster_col_arrow', 'assets/sprites/boosters/beam_v.png');
     this.load.image('booster_shuffle', 'assets/sprites/boosters/lucky67.png');
+    // Load UI assets
+    this.load.image('ui_coin', 'assets/sprites/ui/coin.png');
+    this.load.image('ui_diamond', 'assets/sprites/ui/diamond.png');
+    this.load.image('ui_chest_closed', 'assets/sprites/ui/chest_closed.png');
+    this.load.image('ui_chest_open', 'assets/sprites/ui/chest_open.png');
   }
 
   create(): void {
@@ -279,22 +284,32 @@ export class TreasureHuntScene extends Phaser.Scene {
 
   private createRewardDisplay(container: Phaser.GameObjects.Container, reward: Reward): void {
     if (reward.type === 'coins') {
-      // Draw coin icon
-      const coinGraphics = this.add.graphics();
-      coinGraphics.fillStyle(0xffd700, 1);
-      coinGraphics.fillCircle(0, -10, 8);
-      coinGraphics.fillStyle(0xffec8b, 1);
-      coinGraphics.fillCircle(0, -12, 4);
-      container.add(coinGraphics);
+      // Use generated asset if available
+      if (this.textures.exists('ui_coin')) {
+        const coinImg = this.add.image(0, -10, 'ui_coin').setDisplaySize(20, 20);
+        container.add(coinImg);
+      } else {
+        const coinGraphics = this.add.graphics();
+        coinGraphics.fillStyle(0xffd700, 1);
+        coinGraphics.fillCircle(0, -10, 8);
+        coinGraphics.fillStyle(0xffec8b, 1);
+        coinGraphics.fillCircle(0, -12, 4);
+        container.add(coinGraphics);
+      }
     } else if (reward.type === 'diamonds') {
-      // Draw diamond icon
-      const diamondGraphics = this.add.graphics();
-      diamondGraphics.fillStyle(0x00bfff, 1);
-      diamondGraphics.fillTriangle(0, -18, 5, -10, 0, -2);
-      diamondGraphics.fillTriangle(0, -18, -5, -10, 0, -2);
-      diamondGraphics.fillStyle(0x87ceeb, 1);
-      diamondGraphics.fillTriangle(0, -15, 2, -10, 0, -5);
-      container.add(diamondGraphics);
+      // Use generated asset if available
+      if (this.textures.exists('ui_diamond')) {
+        const diamondImg = this.add.image(0, -10, 'ui_diamond').setDisplaySize(20, 20);
+        container.add(diamondImg);
+      } else {
+        const diamondGraphics = this.add.graphics();
+        diamondGraphics.fillStyle(0x00bfff, 1);
+        diamondGraphics.fillTriangle(0, -18, 5, -10, 0, -2);
+        diamondGraphics.fillTriangle(0, -18, -5, -10, 0, -2);
+        diamondGraphics.fillStyle(0x87ceeb, 1);
+        diamondGraphics.fillTriangle(0, -15, 2, -10, 0, -5);
+        container.add(diamondGraphics);
+      }
     } else if (reward.type === 'booster' && reward.id) {
       // Use booster image
       const boosterKey = `booster_${reward.id}`;

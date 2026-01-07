@@ -13,6 +13,8 @@ export class ReplayLevelsScene extends Phaser.Scene {
   preload(): void {
     // Load title screen background (same as TitleScene)
     this.load.image('bg_title', 'assets/backgrounds/title_screen.jpg.jpeg');
+    // Load UI assets
+    this.load.image('ui_diamond', 'assets/sprites/ui/diamond.png');
   }
 
   create(): void {
@@ -78,8 +80,12 @@ export class ReplayLevelsScene extends Phaser.Scene {
     panel.strokeRoundedRect(width / 2 - panelWidth / 2, bonusY - panelHeight / 2, panelWidth, panelHeight, 12);
 
     if (remaining > 0) {
-      // Diamond icon
-      this.add.polygon(width / 2 - 80, bonusY, [[0, -10], [8, 0], [0, 10], [-8, 0]], 0x00bfff);
+      // Diamond icon - use generated asset if available
+      if (this.textures.exists('ui_diamond')) {
+        this.add.image(width / 2 - 80, bonusY, 'ui_diamond').setDisplaySize(20, 20);
+      } else {
+        this.add.polygon(width / 2 - 80, bonusY, [[0, -10], [8, 0], [0, 10], [-8, 0]], 0x00bfff);
+      }
 
       // Bonus text
       this.add.text(width / 2 - 60, bonusY - 10, 'Daily Bonus', {

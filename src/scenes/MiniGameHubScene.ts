@@ -16,6 +16,8 @@ export class MiniGameHubScene extends Phaser.Scene {
 
   preload(): void {
     this.load.image('bg_title', 'assets/backgrounds/title_screen.jpg.jpeg');
+    // Load UI assets
+    this.load.image('ui_diamond', 'assets/sprites/ui/diamond.png');
   }
 
   create(): void {
@@ -99,14 +101,18 @@ export class MiniGameHubScene extends Phaser.Scene {
     pillGraphics.lineStyle(2, 0x00bfff, 0.6);
     pillGraphics.strokeRoundedRect(diamondPillX - pillWidth / 2, diamondPillY - pillHeight / 2, pillWidth, pillHeight, pillHeight / 2);
 
-    // Diamond icon
-    const dg = this.add.graphics();
+    // Diamond icon - use generated asset if available
     const iconX = diamondPillX - 25;
-    dg.fillStyle(0x00bfff, 1);
-    dg.fillTriangle(iconX, diamondPillY - 8, iconX + 6, diamondPillY, iconX, diamondPillY + 8);
-    dg.fillTriangle(iconX, diamondPillY - 8, iconX - 6, diamondPillY, iconX, diamondPillY + 8);
-    dg.fillStyle(0x87ceeb, 1);
-    dg.fillTriangle(iconX, diamondPillY - 3, iconX + 2, diamondPillY, iconX, diamondPillY + 3);
+    if (this.textures.exists('ui_diamond')) {
+      this.add.image(iconX, diamondPillY, 'ui_diamond').setDisplaySize(20, 20);
+    } else {
+      const dg = this.add.graphics();
+      dg.fillStyle(0x00bfff, 1);
+      dg.fillTriangle(iconX, diamondPillY - 8, iconX + 6, diamondPillY, iconX, diamondPillY + 8);
+      dg.fillTriangle(iconX, diamondPillY - 8, iconX - 6, diamondPillY, iconX, diamondPillY + 8);
+      dg.fillStyle(0x87ceeb, 1);
+      dg.fillTriangle(iconX, diamondPillY - 3, iconX + 2, diamondPillY, iconX, diamondPillY + 3);
+    }
 
     this.diamondsText = this.add.text(diamondPillX + 10, diamondPillY, currencyManager.getDiamonds().toString(), {
       fontSize: '16px',

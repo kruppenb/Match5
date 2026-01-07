@@ -24,6 +24,8 @@ export class PreLevelScene extends Phaser.Scene {
     if (!this.textures.exists('bg_title')) {
       this.load.image('bg_title', 'assets/backgrounds/title_screen.jpg.jpeg');
     }
+    // Load UI assets
+    this.load.image('ui_coin', 'assets/sprites/ui/coin.png');
   }
 
   init(data: { levelId: number; isReplay?: boolean; returnScene?: string }): void {
@@ -93,8 +95,12 @@ export class PreLevelScene extends Phaser.Scene {
       color: '#ffffff',
     }).setOrigin(0.5);
 
-    // Coins display
-    this.add.circle(width - 80, 40, 12, 0xffd700);
+    // Coins display - use generated asset if available
+    if (this.textures.exists('ui_coin')) {
+      this.add.image(width - 80, 40, 'ui_coin').setDisplaySize(24, 24);
+    } else {
+      this.add.circle(width - 80, 40, 12, 0xffd700);
+    }
     this.add.text(width - 60, 40, currencyManager.formatCoins(currencyManager.getCoins()), {
       fontSize: '18px',
       fontFamily: 'Arial',

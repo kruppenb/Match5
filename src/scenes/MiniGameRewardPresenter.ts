@@ -185,34 +185,46 @@ export class MiniGameRewardPresenter {
   }
 
   private drawCoinIcon(container: Phaser.GameObjects.Container, x: number, y: number): void {
-    const g = this.scene.add.graphics();
-    g.fillStyle(0xffd700, 0.3);
-    g.fillCircle(x, y, 14);
-    g.fillStyle(0xffd700, 1);
-    g.fillCircle(x, y, 11);
-    g.fillStyle(0xffec8b, 1);
-    g.fillCircle(x, y - 2, 6);
-    container.add(g);
+    // Use generated asset if available
+    if (this.scene.textures.exists('ui_coin')) {
+      const coinImg = this.scene.add.image(x, y, 'ui_coin').setDisplaySize(24, 24);
+      container.add(coinImg);
+    } else {
+      const g = this.scene.add.graphics();
+      g.fillStyle(0xffd700, 0.3);
+      g.fillCircle(x, y, 14);
+      g.fillStyle(0xffd700, 1);
+      g.fillCircle(x, y, 11);
+      g.fillStyle(0xffec8b, 1);
+      g.fillCircle(x, y - 2, 6);
+      container.add(g);
 
-    const dollarSign = this.scene.add.text(x, y, '$', {
-      fontSize: '10px',
-      fontFamily: 'Arial Black',
-      color: '#b8860b',
-    }).setOrigin(0.5);
-    container.add(dollarSign);
+      const dollarSign = this.scene.add.text(x, y, '$', {
+        fontSize: '10px',
+        fontFamily: 'Arial Black',
+        color: '#b8860b',
+      }).setOrigin(0.5);
+      container.add(dollarSign);
+    }
   }
 
   private drawDiamondIcon(container: Phaser.GameObjects.Container, x: number, y: number): void {
-    const g = this.scene.add.graphics();
-    g.fillStyle(0x00bfff, 0.25);
-    g.fillCircle(x, y, 13);
-    g.fillStyle(0x00bfff, 1);
-    g.fillTriangle(x, y - 9, x + 7, y, x, y + 9);
-    g.fillTriangle(x, y - 9, x - 7, y, x, y + 9);
-    g.fillStyle(0x87ceeb, 1);
-    g.fillTriangle(x, y - 4, x + 3, y, x, y + 4);
-    g.fillTriangle(x, y - 4, x - 3, y, x, y + 4);
-    container.add(g);
+    // Use generated asset if available
+    if (this.scene.textures.exists('ui_diamond')) {
+      const diamondImg = this.scene.add.image(x, y, 'ui_diamond').setDisplaySize(24, 24);
+      container.add(diamondImg);
+    } else {
+      const g = this.scene.add.graphics();
+      g.fillStyle(0x00bfff, 0.25);
+      g.fillCircle(x, y, 13);
+      g.fillStyle(0x00bfff, 1);
+      g.fillTriangle(x, y - 9, x + 7, y, x, y + 9);
+      g.fillTriangle(x, y - 9, x - 7, y, x, y + 9);
+      g.fillStyle(0x87ceeb, 1);
+      g.fillTriangle(x, y - 4, x + 3, y, x, y + 4);
+      g.fillTriangle(x, y - 4, x - 3, y, x, y + 4);
+      container.add(g);
+    }
   }
 
   private createButton(x: number, y: number, label: string, color: number, onClick: () => void): void {

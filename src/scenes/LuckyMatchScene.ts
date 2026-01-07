@@ -33,6 +33,10 @@ export class LuckyMatchScene extends Phaser.Scene {
     this.load.image('booster_row_arrow', 'assets/sprites/boosters/arrow_h.png');
     this.load.image('booster_col_arrow', 'assets/sprites/boosters/beam_v.png');
     this.load.image('booster_shuffle', 'assets/sprites/boosters/lucky67.png');
+    // Load UI assets
+    this.load.image('ui_coin', 'assets/sprites/ui/coin.png');
+    this.load.image('ui_diamond', 'assets/sprites/ui/diamond.png');
+    this.load.image('ui_card_back', 'assets/sprites/ui/card_back.png');
   }
 
   create(): void {
@@ -224,31 +228,40 @@ export class LuckyMatchScene extends Phaser.Scene {
 
   private createRewardIcon(container: Phaser.GameObjects.Container, reward: Reward, y: number): void {
     if (reward.type === 'coins') {
-      // Draw coin icon
-      const coinGraphics = this.add.graphics();
-      coinGraphics.fillStyle(0xffd700, 1);
-      coinGraphics.fillCircle(0, y, 14);
-      coinGraphics.fillStyle(0xffec8b, 1);
-      coinGraphics.fillCircle(0, y - 3, 6);
-      coinGraphics.fillStyle(0xb8860b, 1);
-      const dollarSign = this.add.text(0, y, '$', {
-        fontSize: '12px',
-        fontFamily: 'Arial Black',
-        color: '#b8860b',
-      }).setOrigin(0.5);
-      container.add(coinGraphics);
-      container.add(dollarSign);
+      // Use generated asset if available
+      if (this.textures.exists('ui_coin')) {
+        const coinImg = this.add.image(0, y, 'ui_coin').setDisplaySize(28, 28);
+        container.add(coinImg);
+      } else {
+        const coinGraphics = this.add.graphics();
+        coinGraphics.fillStyle(0xffd700, 1);
+        coinGraphics.fillCircle(0, y, 14);
+        coinGraphics.fillStyle(0xffec8b, 1);
+        coinGraphics.fillCircle(0, y - 3, 6);
+        const dollarSign = this.add.text(0, y, '$', {
+          fontSize: '12px',
+          fontFamily: 'Arial Black',
+          color: '#b8860b',
+        }).setOrigin(0.5);
+        container.add(coinGraphics);
+        container.add(dollarSign);
+      }
     } else if (reward.type === 'diamonds') {
-      // Draw diamond icon
-      const diamondGraphics = this.add.graphics();
-      diamondGraphics.fillStyle(0x00bfff, 0.25);
-      diamondGraphics.fillCircle(0, y, 16);
-      diamondGraphics.fillStyle(0x00bfff, 1);
-      diamondGraphics.fillTriangle(0, y - 12, 9, y, 0, y + 12);
-      diamondGraphics.fillTriangle(0, y - 12, -9, y, 0, y + 12);
-      diamondGraphics.fillStyle(0x87ceeb, 1);
-      diamondGraphics.fillTriangle(0, y - 5, 4, y, 0, y + 5);
-      container.add(diamondGraphics);
+      // Use generated asset if available
+      if (this.textures.exists('ui_diamond')) {
+        const diamondImg = this.add.image(0, y, 'ui_diamond').setDisplaySize(28, 28);
+        container.add(diamondImg);
+      } else {
+        const diamondGraphics = this.add.graphics();
+        diamondGraphics.fillStyle(0x00bfff, 0.25);
+        diamondGraphics.fillCircle(0, y, 16);
+        diamondGraphics.fillStyle(0x00bfff, 1);
+        diamondGraphics.fillTriangle(0, y - 12, 9, y, 0, y + 12);
+        diamondGraphics.fillTriangle(0, y - 12, -9, y, 0, y + 12);
+        diamondGraphics.fillStyle(0x87ceeb, 1);
+        diamondGraphics.fillTriangle(0, y - 5, 4, y, 0, y + 5);
+        container.add(diamondGraphics);
+      }
     } else if (reward.type === 'booster' && reward.id) {
       // Use booster image
       const boosterKey = `booster_${reward.id}`;
