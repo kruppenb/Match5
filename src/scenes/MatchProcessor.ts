@@ -180,24 +180,55 @@ export class MatchProcessor {
     });
 
     // Activate powerups first with animations and collect additional tiles to clear
+    // Track already activated powerups to avoid re-activating them in chain reactions
+    const alreadyActivated = new Set<string>();
+    
     const powerupAnimPromises: Promise<void>[] = [];
     for (const powerup of powerupsToActivate) {
       const color = CONFIG.COLORS[powerup.type as keyof typeof CONFIG.COLORS] || 0xffffff;
       powerupAnimPromises.push(this.callbacks.playPowerupAnimation(powerup, color));
+      alreadyActivated.add(powerup.id);
     }
     // Play all powerup animations simultaneously
     if (powerupAnimPromises.length > 0) {
       await Promise.all(powerupAnimPromises);
     }
 
-    // Now collect affected tiles and positions
+    // Now collect affected tiles and positions, handling chain reactions
     const powerupAffectedPositions = new Set<string>();
-    for (const powerup of powerupsToActivate) {
-      const additionalTiles = this.callbacks.activatePowerup(powerup);
-      additionalTiles.forEach(t => tilesToClear.add(t));
-      // Also get positions affected by powerups (including cells without tiles like ice blocks)
-      const positions = getPowerupAffectedPositions(this.grid, powerup);
-      positions.forEach(p => powerupAffectedPositions.add(`${p.row},${p.col}`));
+    let currentWave = [...powerupsToActivate];
+    
+    while (currentWave.length > 0) {
+      const nextWave: Tile[] = [];
+      
+      for (const powerup of currentWave) {
+        const additionalTiles = this.callbacks.activatePowerup(powerup, undefined, alreadyActivated);
+        
+        for (const tile of additionalTiles) {
+          tilesToClear.add(tile);
+          // Check if this tile is a powerup that hasn't been activated yet
+          if (tile.isPowerup && tile.powerupType && !alreadyActivated.has(tile.id)) {
+            nextWave.push(tile);
+          }
+        }
+        
+        // Also get positions affected by powerups (including cells without tiles like ice blocks)
+        const positions = getPowerupAffectedPositions(this.grid, powerup);
+        positions.forEach(p => powerupAffectedPositions.add(`${p.row},${p.col}`));
+      }
+      
+      // Play animations for chain-reacted powerups
+      if (nextWave.length > 0) {
+        const chainAnimPromises: Promise<void>[] = [];
+        for (const powerup of nextWave) {
+          const color = CONFIG.COLORS[powerup.type as keyof typeof CONFIG.COLORS] || 0xffffff;
+          chainAnimPromises.push(this.callbacks.playPowerupAnimation(powerup, color));
+          alreadyActivated.add(powerup.id);
+        }
+        await Promise.all(chainAnimPromises);
+      }
+      
+      currentWave = nextWave;
     }
 
     // Track positions where matches occurred for damaging adjacent obstacles

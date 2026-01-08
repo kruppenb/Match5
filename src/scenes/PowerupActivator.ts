@@ -88,34 +88,90 @@ export class PowerupActivator {
       } else {
         animationPromises.push(this.playPowerupAnimation(powerup, color));
       }
+      // Mark as activated before animation so chain reactions know not to re-animate
+      alreadyActivated.add(powerup.id);
     }
     await Promise.all(animationPromises);
 
-    // Activate each powerup and collect affected tiles
-    for (const powerup of powerups) {
-      const targetColor = swapTargetColors?.get(powerup.id);
-      const affected = this.activatePowerup(powerup, targetColor, alreadyActivated);
-      affected.forEach(t => tilesToClear.add(t));
+    // Process powerups in waves to handle chain reactions
+    // Initial wave: the powerups passed in
+    let currentWave = [...powerups];
+    
+    while (currentWave.length > 0) {
+      const nextWave: Tile[] = [];
+      
+      // Activate each powerup in current wave and collect affected tiles
+      for (const powerup of currentWave) {
+        const targetColor = swapTargetColors?.get(powerup.id);
+        const affected = this.activatePowerup(powerup, targetColor, alreadyActivated);
+        
+        // Find triggered powerups that haven't been animated yet
+        for (const tile of affected) {
+          tilesToClear.add(tile);
+          if (tile.isPowerup && tile.powerupType && !alreadyActivated.has(tile.id)) {
+            nextWave.push(tile);
+          }
+        }
+      }
+      
+      // Animate and activate the next wave of triggered powerups
+      if (nextWave.length > 0) {
+        // Pre-calculate propeller targets for the new wave
+        for (const powerup of nextWave) {
+          if (powerup.powerupType === 'propeller') {
+            const targets = getPropellerTargets(this.grid, powerup);
+            propellerTargetsMap.set(powerup.id, targets.main);
+            setPropellerTarget(powerup.id, targets.main);
+          }
+        }
+        
+        // Play animations for triggered powerups
+        const chainAnimPromises: Promise<void>[] = [];
+        for (const powerup of nextWave) {
+          const color = CONFIG.COLORS[powerup.type as keyof typeof CONFIG.COLORS] || 0xffffff;
+          if (powerup.powerupType === 'propeller') {
+            const target = propellerTargetsMap.get(powerup.id);
+            chainAnimPromises.push(this.playPropellerAnimationWithTarget(powerup, target ?? null, color));
+          } else {
+            chainAnimPromises.push(this.playPowerupAnimation(powerup, color));
+          }
+          alreadyActivated.add(powerup.id);
+        }
+        await Promise.all(chainAnimPromises);
+      }
+      
+      currentWave = nextWave;
     }
 
-    // Get all positions affected by powerups (including cells without tiles like ice blocks)
+    // Get all positions affected by ALL activated powerups (including cells without tiles like ice blocks)
     const affectedPositions = new Set<string>();
+    
+    // Collect positions from all tiles that will be cleared (includes chain-reacted powerups' effects)
+    tilesToClear.forEach(tile => {
+      affectedPositions.add(`${tile.row},${tile.col}`);
+    });
+    
+    // Also get positions from powerup blast areas (for obstacle clearing)
     for (const powerup of powerups) {
       const targetColor = swapTargetColors?.get(powerup.id);
       const positions = getPowerupAffectedPositions(this.grid, powerup, targetColor);
       positions.forEach(p => affectedPositions.add(`${p.row},${p.col}`));
     }
+    
+    // Include positions from chain-reacted powerups
+    tilesToClear.forEach(tile => {
+      if (tile.isPowerup && tile.powerupType) {
+        const positions = getPowerupAffectedPositions(this.grid, tile);
+        positions.forEach(p => affectedPositions.add(`${p.row},${p.col}`));
+      }
+    });
 
     // For propellers, ensure target position is included for obstacle clearing
-    // (the cache may have been cleared during activatePowerup above)
-    for (const powerup of powerups) {
-      if (powerup.powerupType === 'propeller') {
-        const target = propellerTargetsMap.get(powerup.id);
-        if (target) {
-          affectedPositions.add(`${target.row},${target.col}`);
-        }
+    propellerTargetsMap.forEach((target, _powerupId) => {
+      if (target) {
+        affectedPositions.add(`${target.row},${target.col}`);
       }
-    }
+    });
 
     // Clear obstacles at all affected positions (not just under tiles)
     const obstaclesClearedByType: Record<string, number> = {};
@@ -206,12 +262,43 @@ export class PowerupActivator {
       setMultiPropellerTargets(comboId, colorBombPropellerTargets);
     }
 
+    // Mark the two powerups as activated
+    alreadyActivated.add(powerup1.id);
+    alreadyActivated.add(powerup2.id);
+
     // Play combination animation FIRST
     await this.playCombinationAnimation(powerup1, powerup2);
 
     // Get all affected tiles from the combination
     const affected = combinePowerups(this.grid, powerup1, powerup2, alreadyActivated);
     affected.forEach(t => tilesToClear.add(t));
+    
+    // Find chain-reacted powerups and play their animations
+    const chainedPowerups = affected.filter(t => t.isPowerup && t.powerupType && !alreadyActivated.has(t.id));
+    if (chainedPowerups.length > 0) {
+      // Pre-calculate propeller targets for chained powerups
+      for (const powerup of chainedPowerups) {
+        if (powerup.powerupType === 'propeller') {
+          const targets = getPropellerTargets(this.grid, powerup);
+          propellerTargetsMap.set(powerup.id, targets.main);
+          setPropellerTarget(powerup.id, targets.main);
+        }
+      }
+      
+      // Play animations for chain-reacted powerups
+      const chainAnimPromises: Promise<void>[] = [];
+      for (const powerup of chainedPowerups) {
+        const color = CONFIG.COLORS[powerup.type as keyof typeof CONFIG.COLORS] || 0xffffff;
+        if (powerup.powerupType === 'propeller') {
+          const target = propellerTargetsMap.get(powerup.id);
+          chainAnimPromises.push(this.playPropellerAnimationWithTarget(powerup, target ?? null, color));
+        } else {
+          chainAnimPromises.push(this.playPowerupAnimation(powerup, color));
+        }
+        alreadyActivated.add(powerup.id);
+      }
+      await Promise.all(chainAnimPromises);
+    }
 
     // Get all positions affected by the combination (including cells without tiles like ice blocks)
     const affectedPositions = getCombinationAffectedPositions(this.grid, powerup1, powerup2);

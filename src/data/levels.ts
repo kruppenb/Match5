@@ -222,7 +222,7 @@ export const LEVELS: Record<number, LevelConfig> = {
     grid: { rows: 8, cols: 8 },
     moves: 22,
     tileVariety: 4,
-    objectives: [{ type: 'clear_ice', target: 12 }],
+    objectives: [{ type: 'clear_ice', target: 16 }],
     layout: [
       ['.', '.', '.', '.', '.', '.', '.', '.'],
       ['.', 'I', '.', '.', '.', '.', 'I', '.'],
@@ -280,7 +280,7 @@ export const LEVELS: Record<number, LevelConfig> = {
     grid: { rows: 8, cols: 8 },
     moves: 28,
     tileVariety: 5,
-    objectives: [{ type: 'clear_ice', target: 24 }],
+    objectives: [{ type: 'clear_ice', target: 28 }],
     layout: [
       // Ice frame pattern - ice on edges but NOT blocking top row spawning
       ['.', '.', '.', '.', '.', '.', '.', '.'],
@@ -379,8 +379,8 @@ export const LEVELS: Record<number, LevelConfig> = {
     moves: 28,
     tileVariety: 5,
     objectives: [
-      { type: 'clear_chains', target: 12 },
-      { type: 'clear_ice', target: 8 },
+      { type: 'clear_chains', target: 20 },
+      { type: 'clear_ice', target: 12 },
     ],
     layout: [
       ['H', 'H', '.', '.', '.', '.', 'H', 'H'],
@@ -458,8 +458,8 @@ export const LEVELS: Record<number, LevelConfig> = {
     moves: 28,
     tileVariety: 5,
     objectives: [
-      { type: 'clear_boxes', target: 8 },
-      { type: 'clear_ice', target: 8 },
+      { type: 'clear_boxes', target: 12 },
+      { type: 'clear_ice', target: 24 },
     ],
     layout: [
       ['.', 'I', 'I', '.', '.', 'I', 'I', '.'],
@@ -479,8 +479,8 @@ export const LEVELS: Record<number, LevelConfig> = {
     moves: 30,
     tileVariety: 5,
     objectives: [
-      { type: 'clear_boxes', target: 12 },
-      { type: 'clear_chains', target: 8 },
+      { type: 'clear_boxes', target: 16 },
+      { type: 'clear_chains', target: 12 },
     ],
     layout: [
       ['.', '.', '.', '.', 'H', '.', '.', '.', '.'],
@@ -504,7 +504,7 @@ export const LEVELS: Record<number, LevelConfig> = {
     tileVariety: 5,
     objectives: [
       { type: 'clear_grass', target: 8 },
-      { type: 'clear_ice', target: 4 },
+      { type: 'clear_ice', target: 8 },
     ],
     layout: [
       ['.', '.', 'S', '.', '.', 'S', '.', '.'],
@@ -525,7 +525,7 @@ export const LEVELS: Record<number, LevelConfig> = {
     tileVariety: 6, // All 6 colors!
     objectives: [
       { type: 'clear_chains', target: 8 },
-      { type: 'clear_boxes', target: 4 },
+      { type: 'clear_boxes', target: 8 },
     ],
     layout: [
       ['H', '.', '.', 'S', 'S', '.', '.', 'H'],
@@ -545,9 +545,9 @@ export const LEVELS: Record<number, LevelConfig> = {
     moves: 32,
     tileVariety: 6,
     objectives: [
-      { type: 'clear_grass', target: 12 },
-      { type: 'clear_ice', target: 8 },
-      { type: 'clear_boxes', target: 4 },
+      { type: 'clear_grass', target: 16 },
+      { type: 'clear_ice', target: 12 },
+      { type: 'clear_boxes', target: 5 },
     ],
     layout: [
       ['.', '.', 'G', '.', 'S', '.', 'G', '.', '.'],
@@ -568,9 +568,9 @@ export const LEVELS: Record<number, LevelConfig> = {
     moves: 35,
     tileVariety: 6,
     objectives: [
-      { type: 'clear_chains', target: 12 },
-      { type: 'clear_ice', target: 12 },
-      { type: 'clear_boxes', target: 6 },
+      { type: 'clear_chains', target: 16 },
+      { type: 'clear_ice', target: 16 },
+      { type: 'clear_boxes', target: 13 },
     ],
     layout: [
       ['H', 'I', '.', '.', 'S', '.', '.', 'I', 'H'],
@@ -593,8 +593,8 @@ export const LEVELS: Record<number, LevelConfig> = {
     objectives: [
       { type: 'clear_grass', target: 16 },
       { type: 'clear_ice', target: 12 },
-      { type: 'clear_chains', target: 8 },
-      { type: 'clear_boxes', target: 8 },
+      { type: 'clear_chains', target: 12 },
+      { type: 'clear_boxes', target: 13 },
     ],
     layout: [
       ['G', 'G', '.', 'H', 'S', 'H', '.', 'G', 'G'],
