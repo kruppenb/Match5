@@ -2,7 +2,7 @@
   "name": "Princess Match",
   "short_name": "Princess Match",
   "description": "A tile-matching puzzle game with powerups, heroes, and magical adventures!",
-  "start_url": "/",
+  "start_url": "/Match5/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1a1a2e",
