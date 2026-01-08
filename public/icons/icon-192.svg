@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="100%" height="100%" fill="#1a1a2e"/>
+  <defs>
+    <radialGradient id="g" cx="35%" cy="35%" r="80%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.85"/>
+    </radialGradient>
+  </defs>
+  <!-- bomb body -->
+  <circle cx="96" cy="108" r="54" fill="#111" stroke="#333" stroke-width="3" />
+  <circle cx="96" cy="108" r="54" fill="url(#g)" />
+  <!-- colorful dots (color bomb) -->
+  <circle cx="75" cy="90" r="9" fill="#ff6b6b" />
+  <circle cx="114" cy="87" r="9" fill="#ffd93d" />
+  <circle cx="84" cy="129" r="9" fill="#6bf7c1" />
+  <circle cx="120" cy="126" r="9" fill="#6b9cff" />
+  <circle cx="96" cy="108" r="8" fill="#ff9fe3" />
+  <!-- shine -->
+  <ellipse cx="72" cy="84" rx="15" ry="9" fill="#ffffff" opacity="0.08" />
+  <!-- fuse -->
+  <path d="M96 54 C99 42, 129 36, 135 27" stroke="#8b5e34" stroke-width="7" fill="none" stroke-linecap="round" />
+  <circle cx="138" cy="24" r="9" fill="#ffb86b" />
+</svg>
