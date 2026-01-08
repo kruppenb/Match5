@@ -617,7 +617,7 @@ describe('Hero Power Utils', () => {
       }
 
       // Elsa should prefer row 3 (more obstacles)
-      const result = selectBestLines(grid, 1);
+      selectBestLines(grid, 1);
 
       // This test uses grass which is non-blocking, so counting uses blocksTile
       // Let's use ice instead for this test
