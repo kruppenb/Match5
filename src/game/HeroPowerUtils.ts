@@ -131,7 +131,17 @@ export function selectBestLines(
   } else if (totalColObstacles > totalRowObstacles) {
     useRows = false;
   } else {
-    useRows = Math.random() > 0.5;
+    // When totals are equal, prefer direction with highest single line count
+    const maxRowCount = Math.max(...rowCounts);
+    const maxColCount = Math.max(...colCounts);
+    if (maxRowCount > maxColCount) {
+      useRows = true;
+    } else if (maxColCount > maxRowCount) {
+      useRows = false;
+    } else {
+      // Still tied - prefer rows as a deterministic tiebreaker
+      useRows = true;
+    }
   }
 
   const obstacleCounts = useRows ? rowCounts : colCounts;

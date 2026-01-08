@@ -315,7 +315,11 @@ export class BoosterExecutor {
       this.grid.setTile(row, col, tile);
     });
 
-    // Remove initial matches (need to use external method)
+    // Remove initial matches - this may replace some tiles with new ones
+    // Track which tile IDs existed before so we know which are new
+    const existingTileIds = new Set<string>();
+    this.tileSprites.forEach((_, tileId) => existingTileIds.add(tileId));
+    
     this.removeInitialMatches();
 
     // Phase 3: Animate tiles flying back to their new positions
@@ -325,6 +329,7 @@ export class BoosterExecutor {
       if (cell.tile) {
         const sprite = this.tileSprites.get(cell.tile.id);
         if (sprite) {
+          // Existing tile - animate it to its new position
           const targetPos = this.callbacks.cellToScreen(cell.row, cell.col);
 
           flyBack.push(
@@ -341,6 +346,38 @@ export class BoosterExecutor {
               });
             })
           );
+        } else if (!existingTileIds.has(cell.tile.id)) {
+          // New tile created by removeInitialMatches - create sprite at center, then animate out
+          const centerX = CONFIG.SCREEN.WIDTH / 2;
+          const centerY = CONFIG.SCREEN.HEIGHT / 2;
+          
+          // Create the sprite at center position first
+          this.callbacks.createTileSprite(cell.tile);
+          const newSprite = this.tileSprites.get(cell.tile.id);
+          
+          if (newSprite) {
+            // Position at center with small scale
+            newSprite.setPosition(centerX, centerY);
+            newSprite.setScale(0.6);
+            newSprite.setAngle(Math.random() * 360);
+            
+            const targetPos = this.callbacks.cellToScreen(cell.row, cell.col);
+            
+            flyBack.push(
+              new Promise(resolve => {
+                this.scene.tweens.add({
+                  targets: newSprite,
+                  x: targetPos.x,
+                  y: targetPos.y,
+                  scale: 1,
+                  angle: 0,
+                  duration: 300,
+                  ease: 'Cubic.easeOut',
+                  onComplete: () => resolve(),
+                });
+              })
+            );
+          }
         }
       }
     });
