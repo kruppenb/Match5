@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Position, PowerupType } from '../types';
 import { CONFIG } from '../config';
+import { ParticleManager } from '../utils/ParticleManager';
 
 /**
  * Handles all powerup-related animations including:
@@ -15,12 +16,20 @@ export class PowerupAnimations {
   private gridOffsetX: number;
   private gridOffsetY: number;
   private tileSize: number;
+  private particleManager: ParticleManager | null = null;
 
   constructor(scene: Phaser.Scene, gridOffsetX: number, gridOffsetY: number, tileSize: number) {
     this.scene = scene;
     this.gridOffsetX = gridOffsetX;
     this.gridOffsetY = gridOffsetY;
     this.tileSize = tileSize;
+  }
+
+  /**
+   * Set the particle manager for sprite-based effects
+   */
+  setParticleManager(pm: ParticleManager): void {
+    this.particleManager = pm;
   }
 
   /**
@@ -49,6 +58,12 @@ export class PowerupAnimations {
     const pos = this.cellToScreen(row, col);
     const screenWidth = CONFIG.SCREEN.WIDTH;
 
+    // Initial burst and speed lines
+    if (this.particleManager) {
+      this.particleManager.emitSparks(pos.x, pos.y, 6, 'white');
+      this.particleManager.emitSpeedLines(pos.x, pos.y, 'horizontal', 8);
+    }
+
     // Create rocket projectiles going both directions
     const leftRocket = this.createRocketProjectile(pos.x, pos.y, color, 'left');
     const rightRocket = this.createRocketProjectile(pos.x, pos.y, color, 'right');
@@ -66,7 +81,13 @@ export class PowerupAnimations {
         x: -50,
         duration,
         ease: 'Quad.easeIn',
-        onUpdate: () => this.emitTrailParticle(leftRocket.x, leftRocket.y, color),
+        onUpdate: () => {
+          this.emitTrailParticle(leftRocket.x, leftRocket.y, color);
+          if (this.particleManager && Math.random() > 0.7) {
+            this.particleManager.emitSmokePuff(leftRocket.x + 15, leftRocket.y, 1);
+            this.particleManager.emitRocketFlame(leftRocket.x + 10, leftRocket.y, 'right');
+          }
+        },
         onComplete: () => {
           leftRocket.destroy();
           resolve();
@@ -80,7 +101,13 @@ export class PowerupAnimations {
         x: screenWidth + 50,
         duration,
         ease: 'Quad.easeIn',
-        onUpdate: () => this.emitTrailParticle(rightRocket.x, rightRocket.y, color),
+        onUpdate: () => {
+          this.emitTrailParticle(rightRocket.x, rightRocket.y, color);
+          if (this.particleManager && Math.random() > 0.7) {
+            this.particleManager.emitSmokePuff(rightRocket.x - 15, rightRocket.y, 1);
+            this.particleManager.emitRocketFlame(rightRocket.x - 10, rightRocket.y, 'left');
+          }
+        },
         onComplete: () => {
           rightRocket.destroy();
           resolve();
@@ -101,6 +128,12 @@ export class PowerupAnimations {
     const pos = this.cellToScreen(row, col);
     const screenHeight = CONFIG.SCREEN.HEIGHT;
 
+    // Initial burst and speed lines
+    if (this.particleManager) {
+      this.particleManager.emitSparks(pos.x, pos.y, 6, 'white');
+      this.particleManager.emitSpeedLines(pos.x, pos.y, 'vertical', 8);
+    }
+
     // Create rocket projectiles going both directions
     const upRocket = this.createRocketProjectile(pos.x, pos.y, color, 'up');
     const downRocket = this.createRocketProjectile(pos.x, pos.y, color, 'down');
@@ -118,7 +151,13 @@ export class PowerupAnimations {
         y: -50,
         duration,
         ease: 'Quad.easeIn',
-        onUpdate: () => this.emitTrailParticle(upRocket.x, upRocket.y, color),
+        onUpdate: () => {
+          this.emitTrailParticle(upRocket.x, upRocket.y, color);
+          if (this.particleManager && Math.random() > 0.7) {
+            this.particleManager.emitSmokePuff(upRocket.x, upRocket.y + 15, 1);
+            this.particleManager.emitRocketFlame(upRocket.x, upRocket.y + 10, 'down');
+          }
+        },
         onComplete: () => {
           upRocket.destroy();
           resolve();
@@ -132,7 +171,13 @@ export class PowerupAnimations {
         y: screenHeight + 50,
         duration,
         ease: 'Quad.easeIn',
-        onUpdate: () => this.emitTrailParticle(downRocket.x, downRocket.y, color),
+        onUpdate: () => {
+          this.emitTrailParticle(downRocket.x, downRocket.y, color);
+          if (this.particleManager && Math.random() > 0.7) {
+            this.particleManager.emitSmokePuff(downRocket.x, downRocket.y - 15, 1);
+            this.particleManager.emitRocketFlame(downRocket.x, downRocket.y - 10, 'up');
+          }
+        },
         onComplete: () => {
           downRocket.destroy();
           resolve();
@@ -159,7 +204,15 @@ export class PowerupAnimations {
     // Flash effect
     this.flashScreen(0xffff00, 150);
 
-    // Create expanding shockwave ring
+    // Sprite-based explosion burst
+    if (this.particleManager) {
+      this.particleManager.emitExplosionBurst(pos.x, pos.y, 0.8 + radius * 0.3);
+      this.particleManager.emitShockwave(pos.x, pos.y, 1.5 + radius * 0.5);
+      this.particleManager.emitSparks(pos.x, pos.y, 12 + radius * 4, 'yellow');
+      this.particleManager.emitDebris(pos.x, pos.y, 'orange', 8 + radius * 2);
+    }
+
+    // Create expanding shockwave ring (backup/additional effect)
     const ring = this.scene.add.graphics();
     ring.setDepth(100);
     ring.lineStyle(4, 0xffffff, 1);
@@ -195,6 +248,12 @@ export class PowerupAnimations {
    */
   async animateColorBomb(row: number, col: number, targetPositions: Position[]): Promise<void> {
     const pos = this.cellToScreen(row, col);
+
+    // Sprite-based rainbow burst
+    if (this.particleManager) {
+      this.particleManager.emitRainbowBurst(pos.x, pos.y, 1.2);
+      this.particleManager.emitMagicStars(pos.x, pos.y, 12);
+    }
 
     // Rainbow pulse at origin (slowed down)
     await this.rainbowPulse(pos.x, pos.y, 350);
@@ -423,6 +482,18 @@ export class PowerupAnimations {
    */
   async animateDoubleClearBoard(row: number, col: number): Promise<void> {
     const centerPos = this.cellToScreen(row, col);
+
+    // Epic sprite-based effects
+    if (this.particleManager) {
+      this.particleManager.emitRainbowBurst(centerPos.x, centerPos.y, 2);
+      this.particleManager.emitMagicStars(centerPos.x, centerPos.y, 20);
+      // Multiple shockwaves
+      for (let i = 0; i < 3; i++) {
+        this.scene.time.delayedCall(i * 100, () => {
+          this.particleManager?.emitShockwave(centerPos.x, centerPos.y, 2.5 + i * 0.5);
+        });
+      }
+    }
 
     // Epic rainbow pulse
     await this.rainbowPulse(centerPos.x, centerPos.y, 300);

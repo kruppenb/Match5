@@ -142,6 +142,28 @@ export class GameScene extends Phaser.Scene {
     this.load.image('hero_thor', 'assets/sprites/characters/thor.png');
     this.load.image('hero_ironman', 'assets/sprites/characters/ironman.jpeg');
     this.load.image('hero_elsa', 'assets/sprites/characters/elsa.jpeg');
+
+    // Load effect sprites for powerup animations
+    const effectSprites = [
+      'explosion_burst',
+      'shockwave_ring',
+      'spark_yellow',
+      'spark_white',
+      'smoke_puff',
+      'debris_orange',
+      'debris_blue',
+      'ice_crack',
+      'ice_shard',
+      'chain_link',
+      'wood_splinter',
+      'rainbow_burst',
+      'magic_star',
+      'rocket_flame',
+      'speed_line',
+    ];
+    effectSprites.forEach(effect => {
+      this.load.image(`effect_${effect}`, `assets/sprites/effects/${effect}.png`);
+    });
   }
 
   create(data?: GameSceneData): void {
@@ -213,6 +235,7 @@ export class GameScene extends Phaser.Scene {
     // Initialize polish/juice systems
     this.screenShake = new ScreenShake(this);
     this.particleManager = new ParticleManager(this);
+    this.powerupAnimations.setParticleManager(this.particleManager);
     this.comboDisplay = new ComboDisplay(this);
     this.scorePopup = new ScorePopup(this);
     this.audioManager = getAudioManager();
@@ -780,6 +803,8 @@ export class GameScene extends Phaser.Scene {
     if (layerText) {
       (graphics as any).layerText = layerText;
     }
+    // Store obstacle type for particle effects on removal
+    (graphics as any).obstacleType = cell.obstacle.type;
 
     this.obstacleSprites.set(key, graphics);
   }
@@ -792,6 +817,30 @@ export class GameScene extends Phaser.Scene {
 
       const layerText = (sprite as any).layerText;
       if (layerText) layerText.destroy();
+
+      // Emit obstacle-specific particle effects
+      const pos = this.cellToScreen(row, col);
+      const obstacleType = (sprite as any).obstacleType;
+      if (this.particleManager && obstacleType) {
+        switch (obstacleType) {
+          case 'ice':
+            this.particleManager.emitIceCrack(pos.x, pos.y, this.tileSize);
+            this.particleManager.emitIceShards(pos.x, pos.y, 8);
+            break;
+          case 'chain':
+            this.particleManager.emitChainBreak(pos.x, pos.y, 4);
+            this.particleManager.emitSparks(pos.x, pos.y, 4, 'white');
+            break;
+          case 'box':
+            this.particleManager.emitWoodSplinters(pos.x, pos.y, 8);
+            break;
+          case 'grass':
+            this.particleManager.emitMatchParticles(pos.x, pos.y, 0x44aa44, 6);
+            break;
+          default:
+            this.particleManager.emitMatchParticles(pos.x, pos.y, 0x888888, 4);
+        }
+      }
 
       this.tweens.add({
         targets: sprite,

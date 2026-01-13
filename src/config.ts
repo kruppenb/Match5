@@ -38,7 +38,7 @@ export const CONFIG = {
 
   SCREEN: {
     WIDTH: 500,
-    HEIGHT: 844,
+    HEIGHT: 900,
   },
 
   LEVEL: {

@@ -28,6 +28,413 @@ export class ParticleManager {
   }
 
   /**
+   * Check if an effect sprite texture exists
+   */
+  private hasTexture(key: string): boolean {
+    return this.scene.textures.exists(key);
+  }
+
+  /**
+   * Emit sprite-based explosion burst (for bomb powerup)
+   */
+  emitExplosionBurst(x: number, y: number, scale: number = 1): void {
+    if (!this.hasTexture('effect_explosion_burst')) {
+      this.emitExplosion(x, y, 2);
+      return;
+    }
+
+    const burst = this.scene.add.image(x, y, 'effect_explosion_burst');
+    burst.setDepth(100);
+    burst.setScale(0.1 * scale);
+    burst.setAlpha(1);
+
+    this.scene.tweens.add({
+      targets: burst,
+      scaleX: 1.5 * scale,
+      scaleY: 1.5 * scale,
+      alpha: 0,
+      duration: 400,
+      ease: 'Quad.easeOut',
+      onComplete: () => burst.destroy(),
+    });
+  }
+
+  /**
+   * Emit expanding shockwave ring (for bomb powerup)
+   */
+  emitShockwave(x: number, y: number, maxScale: number = 2): void {
+    if (!this.hasTexture('effect_shockwave_ring')) {
+      return;
+    }
+
+    const ring = this.scene.add.image(x, y, 'effect_shockwave_ring');
+    ring.setDepth(99);
+    ring.setScale(0.2);
+    ring.setAlpha(0.8);
+
+    this.scene.tweens.add({
+      targets: ring,
+      scaleX: maxScale,
+      scaleY: maxScale,
+      alpha: 0,
+      duration: 500,
+      ease: 'Quad.easeOut',
+      onComplete: () => ring.destroy(),
+    });
+  }
+
+  /**
+   * Emit spark particles using sprites
+   */
+  emitSparks(x: number, y: number, count: number = 8, color: 'yellow' | 'white' = 'yellow'): void {
+    const textureKey = `effect_spark_${color}`;
+    if (!this.hasTexture(textureKey)) {
+      this.emitSparkles(x, y, color === 'yellow' ? 0xffff00 : 0xffffff, count);
+      return;
+    }
+
+    for (let i = 0; i < count; i++) {
+      const spark = this.scene.add.image(x, y, textureKey);
+      spark.setDepth(100);
+      spark.setScale(0.3 + Math.random() * 0.3);
+
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 30 + Math.random() * 50;
+
+      this.scene.tweens.add({
+        targets: spark,
+        x: x + Math.cos(angle) * distance,
+        y: y + Math.sin(angle) * distance,
+        alpha: 0,
+        scale: 0.1,
+        angle: Math.random() * 360,
+        duration: 300 + Math.random() * 200,
+        ease: 'Quad.easeOut',
+        onComplete: () => spark.destroy(),
+      });
+    }
+  }
+
+  /**
+   * Emit smoke puff particles (for rocket trails)
+   */
+  emitSmokePuff(x: number, y: number, count: number = 3): void {
+    if (!this.hasTexture('effect_smoke_puff')) {
+      this.emitRocketTrail(x, y, 0xcccccc);
+      return;
+    }
+
+    for (let i = 0; i < count; i++) {
+      const smoke = this.scene.add.image(
+        x + (Math.random() - 0.5) * 20,
+        y + (Math.random() - 0.5) * 20,
+        'effect_smoke_puff'
+      );
+      smoke.setDepth(90);
+      smoke.setScale(0.2 + Math.random() * 0.2);
+      smoke.setAlpha(0.6);
+
+      this.scene.tweens.add({
+        targets: smoke,
+        y: smoke.y - 20 - Math.random() * 30,
+        alpha: 0,
+        scaleX: smoke.scaleX * 1.5,
+        scaleY: smoke.scaleY * 1.5,
+        duration: 400 + Math.random() * 200,
+        ease: 'Quad.easeOut',
+        onComplete: () => smoke.destroy(),
+      });
+    }
+  }
+
+  /**
+   * Emit debris particles (for tile destruction)
+   */
+  emitDebris(x: number, y: number, color: 'orange' | 'blue', count: number = 6): void {
+    const textureKey = `effect_debris_${color}`;
+    if (!this.hasTexture(textureKey)) {
+      this.emitMatchParticles(x, y, color === 'orange' ? 0xff8800 : 0x0088ff, count);
+      return;
+    }
+
+    for (let i = 0; i < count; i++) {
+      const debris = this.scene.add.image(x, y, textureKey);
+      debris.setDepth(95);
+      debris.setScale(0.3 + Math.random() * 0.3);
+      debris.setAngle(Math.random() * 360);
+
+      const angle = Math.random() * Math.PI * 2;
+      const targetX = x + Math.cos(angle) * (40 + Math.random() * 40);
+      const targetY = y + Math.sin(angle) * (40 + Math.random() * 40);
+
+      this.scene.tweens.add({
+        targets: debris,
+        x: targetX,
+        y: targetY + 30, // Add gravity effect
+        alpha: 0,
+        angle: debris.angle + (Math.random() - 0.5) * 360,
+        scale: 0.1,
+        duration: 400 + Math.random() * 200,
+        ease: 'Quad.easeOut',
+        onComplete: () => debris.destroy(),
+      });
+    }
+  }
+
+  /**
+   * Emit ice crack overlay (for ice obstacle)
+   */
+  emitIceCrack(x: number, y: number, tileSize: number): void {
+    if (!this.hasTexture('effect_ice_crack')) {
+      return;
+    }
+
+    const crack = this.scene.add.image(x, y, 'effect_ice_crack');
+    crack.setDepth(85);
+    crack.setScale(tileSize / crack.width);
+    crack.setAlpha(0);
+
+    this.scene.tweens.add({
+      targets: crack,
+      alpha: 0.8,
+      duration: 100,
+      yoyo: true,
+      hold: 200,
+      onComplete: () => crack.destroy(),
+    });
+  }
+
+  /**
+   * Emit ice shard particles (for ice obstacle destruction)
+   */
+  emitIceShards(x: number, y: number, count: number = 8): void {
+    if (!this.hasTexture('effect_ice_shard')) {
+      this.emitMatchParticles(x, y, 0x88ddff, count);
+      return;
+    }
+
+    for (let i = 0; i < count; i++) {
+      const shard = this.scene.add.image(x, y, 'effect_ice_shard');
+      shard.setDepth(95);
+      shard.setScale(0.2 + Math.random() * 0.3);
+      shard.setAngle(Math.random() * 360);
+      shard.setTint(0x88ddff);
+
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 30 + Math.random() * 50;
+
+      this.scene.tweens.add({
+        targets: shard,
+        x: x + Math.cos(angle) * distance,
+        y: y + Math.sin(angle) * distance + 20,
+        alpha: 0,
+        angle: shard.angle + (Math.random() - 0.5) * 180,
+        scale: 0.05,
+        duration: 400 + Math.random() * 200,
+        ease: 'Quad.easeOut',
+        onComplete: () => shard.destroy(),
+      });
+    }
+  }
+
+  /**
+   * Emit chain link particles (for chain obstacle destruction)
+   */
+  emitChainBreak(x: number, y: number, count: number = 4): void {
+    if (!this.hasTexture('effect_chain_link')) {
+      this.emitMatchParticles(x, y, 0x888888, count);
+      return;
+    }
+
+    for (let i = 0; i < count; i++) {
+      const link = this.scene.add.image(x, y, 'effect_chain_link');
+      link.setDepth(95);
+      link.setScale(0.3 + Math.random() * 0.2);
+      link.setAngle(Math.random() * 360);
+
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI;
+      const distance = 40 + Math.random() * 40;
+
+      this.scene.tweens.add({
+        targets: link,
+        x: x + Math.cos(angle) * distance,
+        y: y + Math.sin(angle) * distance + 50, // Heavy fall
+        alpha: 0,
+        angle: link.angle + (Math.random() - 0.5) * 360,
+        duration: 500 + Math.random() * 200,
+        ease: 'Quad.easeIn',
+        onComplete: () => link.destroy(),
+      });
+    }
+  }
+
+  /**
+   * Emit wood splinter particles (for box obstacle destruction)
+   */
+  emitWoodSplinters(x: number, y: number, count: number = 6): void {
+    if (!this.hasTexture('effect_wood_splinter')) {
+      this.emitMatchParticles(x, y, 0x8b4513, count);
+      return;
+    }
+
+    for (let i = 0; i < count; i++) {
+      const splinter = this.scene.add.image(x, y, 'effect_wood_splinter');
+      splinter.setDepth(95);
+      splinter.setScale(0.25 + Math.random() * 0.25);
+      splinter.setAngle(Math.random() * 360);
+
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 35 + Math.random() * 45;
+
+      this.scene.tweens.add({
+        targets: splinter,
+        x: x + Math.cos(angle) * distance,
+        y: y + Math.sin(angle) * distance + 30,
+        alpha: 0,
+        angle: splinter.angle + (Math.random() - 0.5) * 360,
+        scale: 0.1,
+        duration: 450 + Math.random() * 200,
+        ease: 'Quad.easeOut',
+        onComplete: () => splinter.destroy(),
+      });
+    }
+  }
+
+  /**
+   * Emit rainbow burst (for color bomb)
+   */
+  emitRainbowBurst(x: number, y: number, scale: number = 1): void {
+    if (!this.hasTexture('effect_rainbow_burst')) {
+      // Fallback to colored circles
+      const colors = [0xff0000, 0xff7700, 0xffff00, 0x00ff00, 0x0000ff, 0x8800ff];
+      colors.forEach((color, i) => {
+        this.scene.time.delayedCall(i * 30, () => {
+          this.emitBurst(x, y, color, 5);
+        });
+      });
+      return;
+    }
+
+    const burst = this.scene.add.image(x, y, 'effect_rainbow_burst');
+    burst.setDepth(100);
+    burst.setScale(0.1 * scale);
+    burst.setAlpha(0.9);
+
+    this.scene.tweens.add({
+      targets: burst,
+      scaleX: 2 * scale,
+      scaleY: 2 * scale,
+      alpha: 0,
+      angle: 45,
+      duration: 500,
+      ease: 'Quad.easeOut',
+      onComplete: () => burst.destroy(),
+    });
+  }
+
+  /**
+   * Emit magic star particles (for color bomb)
+   */
+  emitMagicStars(x: number, y: number, count: number = 8): void {
+    if (!this.hasTexture('effect_magic_star')) {
+      const colors = [0xff0000, 0xffff00, 0x00ff00, 0x0000ff, 0xff00ff];
+      this.emitSparkles(x, y, colors[Math.floor(Math.random() * colors.length)], count);
+      return;
+    }
+
+    for (let i = 0; i < count; i++) {
+      const star = this.scene.add.image(x, y, 'effect_magic_star');
+      star.setDepth(100);
+      star.setScale(0.2 + Math.random() * 0.3);
+
+      const angle = (i / count) * Math.PI * 2;
+      const distance = 40 + Math.random() * 60;
+
+      this.scene.tweens.add({
+        targets: star,
+        x: x + Math.cos(angle) * distance,
+        y: y + Math.sin(angle) * distance,
+        alpha: 0,
+        scale: 0.05,
+        angle: 360,
+        duration: 400 + Math.random() * 200,
+        ease: 'Quad.easeOut',
+        onComplete: () => star.destroy(),
+      });
+    }
+  }
+
+  /**
+   * Emit rocket flame trail
+   */
+  emitRocketFlame(x: number, y: number, direction: 'left' | 'right' | 'up' | 'down'): void {
+    if (!this.hasTexture('effect_rocket_flame')) {
+      this.emitRocketTrail(x, y, 0xff8800);
+      return;
+    }
+
+    const flame = this.scene.add.image(x, y, 'effect_rocket_flame');
+    flame.setDepth(90);
+    flame.setScale(0.4);
+
+    // Rotate based on direction
+    switch (direction) {
+      case 'left': flame.setAngle(180); break;
+      case 'right': flame.setAngle(0); break;
+      case 'up': flame.setAngle(-90); break;
+      case 'down': flame.setAngle(90); break;
+    }
+
+    this.scene.tweens.add({
+      targets: flame,
+      alpha: 0,
+      scaleX: 0.2,
+      scaleY: 0.2,
+      duration: 200,
+      ease: 'Quad.easeOut',
+      onComplete: () => flame.destroy(),
+    });
+  }
+
+  /**
+   * Emit speed lines (for fast movement effects)
+   */
+  emitSpeedLines(x: number, y: number, direction: 'horizontal' | 'vertical', count: number = 5): void {
+    if (!this.hasTexture('effect_speed_line')) {
+      return;
+    }
+
+    for (let i = 0; i < count; i++) {
+      const line = this.scene.add.image(x, y, 'effect_speed_line');
+      line.setDepth(85);
+      line.setScale(0.3 + Math.random() * 0.3, 0.2);
+      line.setAlpha(0.6);
+
+      if (direction === 'vertical') {
+        line.setAngle(90);
+        line.setPosition(
+          x + (Math.random() - 0.5) * 40,
+          y + (Math.random() - 0.5) * 20
+        );
+      } else {
+        line.setPosition(
+          x + (Math.random() - 0.5) * 20,
+          y + (Math.random() - 0.5) * 40
+        );
+      }
+
+      this.scene.tweens.add({
+        targets: line,
+        alpha: 0,
+        scaleX: line.scaleX * 2,
+        duration: 200,
+        ease: 'Linear',
+        onComplete: () => line.destroy(),
+      });
+    }
+  }
+
+  /**
    * Emit particles when tiles are matched/cleared
    */
   emitMatchParticles(x: number, y: number, color: number, count: number = 12): void {

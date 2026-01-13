@@ -24,10 +24,11 @@ const config: Phaser.Types.Core.GameConfig = {
   parent: 'game',
   backgroundColor: '#1a1a2e',
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.EXPAND,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: CONFIG.SCREEN.WIDTH,
     height: CONFIG.SCREEN.HEIGHT,
+    expandParent: true,
   },
   physics: {
     default: 'arcade',
