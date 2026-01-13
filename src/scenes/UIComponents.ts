@@ -20,7 +20,8 @@ export class MoveCounter {
 
     // Move count text
     this.text = scene.add.text(0, 0, '0', {
-      fontSize: '24px',
+      fontSize: '26px',
+      fontFamily: '"Arial Black", "Helvetica Bold", sans-serif',
       fontStyle: 'bold',
       color: '#ffffff',
     }).setOrigin(0.5);
@@ -34,7 +35,8 @@ export class MoveCounter {
     if (existing) existing.destroy();
 
     const text = this.scene.add.text(offsetX, offsetY, labelText, {
-      fontSize: '12px',
+      fontSize: '14px',
+      fontFamily: '"Arial Bold", "Helvetica Bold", sans-serif',
       color: '#aaaaaa',
     });
     // Align origin based on requested alignment
@@ -112,7 +114,8 @@ export class ObjectiveDisplay {
 
     // Progress text
     const text = this.scene.add.text(x, y + 28, `${obj.current}/${obj.target}`, {
-      fontSize: '16px',
+      fontSize: '18px',
+      fontFamily: '"Arial Bold", "Helvetica Bold", sans-serif',
       color: '#ffffff',
     }).setOrigin(0.5);
     this.container.add(text);
@@ -245,7 +248,8 @@ export class EndScreen {
 
     // Title
     const title = this.scene.add.text(0, -120, 'LEVEL COMPLETE!', {
-      fontSize: '24px',
+      fontSize: '26px',
+      fontFamily: '"Arial Black", "Helvetica Bold", sans-serif',
       fontStyle: 'bold',
       color: '#44ff44',
     }).setOrigin(0.5);
@@ -268,14 +272,16 @@ export class EndScreen {
 
     // Score
     const scoreText = this.scene.add.text(0, -10, `Score: ${score}`, {
-      fontSize: '22px',
+      fontSize: '24px',
+      fontFamily: '"Arial Bold", "Helvetica Bold", sans-serif',
       color: '#ffffff',
     }).setOrigin(0.5);
     this.container.add(scoreText);
 
     if (bonus > 0) {
       const bonusText = this.scene.add.text(0, 20, `Bonus: +${bonus}`, {
-        fontSize: '16px',
+        fontSize: '18px',
+        fontFamily: '"Arial Bold", "Helvetica Bold", sans-serif',
         color: '#88ff88',
       }).setOrigin(0.5);
       this.container.add(bonusText);
@@ -307,6 +313,7 @@ export class EndScreen {
     // Title
     const title = this.scene.add.text(0, -110, 'OUT OF MOVES!', {
       fontSize: '28px',
+      fontFamily: '"Arial Black", "Helvetica Bold", sans-serif',
       fontStyle: 'bold',
       color: '#ff4444',
     }).setOrigin(0.5);
@@ -315,6 +322,7 @@ export class EndScreen {
     // Score
     const scoreText = this.scene.add.text(0, -30, `Score: ${score}`, {
       fontSize: '24px',
+      fontFamily: '"Arial Bold", "Helvetica Bold", sans-serif',
       color: '#ffffff',
     }).setOrigin(0.5);
     this.container.add(scoreText);
@@ -331,7 +339,8 @@ export class EndScreen {
     button.setPosition(x, y);
 
     const buttonText = this.scene.add.text(x, y, text, {
-      fontSize: '14px',
+      fontSize: '16px',
+      fontFamily: '"Arial Bold", "Helvetica Bold", sans-serif',
       fontStyle: 'bold',
       color: '#ffffff',
     }).setOrigin(0.5);
@@ -462,7 +471,8 @@ export class BoosterBar {
 
     // Count badge
     const countText = this.scene.add.text(size / 2 - 8, size / 2 - 12, count.toString(), {
-      fontSize: '12px',
+      fontSize: '14px',
+      fontFamily: '"Arial Bold", "Helvetica Bold", sans-serif',
       fontStyle: 'bold',
       color: '#ffffff',
       backgroundColor: '#4488ff',

@@ -88,9 +88,9 @@ export class TitleScene extends Phaser.Scene {
   private createHeader(): void {
     const { width } = this.scale;
 
-    this.add.text(width / 2, 45, 'PRINCESS MATCH', {
+    this.add.text(width / 2, 48, 'PRINCESS MATCH', {
       fontSize: '32px',
-      fontFamily: 'Arial Black',
+      fontFamily: '"Arial Black", "Helvetica Bold", sans-serif',
       color: '#ffffff',
       stroke: '#000000',
       strokeThickness: 4,
@@ -101,7 +101,7 @@ export class TitleScene extends Phaser.Scene {
     const { width } = this.scale;
     const currencyManager = getCurrencyManager();
     this.barY = 100;
-    const pillWidth = 90;
+    const pillWidth = 92;
     const pillHeight = 36;
     const gap = 12;
     const iconOffset = 18; // Distance from left edge to icon center
@@ -129,7 +129,7 @@ export class TitleScene extends Phaser.Scene {
     // Coins text - centered in remaining space
     this.coinsText = this.add.text(this.coinsPillX + 8, this.barY, currencyManager.formatCoins(currencyManager.getCoins()), {
       fontSize: '16px',
-      fontFamily: 'Arial Black',
+      fontFamily: '"Arial Black", "Helvetica Bold", sans-serif',
       color: '#ffffff',
       stroke: '#000000',
       strokeThickness: 1,
@@ -158,7 +158,7 @@ export class TitleScene extends Phaser.Scene {
     // Diamonds text - centered in remaining space
     this.diamondsText = this.add.text(this.diamondsPillX + 8, this.barY, currencyManager.getDiamonds().toString(), {
       fontSize: '16px',
-      fontFamily: 'Arial Black',
+      fontFamily: '"Arial Black", "Helvetica Bold", sans-serif',
       color: '#ffffff',
       stroke: '#000000',
       strokeThickness: 1,
@@ -218,8 +218,8 @@ export class TitleScene extends Phaser.Scene {
     card.lineBetween(width / 2 + 35, labelY, width / 2 + 60, labelY);
 
     this.add.text(width / 2, labelY, 'LEVEL', {
-      fontSize: '14px',
-      fontFamily: 'Arial',
+      fontSize: '16px',
+      fontFamily: '"Arial Bold", "Helvetica Bold", sans-serif',
       color: '#8ab4d9',
       letterSpacing: 4,
     }).setOrigin(0.5);
@@ -318,8 +318,8 @@ export class TitleScene extends Phaser.Scene {
 
   private createLeftTabs(): void {
     const { height } = this.scale;
-    const tabX = 45;
-    const tabSize = 52;
+    const tabX = 48;
+    const tabSize = 54;
     const spacing = 8;
 
     // Position tabs on the left side, below the level card
@@ -361,9 +361,9 @@ export class TitleScene extends Phaser.Scene {
       this.scene.start('ReplayLevelsScene');
     });
 
-    // Settings button at bottom left
-    const gearY = height - 50;
-    this.createSettingsButton(35, gearY);
+    // Settings button at bottom left - add padding for safe areas
+    const gearY = height - 60;
+    this.createSettingsButton(38, gearY);
   }
 
   private createIconTab(
@@ -428,15 +428,15 @@ export class TitleScene extends Phaser.Scene {
 
     // Label below icon
     this.add.text(x, y + 16, label, {
-      fontSize: '9px',
-      fontFamily: 'Arial',
+      fontSize: '10px',
+      fontFamily: '"Arial Bold", "Helvetica Bold", sans-serif',
       color: '#aabbcc',
     }).setOrigin(0.5);
 
     // Badge (timer or notification)
     if (badge) {
       const badgeColor = hasNotification ? 0xff4444 : 0x4a90d9;
-      const badgeWidth = hasNotification ? 16 : Math.max(24, badge.length * 6 + 8);
+      const badgeWidth = hasNotification ? 16 : Math.max(26, badge.length * 7 + 8);
       const badgeX = x + size / 2 - badgeWidth / 2 + 2;
       const badgeY = y - size / 2 + 8;
 
@@ -445,8 +445,8 @@ export class TitleScene extends Phaser.Scene {
         .fillRoundedRect(badgeX - badgeWidth / 2, badgeY - 8, badgeWidth, 14, 7);
 
       this.add.text(badgeX, badgeY, badge, {
-        fontSize: '9px',
-        fontFamily: 'Arial Bold',
+        fontSize: '10px',
+        fontFamily: '"Arial Bold", "Helvetica Bold", sans-serif',
         color: '#ffffff',
       }).setOrigin(0.5);
     }
@@ -472,8 +472,8 @@ export class TitleScene extends Phaser.Scene {
       .fillRoundedRect(badgeX - badgeWidth / 2, badgeY - 8, badgeWidth, 14, 7);
 
     this.eventBadgeText = this.add.text(badgeX, badgeY, '!', {
-      fontSize: '9px',
-      fontFamily: 'Arial Bold',
+      fontSize: '10px',
+      fontFamily: '"Arial Bold", "Helvetica Bold", sans-serif',
       color: '#ffffff',
     }).setOrigin(0.5);
   }
@@ -485,8 +485,8 @@ export class TitleScene extends Phaser.Scene {
     if (hasRewards && !this.eventBadgeGraphics) {
       // Need to create badge - recalculate position
       const { height } = this.scale;
-      const tabX = 45;
-      const tabSize = 52;
+      const tabX = 48;
+      const tabSize = 54;
       const spacing = 8;
       const levelCardBottom = height / 2 - 120 + 100;
       const topBound = levelCardBottom + 30;
