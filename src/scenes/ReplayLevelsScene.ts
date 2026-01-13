@@ -156,8 +156,9 @@ export class ReplayLevelsScene extends Phaser.Scene {
     const startY = 170; // More spacing from bonus info
     const bottomPadding = 80;
 
-    const availableWidth = CONFIG.SCREEN.WIDTH - marginX * 2;
-    const availableHeight = CONFIG.SCREEN.HEIGHT - startY - bottomPadding;
+    const { width: screenWidth, height: screenHeight } = this.scale;
+    const availableWidth = screenWidth - marginX * 2;
+    const availableHeight = screenHeight - startY - bottomPadding;
 
     const gapX = 10;
     const gapY = 12;
@@ -167,7 +168,7 @@ export class ReplayLevelsScene extends Phaser.Scene {
     buttonSize = Math.min(buttonSize, maxButtonFromHeight, 75);
 
     const gridWidth = cols * buttonSize + (cols - 1) * gapX;
-    const startX = (CONFIG.SCREEN.WIDTH - gridWidth) / 2 + buttonSize / 2;
+    const startX = (screenWidth - gridWidth) / 2 + buttonSize / 2;
 
     completedLevels.forEach((levelId, index) => {
       const col = index % cols;

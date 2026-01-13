@@ -166,11 +166,19 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  // Screen dimensions - updated on resize
+  private screenWidth: number = CONFIG.SCREEN.WIDTH;
+  private screenHeight: number = CONFIG.SCREEN.HEIGHT;
+
   create(data?: GameSceneData): void {
     const levelId = data?.levelId ?? 1;
     this.initialHeroCharge = data?.heroChargePercent ?? 0;
     this.isReplay = data?.isReplay ?? false;
     console.log(`Game Scene Created - Level ${levelId}, Hero Charge: ${this.initialHeroCharge}%, Replay: ${this.isReplay}`);
+
+    // Get actual screen dimensions
+    this.screenWidth = this.scale.width;
+    this.screenHeight = this.scale.height;
 
     // Load level
     this.level = Level.load(levelId);
@@ -185,9 +193,9 @@ export class GameScene extends Phaser.Scene {
     this.gameState = new GameState(this.level);
     this.boosterManager = new BoosterManager();
 
-    // Calculate dynamic tile size to fit grid on screen
-    const availableWidth = CONFIG.SCREEN.WIDTH - CONFIG.UI.PADDING * 2;
-    const availableHeight = CONFIG.SCREEN.HEIGHT - CONFIG.UI.HEADER_HEIGHT - CONFIG.UI.OBJECTIVE_BAR_HEIGHT - CONFIG.UI.PADDING * 2;
+    // Calculate dynamic tile size to fit grid on screen using actual dimensions
+    const availableWidth = this.screenWidth - CONFIG.UI.PADDING * 2;
+    const availableHeight = this.screenHeight - CONFIG.UI.HEADER_HEIGHT - CONFIG.UI.OBJECTIVE_BAR_HEIGHT - CONFIG.UI.PADDING * 2;
 
     const maxTileWidth = availableWidth / this.level.cols;
     const maxTileHeight = availableHeight / this.level.rows;
@@ -196,7 +204,7 @@ export class GameScene extends Phaser.Scene {
     // Calculate grid offset for centering
     const totalGridWidth = this.level.cols * this.tileSize;
     const totalGridHeight = this.level.rows * this.tileSize;
-    this.gridOffsetX = (CONFIG.SCREEN.WIDTH - totalGridWidth) / 2;
+    this.gridOffsetX = (this.screenWidth - totalGridWidth) / 2;
     this.gridOffsetY = CONFIG.UI.HEADER_HEIGHT + CONFIG.UI.OBJECTIVE_BAR_HEIGHT + (availableHeight - totalGridHeight) / 2 + CONFIG.UI.PADDING;
 
     // Ensure no initial matches
@@ -415,8 +423,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderBackground(): void {
-    const width = CONFIG.SCREEN.WIDTH;
-    const height = CONFIG.SCREEN.HEIGHT;
+    const width = this.screenWidth;
+    const height = this.screenHeight;
 
     const bgKey = this.getBackgroundForLevel(this.level.id);
 
@@ -476,7 +484,7 @@ export class GameScene extends Phaser.Scene {
 
     this.moveCounter = new MoveCounter(
       this,
-      CONFIG.SCREEN.WIDTH / 2,
+      this.screenWidth / 2,
       CONFIG.UI.HEADER_HEIGHT / 2
     );
     this.updateMoveDisplay();
@@ -485,7 +493,7 @@ export class GameScene extends Phaser.Scene {
     const labelOffsetY = -6;
     this.moveCounter.attachLabel('MOVES', labelOffsetX, labelOffsetY, 'left');
 
-    const menuBtn = this.add.text(CONFIG.SCREEN.WIDTH - CONFIG.UI.PADDING, CONFIG.UI.HEADER_HEIGHT / 2, 'MENU', {
+    const menuBtn = this.add.text(this.screenWidth - CONFIG.UI.PADDING, CONFIG.UI.HEADER_HEIGHT / 2, 'MENU', {
       fontSize: '16px',
       fontStyle: 'bold',
       color: '#ffffff',
@@ -501,15 +509,15 @@ export class GameScene extends Phaser.Scene {
 
     this.objectiveDisplay = new ObjectiveDisplay(
       this,
-      CONFIG.SCREEN.WIDTH / 2,
+      this.screenWidth / 2,
       CONFIG.UI.HEADER_HEIGHT + CONFIG.UI.OBJECTIVE_BAR_HEIGHT / 2,
       this.gameState.getObjectives()
     );
 
     this.boosterBar = new BoosterBar(
       this,
-      CONFIG.SCREEN.WIDTH / 2,
-      CONFIG.SCREEN.HEIGHT - 65,
+      this.screenWidth / 2,
+      this.screenHeight - 65,
       this.boosterManager.getInventory(),
       (type) => this.onBoosterSelect(type),
       () => this.onBoosterCancel()

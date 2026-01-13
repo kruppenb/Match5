@@ -73,7 +73,7 @@ export class HeroPowerSystem {
     this.state.currentCharge = initialCharge;
 
     // Position bar at top of screen, below header and objective bar
-    this.barX = CONFIG.SCREEN.WIDTH / 2;
+    this.barX = scene.scale.width / 2;
     this.barY = CONFIG.UI.HEADER_HEIGHT + CONFIG.UI.OBJECTIVE_BAR_HEIGHT * 2 + 8;
 
     this.createBarUI();

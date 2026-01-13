@@ -20,8 +20,16 @@ export class LevelSelectScene extends Phaser.Scene {
     this.load.image('ui_diamond', 'assets/sprites/ui/diamond.png');
   }
 
+  // Screen dimensions from scale
+  private screenWidth: number = CONFIG.SCREEN.WIDTH;
+  private screenHeight: number = CONFIG.SCREEN.HEIGHT;
+
   create(): void {
     console.log('Level Select Scene Created');
+
+    // Get actual screen dimensions
+    this.screenWidth = this.scale.width;
+    this.screenHeight = this.scale.height;
 
     // Check for daily login bonus
     this.checkDailyLogin();
@@ -29,26 +37,26 @@ export class LevelSelectScene extends Phaser.Scene {
     // Background
     this.add.graphics()
       .fillStyle(CONFIG.UI.COLORS.BACKGROUND, 1)
-      .fillRect(0, 0, CONFIG.SCREEN.WIDTH, CONFIG.SCREEN.HEIGHT);
+      .fillRect(0, 0, this.screenWidth, this.screenHeight);
 
     // Currency display (top right)
     this.createCurrencyDisplay();
 
     // Title
-    this.add.text(CONFIG.SCREEN.WIDTH / 2, 36, 'PRINCESS MATCH', {
+    this.add.text(this.screenWidth / 2, 36, 'PRINCESS MATCH', {
       fontSize: '32px',
       fontStyle: 'bold',
       color: '#ffffff',
     }).setOrigin(0.5);
 
-    this.add.text(CONFIG.SCREEN.WIDTH / 2, 70, 'Select a Level', {
+    this.add.text(this.screenWidth / 2, 70, 'Select a Level', {
       fontSize: '16px',
       color: '#888888',
     }).setOrigin(0.5);
 
     // Total stars display
     const totalStars = ProgressStorage.getTotalStars();
-    this.add.text(CONFIG.SCREEN.WIDTH / 2, 95, `⭐ ${totalStars}`, {
+    this.add.text(this.screenWidth / 2, 95, `⭐ ${totalStars}`, {
       fontSize: '18px',
       color: '#ffff00',
     }).setOrigin(0.5);
@@ -60,7 +68,7 @@ export class LevelSelectScene extends Phaser.Scene {
     this.createMetaButtons();
 
     // Reset progress button (for testing)
-    const resetBtn = this.add.text(20, CONFIG.SCREEN.HEIGHT - 30, 'Reset', {
+    const resetBtn = this.add.text(20, this.screenHeight - 30, 'Reset', {
       fontSize: '12px',
       color: '#666666',
     }).setInteractive({ useHandCursor: true });
@@ -147,11 +155,11 @@ export class LevelSelectScene extends Phaser.Scene {
     // Coins - use generated asset if available
     const coinsValue = currencyManager.formatCoins(currencyManager.getCoins());
     if (this.textures.exists('ui_coin')) {
-      this.add.image(CONFIG.SCREEN.WIDTH - 95, currencyY, 'ui_coin').setDisplaySize(16, 16);
+      this.add.image(this.screenWidth - 95, currencyY, 'ui_coin').setDisplaySize(16, 16);
     } else {
-      this.add.circle(CONFIG.SCREEN.WIDTH - 95, currencyY, 8, 0xffd700);
+      this.add.circle(this.screenWidth - 95, currencyY, 8, 0xffd700);
     }
-    this.coinsText = this.add.text(CONFIG.SCREEN.WIDTH - 83, currencyY, coinsValue, {
+    this.coinsText = this.add.text(this.screenWidth - 83, currencyY, coinsValue, {
       fontSize: '12px',
       fontFamily: 'Arial Bold',
       color: '#ffffff',
@@ -159,11 +167,11 @@ export class LevelSelectScene extends Phaser.Scene {
 
     // Diamonds - use generated asset if available
     if (this.textures.exists('ui_diamond')) {
-      this.add.image(CONFIG.SCREEN.WIDTH - 30, currencyY, 'ui_diamond').setDisplaySize(16, 16);
+      this.add.image(this.screenWidth - 30, currencyY, 'ui_diamond').setDisplaySize(16, 16);
     } else {
-      this.add.polygon(CONFIG.SCREEN.WIDTH - 30, currencyY, [[0, -6], [5, 0], [0, 6], [-5, 0]], 0x00bfff);
+      this.add.polygon(this.screenWidth - 30, currencyY, [[0, -6], [5, 0], [0, 6], [-5, 0]], 0x00bfff);
     }
-    this.diamondsText = this.add.text(CONFIG.SCREEN.WIDTH - 20, currencyY, currencyManager.getDiamonds().toString(), {
+    this.diamondsText = this.add.text(this.screenWidth - 20, currencyY, currencyManager.getDiamonds().toString(), {
       fontSize: '12px',
       fontFamily: 'Arial Bold',
       color: '#ffffff',
@@ -351,8 +359,8 @@ export class LevelSelectScene extends Phaser.Scene {
     const starRowHeight = 16; // space below each button for stars
 
     // Available space
-    const availableWidth = CONFIG.SCREEN.WIDTH - marginX * 2;
-    const availableHeight = CONFIG.SCREEN.HEIGHT - startY - bottomPadding;
+    const availableWidth = this.screenWidth - marginX * 2;
+    const availableHeight = this.screenHeight - startY - bottomPadding;
 
     // Fixed gaps
     const gapY = 8;
@@ -375,7 +383,7 @@ export class LevelSelectScene extends Phaser.Scene {
 
     // Center the grid horizontally
     const gridWidth = cols * buttonSize + (cols - 1) * gapX;
-    const startX = (CONFIG.SCREEN.WIDTH - gridWidth) / 2 + buttonSize / 2;
+    const startX = (this.screenWidth - gridWidth) / 2 + buttonSize / 2;
 
     for (let i = 0; i < totalLevels; i++) {
       const levelId = i + 1;

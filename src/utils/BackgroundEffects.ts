@@ -79,8 +79,8 @@ export class BackgroundEffects {
 
   constructor(scene: Phaser.Scene, levelIdOrTheme: number | string) {
     this.scene = scene;
-    this.width = CONFIG.SCREEN.WIDTH;
-    this.height = CONFIG.SCREEN.HEIGHT;
+    this.width = scene.scale.width;
+    this.height = scene.scale.height;
     this.theme = this.getTheme(levelIdOrTheme);
   }
 

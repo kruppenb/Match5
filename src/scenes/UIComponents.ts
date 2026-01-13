@@ -204,7 +204,7 @@ export class EndScreen {
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
-    this.container = scene.add.container(CONFIG.SCREEN.WIDTH / 2, CONFIG.SCREEN.HEIGHT / 2);
+    this.container = scene.add.container(scene.scale.width / 2, scene.scale.height / 2);
     this.container.setVisible(false);
     this.container.setDepth(1000);
   }
@@ -227,11 +227,12 @@ export class EndScreen {
 
   private createWinContent(score: number, stars: number, bonus: number): void {
     this.container.removeAll(true);
+    const { width, height } = this.scene.scale;
 
     // Background
     const bg = this.scene.add.graphics();
     bg.fillStyle(0x000000, 0.8);
-    bg.fillRect(-CONFIG.SCREEN.WIDTH / 2, -CONFIG.SCREEN.HEIGHT / 2, CONFIG.SCREEN.WIDTH, CONFIG.SCREEN.HEIGHT);
+    bg.fillRect(-width / 2, -height / 2, width, height);
     this.container.add(bg);
 
     // Panel - adjusted for 2 buttons instead of 3
@@ -287,11 +288,12 @@ export class EndScreen {
 
   private createLoseContent(score: number): void {
     this.container.removeAll(true);
+    const { width, height } = this.scene.scale;
 
     // Background
     const bg = this.scene.add.graphics();
     bg.fillStyle(0x000000, 0.8);
-    bg.fillRect(-CONFIG.SCREEN.WIDTH / 2, -CONFIG.SCREEN.HEIGHT / 2, CONFIG.SCREEN.WIDTH, CONFIG.SCREEN.HEIGHT);
+    bg.fillRect(-width / 2, -height / 2, width, height);
     this.container.add(bg);
 
     // Panel

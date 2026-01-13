@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import { CONFIG } from '../config';
 import { Grid } from '../game/Grid';
 import { Tile } from '../types';
 import { ParticleManager } from '../utils/ParticleManager';
@@ -51,12 +50,14 @@ export class CelebrationManager {
     const celebrationDuration = 3000; // 3 seconds total
     const startTime = Date.now();
 
+    const { width: screenWidth, height: screenHeight } = this.scene.scale;
+
     // Start continuous fireworks
     const fireworkInterval = this.scene.time.addEvent({
       delay: 200,
       callback: () => {
-        const x = 50 + Math.random() * (CONFIG.SCREEN.WIDTH - 100);
-        const y = 100 + Math.random() * (CONFIG.SCREEN.HEIGHT / 2);
+        const x = 50 + Math.random() * (screenWidth - 100);
+        const y = 100 + Math.random() * (screenHeight / 2);
         this.particleManager.emitFirework(x, y);
 
         if (Math.random() > 0.6) {
@@ -67,8 +68,8 @@ export class CelebrationManager {
     });
 
     // Emit initial burst of confetti and celebration stars
-    this.particleManager.emitConfetti(CONFIG.SCREEN.WIDTH / 2, CONFIG.SCREEN.HEIGHT / 3, 80);
-    this.particleManager.emitCelebrationStars(CONFIG.SCREEN.WIDTH / 2, CONFIG.SCREEN.HEIGHT / 2, 12);
+    this.particleManager.emitConfetti(screenWidth / 2, screenHeight / 3, 80);
+    this.particleManager.emitCelebrationStars(screenWidth / 2, screenHeight / 2, 12);
 
     // Use remaining moves to blow up tiles on the board
     if (remainingMoves > 0) {
@@ -86,8 +87,8 @@ export class CelebrationManager {
 
     // Final big firework burst
     for (let i = 0; i < 5; i++) {
-      const x = 80 + Math.random() * (CONFIG.SCREEN.WIDTH - 160);
-      const y = 150 + Math.random() * (CONFIG.SCREEN.HEIGHT / 3);
+      const x = 80 + Math.random() * (screenWidth - 160);
+      const y = 150 + Math.random() * (screenHeight / 3);
       this.scene.time.delayedCall(i * 100, () => {
         this.particleManager.emitFirework(x, y);
       });

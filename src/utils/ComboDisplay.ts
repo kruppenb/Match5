@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import { CONFIG } from '../config';
 
 interface ComboText {
   text: Phaser.GameObjects.Text;
@@ -48,8 +47,8 @@ export class ComboDisplay {
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
-    this.centerX = CONFIG.SCREEN.WIDTH / 2;
-    this.centerY = CONFIG.SCREEN.HEIGHT / 2;
+    this.centerX = scene.scale.width / 2;
+    this.centerY = scene.scale.height / 2;
   }
 
   /**

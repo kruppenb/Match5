@@ -234,8 +234,8 @@ export class BoosterExecutor {
     });
 
     // Phase 1: Animate tiles flying to center chaos
-    const centerX = CONFIG.SCREEN.WIDTH / 2;
-    const centerY = CONFIG.SCREEN.HEIGHT / 2;
+    const centerX = this.scene.scale.width / 2;
+    const centerY = this.scene.scale.height / 2;
     const flyToCenter: Promise<void>[] = [];
 
     tileData.forEach(({ tile }, index) => {
@@ -348,8 +348,8 @@ export class BoosterExecutor {
           );
         } else if (!existingTileIds.has(cell.tile.id)) {
           // New tile created by removeInitialMatches - create sprite at center, then animate out
-          const centerX = CONFIG.SCREEN.WIDTH / 2;
-          const centerY = CONFIG.SCREEN.HEIGHT / 2;
+          const centerX = this.scene.scale.width / 2;
+          const centerY = this.scene.scale.height / 2;
           
           // Create the sprite at center position first
           this.callbacks.createTileSprite(cell.tile);
@@ -484,13 +484,14 @@ export class BoosterExecutor {
   }
 
   private create67Overlay(): Phaser.GameObjects.Container {
-    const container = this.scene.add.container(CONFIG.SCREEN.WIDTH / 2, CONFIG.SCREEN.HEIGHT / 2);
+    const { width, height } = this.scene.scale;
+    const container = this.scene.add.container(width / 2, height / 2);
     container.setDepth(500);
 
     // Semi-transparent background
     const bg = this.scene.add.graphics();
     bg.fillStyle(0x000000, 0.3);
-    bg.fillRect(-CONFIG.SCREEN.WIDTH / 2, -CONFIG.SCREEN.HEIGHT / 2, CONFIG.SCREEN.WIDTH, CONFIG.SCREEN.HEIGHT);
+    bg.fillRect(-width / 2, -height / 2, width, height);
     container.add(bg);
 
     // Create the 6

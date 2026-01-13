@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { Position, PowerupType } from '../types';
-import { CONFIG } from '../config';
 import { ParticleManager } from '../utils/ParticleManager';
 
 /**
@@ -16,6 +15,8 @@ export class PowerupAnimations {
   private gridOffsetX: number;
   private gridOffsetY: number;
   private tileSize: number;
+  private screenWidth: number;
+  private screenHeight: number;
   private particleManager: ParticleManager | null = null;
 
   constructor(scene: Phaser.Scene, gridOffsetX: number, gridOffsetY: number, tileSize: number) {
@@ -23,6 +24,9 @@ export class PowerupAnimations {
     this.gridOffsetX = gridOffsetX;
     this.gridOffsetY = gridOffsetY;
     this.tileSize = tileSize;
+    // Use actual screen dimensions from the scene
+    this.screenWidth = scene.scale.width;
+    this.screenHeight = scene.scale.height;
   }
 
   /**
@@ -39,6 +43,9 @@ export class PowerupAnimations {
     this.gridOffsetX = gridOffsetX;
     this.gridOffsetY = gridOffsetY;
     this.tileSize = tileSize;
+    // Update screen dimensions from scene
+    this.screenWidth = this.scene.scale.width;
+    this.screenHeight = this.scene.scale.height;
   }
 
   /**
@@ -56,7 +63,7 @@ export class PowerupAnimations {
    */
   async animateRocketHorizontal(row: number, col: number, color: number): Promise<void> {
     const pos = this.cellToScreen(row, col);
-    const screenWidth = CONFIG.SCREEN.WIDTH;
+    const screenWidth = this.screenWidth;
 
     // Initial burst and speed lines
     if (this.particleManager) {
@@ -126,7 +133,7 @@ export class PowerupAnimations {
    */
   async animateRocketVertical(row: number, col: number, color: number): Promise<void> {
     const pos = this.cellToScreen(row, col);
-    const screenHeight = CONFIG.SCREEN.HEIGHT;
+    const screenHeight = this.screenHeight;
 
     // Initial burst and speed lines
     if (this.particleManager) {
@@ -734,7 +741,7 @@ export class PowerupAnimations {
     flash.fillRect(
       this.gridOffsetX,
       startPos.y - this.tileSize / 2,
-      CONFIG.SCREEN.WIDTH - this.gridOffsetX * 2,
+      this.screenWidth - this.gridOffsetX * 2,
       this.tileSize
     );
 
@@ -757,7 +764,7 @@ export class PowerupAnimations {
       pos.x - this.tileSize / 2,
       this.gridOffsetY,
       this.tileSize,
-      CONFIG.SCREEN.HEIGHT - this.gridOffsetY
+      this.screenHeight - this.gridOffsetY
     );
 
     this.scene.tweens.add({
@@ -777,7 +784,7 @@ export class PowerupAnimations {
     const flash = this.scene.add.graphics();
     flash.setDepth(200);
     flash.fillStyle(color, 0.5);
-    flash.fillRect(0, 0, CONFIG.SCREEN.WIDTH, CONFIG.SCREEN.HEIGHT);
+    flash.fillRect(0, 0, this.screenWidth, this.screenHeight);
 
     this.scene.tweens.add({
       targets: flash,
@@ -1032,7 +1039,7 @@ export class PowerupAnimations {
     wave.setDepth(90);
 
     const waveData = { radius: 20, alpha: 0.8 };
-    const maxRadius = Math.max(CONFIG.SCREEN.WIDTH, CONFIG.SCREEN.HEIGHT);
+    const maxRadius = Math.max(this.screenWidth, this.screenHeight);
 
     await new Promise<void>(resolve => {
       this.scene.tweens.add({

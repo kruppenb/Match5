@@ -17,18 +17,24 @@ import { PipeConnectScene } from './scenes/PipeConnectScene';
 import { SaveTheRoomScene } from './scenes/SaveTheRoomScene';
 import { ParkingJamScene } from './scenes/ParkingJamScene';
 import { SlingshotScene } from './scenes/SlingshotScene';
-import { CONFIG } from './config';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'game',
   backgroundColor: '#1a1a2e',
   scale: {
-    mode: Phaser.Scale.EXPAND,
+    mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: CONFIG.SCREEN.WIDTH,
-    height: CONFIG.SCREEN.HEIGHT,
-    expandParent: true,
+    width: '100%',
+    height: '100%',
+    min: {
+      width: 320,
+      height: 480,
+    },
+    max: {
+      width: 1920,
+      height: 1920,
+    },
   },
   physics: {
     default: 'arcade',
