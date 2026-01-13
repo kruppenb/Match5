@@ -27,3 +27,8 @@ scripts/*
 
 # AI prompts (contains generation prompts, not needed in repo)
 docs/features/AI_PROMPTS.md
+
+# Screenshots and temp files
+screenshot*.png
+tmpclaude-*
+nul
