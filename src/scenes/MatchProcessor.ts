@@ -3,7 +3,7 @@ import { Grid } from '../game/Grid';
 import { GameState } from '../game/GameState';
 import { MatchDetector } from '../game/MatchDetector';
 import { SpecialObstacleProcessor } from '../game/SpecialObstacleProcessor';
-import { getPowerupAffectedPositions } from '../game/powerupUtils';
+import { getPowerupAffectedPositions, getPropellerTargets, setPropellerTarget } from '../game/powerupUtils';
 import { Tile, Obstacle } from '../types';
 import { CONFIG } from '../config';
 import { ScreenShake } from '../utils/ScreenShake';
@@ -182,7 +182,18 @@ export class MatchProcessor {
     // Activate powerups first with animations and collect additional tiles to clear
     // Track already activated powerups to avoid re-activating them in chain reactions
     const alreadyActivated = new Set<string>();
-    
+
+    // Pre-calculate and cache propeller targets BEFORE animation/activation
+    // This ensures the target is preserved for obstacle clearing even after activatePowerup clears the cache
+    const propellerTargetsMap = new Map<string, { row: number; col: number } | null>();
+    for (const powerup of powerupsToActivate) {
+      if (powerup.powerupType === 'propeller') {
+        const targets = getPropellerTargets(this.grid, powerup);
+        propellerTargetsMap.set(powerup.id, targets.main);
+        setPropellerTarget(powerup.id, targets.main);
+      }
+    }
+
     const powerupAnimPromises: Promise<void>[] = [];
     for (const powerup of powerupsToActivate) {
       const color = CONFIG.COLORS[powerup.type as keyof typeof CONFIG.COLORS] || 0xffffff;
@@ -219,6 +230,15 @@ export class MatchProcessor {
       
       // Play animations for chain-reacted powerups
       if (nextWave.length > 0) {
+        // Pre-calculate propeller targets for chain-reacted propellers
+        for (const powerup of nextWave) {
+          if (powerup.powerupType === 'propeller') {
+            const targets = getPropellerTargets(this.grid, powerup);
+            propellerTargetsMap.set(powerup.id, targets.main);
+            setPropellerTarget(powerup.id, targets.main);
+          }
+        }
+
         const chainAnimPromises: Promise<void>[] = [];
         for (const powerup of nextWave) {
           const color = CONFIG.COLORS[powerup.type as keyof typeof CONFIG.COLORS] || 0xffffff;
@@ -227,9 +247,16 @@ export class MatchProcessor {
         }
         await Promise.all(chainAnimPromises);
       }
-      
+
       currentWave = nextWave;
     }
+
+    // Add cached propeller targets to affected positions (they may have been cleared from cache during activation)
+    propellerTargetsMap.forEach((target) => {
+      if (target) {
+        powerupAffectedPositions.add(`${target.row},${target.col}`);
+      }
+    });
 
     // Track positions where matches occurred for damaging adjacent obstacles
     const matchedPositions = new Set<string>();

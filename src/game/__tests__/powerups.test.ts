@@ -1533,4 +1533,245 @@ describe('Powerups', () => {
       expect(affected1.length).toBe(affected2.length);
     });
   });
+
+  describe('Propeller Target Preservation Through Activation', () => {
+    test('propeller target should be usable for obstacle clearing after activation', () => {
+      const grid = new Grid(5, 5);
+      // Fill grid with tiles
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 5; c++) {
+          grid.setTile(r, c, { id: `t_${r}_${c}`, type: 'blue', row: r, col: c, isPowerup: false } as any);
+        }
+      }
+
+      // Add grass obstacle at target location
+      const grassCell = grid.getCell(4, 4);
+      if (grassCell) {
+        grassCell.obstacle = createGrass(1);
+      }
+
+      const propeller = { id: 'p1', type: 'red', row: 0, col: 0, isPowerup: true, powerupType: 'propeller' } as any;
+      grid.setTile(0, 0, propeller);
+
+      // Simulate the MatchProcessor workflow:
+      // 1. Pre-calculate and store target locally
+      const propellerTargetsMap = new Map<string, { row: number; col: number } | null>();
+      const targets = getPropellerTargets(grid, propeller);
+      propellerTargetsMap.set(propeller.id, targets.main);
+      setPropellerTarget(propeller.id, targets.main);
+
+      // 2. Activate propeller (this clears the cache internally)
+      const affected = activatePowerup(grid, propeller);
+      expect(affected.length).toBeGreaterThan(0);
+
+      // 3. Get affected positions from utility (cache is cleared at this point)
+      const positions = getPowerupAffectedPositions(grid, propeller);
+      const affectedPositions = new Set(positions.map(p => `${p.row},${p.col}`));
+
+      // 4. Add locally stored target (the fix)
+      const savedTarget = propellerTargetsMap.get(propeller.id);
+      if (savedTarget) {
+        affectedPositions.add(`${savedTarget.row},${savedTarget.col}`);
+      }
+
+      // Target position should be in affected positions for obstacle clearing
+      expect(savedTarget).toEqual({ row: 4, col: 4 });
+      expect(affectedPositions.has('4,4')).toBe(true);
+    });
+
+    test('chain-reacted propeller targets should be preserved', () => {
+      const grid = new Grid(7, 7);
+      // Fill grid with tiles
+      for (let r = 0; r < 7; r++) {
+        for (let c = 0; c < 7; c++) {
+          grid.setTile(r, c, { id: `t_${r}_${c}`, type: 'blue', row: r, col: c, isPowerup: false } as any);
+        }
+      }
+
+      // Add grass obstacles
+      const grass1 = grid.getCell(6, 6);
+      const grass2 = grid.getCell(6, 0);
+      if (grass1) grass1.obstacle = createGrass(1);
+      if (grass2) grass2.obstacle = createGrass(1);
+
+      // Place bomb that will trigger a propeller via chain reaction
+      // Bomb at (3,3) has 5x5 range covering (1,1) to (5,5)
+      const bomb = { id: 'b1', type: 'red', row: 3, col: 3, isPowerup: true, powerupType: 'bomb' } as any;
+      const propeller = { id: 'p1', type: 'blue', row: 3, col: 4, isPowerup: true, powerupType: 'propeller' } as any;
+      grid.setTile(3, 3, bomb);
+      grid.setTile(3, 4, propeller);
+
+      // Verify tile was set correctly
+      const tileAt34 = grid.getTile(3, 4);
+      expect(tileAt34?.id).toBe('p1');
+      expect(tileAt34?.isPowerup).toBe(true);
+      expect(tileAt34?.powerupType).toBe('propeller');
+
+      // Simulate workflow with local target storage
+      const propellerTargetsMap = new Map<string, { row: number; col: number } | null>();
+
+      // Activate bomb (don't pre-add to alreadyActivated - activatePowerup handles this)
+      const alreadyActivated = new Set<string>();
+      const affected = activatePowerup(grid, bomb, undefined, alreadyActivated);
+
+      // Bomb should have been added to alreadyActivated
+      expect(alreadyActivated.has(bomb.id)).toBe(true);
+
+      // The propeller at (3,4) should be in the affected tiles
+      // This verifies that bomb's 5x5 range includes position (3,4)
+      const propellerInAffected = affected.find(t => t.id === 'p1');
+      expect(propellerInAffected).toBeDefined();
+
+      // Pre-calculate propeller target for any chained propellers
+      const chainedPropellers = affected.filter(t => t.isPowerup && t.powerupType === 'propeller');
+      for (const prop of chainedPropellers) {
+        const targets = getPropellerTargets(grid, prop);
+        propellerTargetsMap.set(prop.id, targets.main);
+        setPropellerTarget(prop.id, targets.main);
+      }
+
+      // Verify we stored a target for the propeller
+      const savedTarget = propellerTargetsMap.get('p1');
+      expect(savedTarget).not.toBeNull();
+    });
+  });
+
+  describe('Rocket Always Clears Full Row/Column', () => {
+    test('rocket clears all tiles regardless of grid state variations', () => {
+      const grid = new Grid(5, 5);
+      // Fill grid with different colored tiles
+      const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 5; c++) {
+          grid.setTile(r, c, { id: `t_${r}_${c}`, type: colors[c], row: r, col: c, isPowerup: false } as any);
+        }
+      }
+
+      const rocket = { id: 'r1', type: 'red', row: 2, col: 2, isPowerup: true, powerupType: 'rocket_h' } as any;
+      grid.setTile(2, 2, rocket);
+
+      const affected = activatePowerup(grid, rocket);
+
+      // Should clear exactly 4 tiles (all in row 2 except the rocket)
+      expect(affected.length).toBe(4);
+
+      // All affected tiles should be in row 2
+      expect(affected.every(t => t.row === 2)).toBe(true);
+
+      // Rocket should not be in affected list
+      expect(affected.some(t => t.id === 'r1')).toBe(false);
+
+      // All columns except rocket's column should be represented
+      const cols = affected.map(t => t.col).sort((a, b) => a - b);
+      expect(cols).toEqual([0, 1, 3, 4]);
+    });
+
+    test('vertical rocket clears all tiles in column consistently', () => {
+      const grid = new Grid(5, 5);
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 5; c++) {
+          grid.setTile(r, c, { id: `t_${r}_${c}`, type: 'red', row: r, col: c, isPowerup: false } as any);
+        }
+      }
+
+      const rocket = { id: 'r1', type: 'blue', row: 2, col: 2, isPowerup: true, powerupType: 'rocket_v' } as any;
+      grid.setTile(2, 2, rocket);
+
+      const affected = activatePowerup(grid, rocket);
+
+      // Should clear exactly 4 tiles (all in column 2 except the rocket)
+      expect(affected.length).toBe(4);
+
+      // All affected tiles should be in column 2
+      expect(affected.every(t => t.col === 2)).toBe(true);
+
+      // All rows except rocket's row should be represented
+      const rows = affected.map(t => t.row).sort((a, b) => a - b);
+      expect(rows).toEqual([0, 1, 3, 4]);
+    });
+
+    test('rocket in chain reaction clears its full row/column', () => {
+      const grid = new Grid(7, 7);
+      for (let r = 0; r < 7; r++) {
+        for (let c = 0; c < 7; c++) {
+          grid.setTile(r, c, { id: `t_${r}_${c}`, type: 'red', row: r, col: c, isPowerup: false } as any);
+        }
+      }
+
+      // Bomb in center, rocket nearby
+      const bomb = { id: 'b1', type: 'red', row: 3, col: 3, isPowerup: true, powerupType: 'bomb' } as any;
+      const rocket = { id: 'r1', type: 'blue', row: 3, col: 5, isPowerup: true, powerupType: 'rocket_h' } as any;
+      grid.setTile(3, 3, bomb);
+      grid.setTile(3, 5, rocket);
+
+      const affected = activatePowerup(grid, bomb);
+
+      // Rocket should be triggered
+      expect(affected.some(t => t.id === 'r1')).toBe(true);
+
+      // Tiles at the edges of the rocket's row should be cleared
+      expect(affected.some(t => t.row === 3 && t.col === 0)).toBe(true);
+      expect(affected.some(t => t.row === 3 && t.col === 6)).toBe(true);
+    });
+  });
+
+  describe('Multiple Powerups Clear All Expected Tiles', () => {
+    test('two rockets in same row both contribute to clearing', () => {
+      const grid = new Grid(7, 7);
+      for (let r = 0; r < 7; r++) {
+        for (let c = 0; c < 7; c++) {
+          grid.setTile(r, c, { id: `t_${r}_${c}`, type: 'red', row: r, col: c, isPowerup: false } as any);
+        }
+      }
+
+      const rocket1 = { id: 'r1', type: 'red', row: 3, col: 1, isPowerup: true, powerupType: 'rocket_h' } as any;
+      const rocket2 = { id: 'r2', type: 'blue', row: 3, col: 5, isPowerup: true, powerupType: 'rocket_h' } as any;
+      grid.setTile(3, 1, rocket1);
+      grid.setTile(3, 5, rocket2);
+
+      const affected = activatePowerup(grid, rocket1);
+
+      // Both rockets should be affected (chain reaction)
+      expect(affected.some(t => t.id === 'r2')).toBe(true);
+      expect(affected.some(t => t.id === 'r1')).toBe(true);
+
+      // All non-rocket positions in row 3 should be cleared
+      for (let c = 0; c < 7; c++) {
+        if (c === 1 || c === 5) continue; // rocket positions
+        const tile = affected.find(t => t.row === 3 && t.col === c);
+        expect(tile).toBeDefined();
+      }
+    });
+
+    test('bomb triggers multiple rockets and all clear correctly', () => {
+      const grid = new Grid(9, 9);
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          grid.setTile(r, c, { id: `t_${r}_${c}`, type: 'red', row: r, col: c, isPowerup: false } as any);
+        }
+      }
+
+      // Bomb in center with rockets above and below
+      const bomb = { id: 'b1', type: 'red', row: 4, col: 4, isPowerup: true, powerupType: 'bomb' } as any;
+      const rocketH = { id: 'rh', type: 'blue', row: 3, col: 4, isPowerup: true, powerupType: 'rocket_h' } as any;
+      const rocketV = { id: 'rv', type: 'green', row: 5, col: 4, isPowerup: true, powerupType: 'rocket_v' } as any;
+      grid.setTile(4, 4, bomb);
+      grid.setTile(3, 4, rocketH);
+      grid.setTile(5, 4, rocketV);
+
+      const affected = activatePowerup(grid, bomb);
+
+      // Both rockets should be triggered
+      expect(affected.some(t => t.id === 'rh')).toBe(true);
+      expect(affected.some(t => t.id === 'rv')).toBe(true);
+
+      // Horizontal rocket clears row 3 edges
+      expect(affected.some(t => t.row === 3 && t.col === 0)).toBe(true);
+      expect(affected.some(t => t.row === 3 && t.col === 8)).toBe(true);
+
+      // Vertical rocket clears column 4 edges
+      expect(affected.some(t => t.row === 0 && t.col === 4)).toBe(true);
+      expect(affected.some(t => t.row === 8 && t.col === 4)).toBe(true);
+    });
+  });
 });
