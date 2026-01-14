@@ -177,10 +177,16 @@ export class PowerupActivator {
     const obstaclesClearedByType: Record<string, number> = {};
     affectedPositions.forEach(key => {
       const [row, col] = key.split(',').map(Number);
+      const cell = this.grid.getCell(row, col);
+      const hadObstacle = cell?.obstacle != null;
       const clearedObstacle = this.grid.clearObstacle(row, col);
       if (clearedObstacle) {
+        // Obstacle was fully cleared
         obstaclesClearedByType[clearedObstacle.type] = (obstaclesClearedByType[clearedObstacle.type] || 0) + 1;
         this.callbacks.removeObstacleSprite(row, col);
+      } else if (hadObstacle && cell?.obstacle) {
+        // Obstacle was damaged but not cleared - update visual to show reduced layers
+        this.callbacks.updateObstacleSprite(row, col);
       }
     });
 
@@ -321,10 +327,16 @@ export class PowerupActivator {
     const obstaclesClearedByType: Record<string, number> = {};
     affectedPositionSet.forEach(key => {
       const [row, col] = key.split(',').map(Number);
+      const cell = this.grid.getCell(row, col);
+      const hadObstacle = cell?.obstacle != null;
       const clearedObstacle = this.grid.clearObstacle(row, col);
       if (clearedObstacle) {
+        // Obstacle was fully cleared
         obstaclesClearedByType[clearedObstacle.type] = (obstaclesClearedByType[clearedObstacle.type] || 0) + 1;
         this.callbacks.removeObstacleSprite(row, col);
+      } else if (hadObstacle && cell?.obstacle) {
+        // Obstacle was damaged but not cleared - update visual to show reduced layers
+        this.callbacks.updateObstacleSprite(row, col);
       }
     });
 

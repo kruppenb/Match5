@@ -32,3 +32,6 @@ docs/features/AI_PROMPTS.md
 screenshot*.png
 tmpclaude-*
 nul
+
+# Test artifacts
+test-results/
