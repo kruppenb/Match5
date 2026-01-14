@@ -88,21 +88,21 @@ export class PowerupActivator {
       } else {
         animationPromises.push(this.playPowerupAnimation(powerup, color));
       }
-      // Mark as activated before animation so chain reactions know not to re-animate
-      alreadyActivated.add(powerup.id);
     }
     await Promise.all(animationPromises);
 
     // Process powerups in waves to handle chain reactions
     // Initial wave: the powerups passed in
     let currentWave = [...powerups];
-    
+
     while (currentWave.length > 0) {
       const nextWave: Tile[] = [];
-      
+
       // Activate each powerup in current wave and collect affected tiles
       for (const powerup of currentWave) {
         const targetColor = swapTargetColors?.get(powerup.id);
+        // Pass alreadyActivated to prevent infinite chain loops, but note that
+        // activatePowerup will add this powerup to the set internally
         const affected = this.activatePowerup(powerup, targetColor, alreadyActivated);
         
         // Find triggered powerups that haven't been animated yet
@@ -135,7 +135,7 @@ export class PowerupActivator {
           } else {
             chainAnimPromises.push(this.playPowerupAnimation(powerup, color));
           }
-          alreadyActivated.add(powerup.id);
+          // Note: alreadyActivated will be updated by activatePowerup in the next iteration
         }
         await Promise.all(chainAnimPromises);
       }

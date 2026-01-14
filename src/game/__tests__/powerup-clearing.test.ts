@@ -446,4 +446,318 @@ describe('Powerup Clearing Integration Tests', () => {
       }
     });
   });
+
+  describe('Powerups clearing tiles on grass cells (Level 8 scenario)', () => {
+    test('rocket_h clears BOTH grass obstacles AND tiles on top', () => {
+      const grid = new Grid(8, 8);
+      grid.fillGrid();
+
+      // Add grass obstacles to row 4 (like level 8 has)
+      // Grass cells have BOTH an obstacle AND a tile on top
+      for (let col = 0; col < 8; col++) {
+        const cell = grid.getCell(4, col);
+        if (cell) {
+          cell.obstacle = createGrass(1);
+          // Tile already exists from fillGrid
+        }
+      }
+
+      // Verify initial state: all cells in row 4 have both grass and tiles
+      for (let col = 0; col < 8; col++) {
+        const cell = grid.getCell(4, col);
+        expect(cell?.obstacle?.type).toBe('grass');
+        expect(cell?.tile).not.toBeNull();
+      }
+
+      // Place rocket at (3, 4) - row above the grass row
+      const rocket: Tile = {
+        id: 'rocket_1',
+        type: 'red',
+        row: 4,
+        col: 0,
+        isPowerup: true,
+        powerupType: 'rocket_h',
+      };
+      grid.setTile(4, 0, rocket);
+
+      // Get affected tiles
+      const affectedTiles = activatePowerup(grid, rocket);
+
+      // Get affected positions (for obstacle clearing)
+      const affectedPositions = getPowerupAffectedPositions(grid, rocket);
+
+      // CRITICAL: Should have 7 tiles (all cells in row 4 except rocket position)
+      expect(affectedTiles.length).toBe(7);
+
+      // All affected tiles should be in row 4
+      expect(affectedTiles.every(t => t.row === 4)).toBe(true);
+
+      // Should have 8 positions (entire row for obstacle clearing)
+      expect(affectedPositions.length).toBe(8);
+
+      // Simulate the clearing sequence (like PowerupActivator does):
+      // 1. Clear obstacles at affected positions
+      for (const pos of affectedPositions) {
+        grid.clearObstacle(pos.row, pos.col);
+      }
+
+      // 2. Clear tiles
+      for (const tile of affectedTiles) {
+        grid.setTile(tile.row, tile.col, null);
+      }
+      grid.setTile(rocket.row, rocket.col, null);
+
+      // Verify: ALL grass obstacles in row 4 should be cleared
+      for (let col = 0; col < 8; col++) {
+        const cell = grid.getCell(4, col);
+        expect(cell?.obstacle).toBeNull();
+      }
+
+      // Verify: ALL tiles in row 4 should be cleared
+      for (let col = 0; col < 8; col++) {
+        expect(grid.getTile(4, col)).toBeNull();
+      }
+    });
+
+    test('bomb clears grass AND tiles in 5x5 area', () => {
+      const grid = new Grid(8, 8);
+      grid.fillGrid();
+
+      // Add grass obstacles to a 5x5 area centered at (4,4)
+      for (let r = 2; r <= 6; r++) {
+        for (let c = 2; c <= 6; c++) {
+          const cell = grid.getCell(r, c);
+          if (cell) {
+            cell.obstacle = createGrass(1);
+          }
+        }
+      }
+
+      // Place bomb at center
+      const bomb: Tile = {
+        id: 'bomb_1',
+        type: 'red',
+        row: 4,
+        col: 4,
+        isPowerup: true,
+        powerupType: 'bomb',
+      };
+      grid.setTile(4, 4, bomb);
+
+      // Get affected tiles and positions
+      const affectedTiles = activatePowerup(grid, bomb);
+      const affectedPositions = getPowerupAffectedPositions(grid, bomb);
+
+      // Should affect 24 tiles (5x5 = 25 - 1 bomb)
+      expect(affectedTiles.length).toBe(24);
+
+      // Should affect 25 positions
+      expect(affectedPositions.length).toBe(25);
+
+      // Simulate clearing
+      for (const pos of affectedPositions) {
+        grid.clearObstacle(pos.row, pos.col);
+      }
+      for (const tile of affectedTiles) {
+        grid.setTile(tile.row, tile.col, null);
+      }
+      grid.setTile(bomb.row, bomb.col, null);
+
+      // Verify: all grass and tiles in 5x5 area should be cleared
+      for (let r = 2; r <= 6; r++) {
+        for (let c = 2; c <= 6; c++) {
+          const cell = grid.getCell(r, c);
+          expect(cell?.obstacle).toBeNull();
+          expect(grid.getTile(r, c)).toBeNull();
+        }
+      }
+    });
+
+    test('tiles on grass cells are returned by activatePowerup', () => {
+      const grid = new Grid(8, 8);
+
+      // Manually create tiles with grass underneath (like level 8)
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const cell = grid.getCell(row, col);
+          if (cell) {
+            cell.tile = {
+              id: `tile_${row}_${col}`,
+              type: ['red', 'blue', 'green'][Math.floor(Math.random() * 3)],
+              row,
+              col,
+              isPowerup: false,
+            };
+            // Add grass to all cells except where rocket will be placed
+            if (!(row === 4 && col === 0)) {
+              cell.obstacle = createGrass(1);
+            }
+          }
+        }
+      }
+
+      // Place rocket
+      const rocket: Tile = {
+        id: 'rocket_1',
+        type: 'red',
+        row: 4,
+        col: 0,
+        isPowerup: true,
+        powerupType: 'rocket_h',
+      };
+      grid.setTile(4, 0, rocket);
+
+      // Get affected tiles
+      const affectedTiles = activatePowerup(grid, rocket);
+
+      // Should return 7 tiles (all cells in row 4 except rocket position)
+      // These tiles are on TOP of grass obstacles
+      expect(affectedTiles.length).toBe(7);
+
+      // Verify each affected tile exists and is at the correct position
+      for (const tile of affectedTiles) {
+        expect(tile.row).toBe(4);
+        expect(tile.col).not.toBe(0); // Not the rocket position
+        expect(tile.isPowerup).toBe(false);
+      }
+    });
+
+    test('initializeFromLayout creates grass cells with tiles', () => {
+      const grid = new Grid(8, 8);
+
+      // Layout similar to level 8 - row with grass
+      const layout = [
+        ['.', '.', '.', '.', '.', '.', '.', '.'],
+        ['.', '.', '.', '.', '.', '.', '.', '.'],
+        ['.', '.', '.', '.', '.', '.', '.', '.'],
+        ['.', '.', '.', '.', '.', '.', '.', '.'],
+        ['G', 'G', 'G', 'G', 'G', 'G', 'G', 'G'], // Row 4: all grass
+        ['.', '.', '.', '.', '.', '.', '.', '.'],
+        ['.', '.', '.', '.', '.', '.', '.', '.'],
+        ['.', '.', '.', '.', '.', '.', '.', '.'],
+      ];
+
+      grid.initializeFromLayout(layout, 5);
+
+      // Verify: row 4 should have both grass obstacles AND tiles
+      for (let col = 0; col < 8; col++) {
+        const cell = grid.getCell(4, col);
+        expect(cell?.obstacle?.type).toBe('grass');
+        expect(cell?.tile).not.toBeNull();
+        expect(cell?.tile?.isPowerup).toBe(false);
+      }
+
+      // Now test that a powerup would clear both
+      const rocket: Tile = {
+        id: 'rocket_test',
+        type: 'red',
+        row: 4,
+        col: 0,
+        isPowerup: true,
+        powerupType: 'rocket_h',
+      };
+      grid.setTile(4, 0, rocket);
+
+      const affectedTiles = activatePowerup(grid, rocket);
+      const affectedPositions = getPowerupAffectedPositions(grid, rocket);
+
+      // Should have 7 tiles (all grass cells have tiles, minus rocket position)
+      expect(affectedTiles.length).toBe(7);
+      // Should have 8 positions for obstacle clearing
+      expect(affectedPositions.length).toBe(8);
+    });
+
+    test('PowerupActivator-like flow clears both grass and tiles', () => {
+      const grid = new Grid(8, 8);
+
+      // Layout like level 8
+      const layout = [
+        ['.', 'G', 'G', 'G', 'G', 'G', 'G', '.'],
+        ['G', '.', '.', '.', '.', '.', '.', 'G'],
+        ['G', '.', 'G', 'G', 'G', 'G', '.', 'G'],
+        ['G', '.', 'G', '.', '.', 'G', '.', 'G'],
+        ['G', '.', 'G', '.', '.', 'G', '.', 'G'],
+        ['G', '.', 'G', 'G', 'G', 'G', '.', 'G'],
+        ['G', '.', '.', '.', '.', '.', '.', 'G'],
+        ['.', 'G', 'G', 'G', 'G', 'G', 'G', '.'],
+      ];
+
+      grid.initializeFromLayout(layout, 5);
+
+      // Place a horizontal rocket at row 3, col 1 (a cell without grass)
+      const rocket: Tile = {
+        id: 'rocket_test',
+        type: 'red',
+        row: 3,
+        col: 1,
+        isPowerup: true,
+        powerupType: 'rocket_h',
+      };
+      grid.setTile(3, 1, rocket);
+
+      // Simulate PowerupActivator flow (FIXED: don't pre-add to alreadyActivated)
+      const tilesToClear = new Set<Tile>();
+      const alreadyActivated = new Set<string>();
+
+      // Add the powerup itself
+      tilesToClear.add(rocket);
+      // NOTE: Don't add to alreadyActivated here - activatePowerup will do it
+
+      // Get affected tiles (like activatePowerup does)
+      const affected = activatePowerup(grid, rocket, undefined, alreadyActivated);
+      affected.forEach(t => tilesToClear.add(t));
+
+      // Get affected positions for obstacles
+      const affectedPositions = new Set<string>();
+      tilesToClear.forEach(tile => {
+        affectedPositions.add(`${tile.row},${tile.col}`);
+      });
+      const positions = getPowerupAffectedPositions(grid, rocket);
+      positions.forEach(p => affectedPositions.add(`${p.row},${p.col}`));
+
+      // Verify we got tiles from grass cells
+      // Row 3: cols 0, 2, 5, 7 have grass with tiles
+      const grassCellTiles = affected.filter(t => {
+        const cell = grid.getCell(t.row, t.col);
+        return cell?.obstacle?.type === 'grass';
+      });
+      expect(grassCellTiles.length).toBeGreaterThan(0);
+
+      // Clear obstacles at affected positions
+      let obstaclesCleared = 0;
+      affectedPositions.forEach(key => {
+        const [row, col] = key.split(',').map(Number);
+        const clearedObstacle = grid.clearObstacle(row, col);
+        if (clearedObstacle) obstaclesCleared++;
+      });
+
+      // Clear tiles from grid
+      let tilesCleared = 0;
+      tilesToClear.forEach(tile => {
+        const currentTile = grid.getTile(tile.row, tile.col);
+        if (currentTile && currentTile.id === tile.id) {
+          grid.setTile(tile.row, tile.col, null);
+          tilesCleared++;
+        }
+      });
+
+      // Verify results
+      // Should have cleared some grass obstacles
+      expect(obstaclesCleared).toBeGreaterThan(0);
+
+      // Should have cleared tiles (including tiles on grass)
+      expect(tilesCleared).toBeGreaterThan(0);
+
+      // Verify row 3 is cleared
+      for (let col = 0; col < 8; col++) {
+        expect(grid.getTile(3, col)).toBeNull();
+        // Grass obstacles in row 3 should be cleared
+        const cell = grid.getCell(3, col);
+        if ([2, 5].includes(col)) {
+          // These cells had grass
+          expect(cell?.obstacle).toBeNull();
+        }
+      }
+    });
+  });
 });

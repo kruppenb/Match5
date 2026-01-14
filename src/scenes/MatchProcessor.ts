@@ -198,7 +198,7 @@ export class MatchProcessor {
     for (const powerup of powerupsToActivate) {
       const color = CONFIG.COLORS[powerup.type as keyof typeof CONFIG.COLORS] || 0xffffff;
       powerupAnimPromises.push(this.callbacks.playPowerupAnimation(powerup, color));
-      alreadyActivated.add(powerup.id);
+      // Note: alreadyActivated will be updated by activatePowerup when processing
     }
     // Play all powerup animations simultaneously
     if (powerupAnimPromises.length > 0) {
@@ -243,7 +243,7 @@ export class MatchProcessor {
         for (const powerup of nextWave) {
           const color = CONFIG.COLORS[powerup.type as keyof typeof CONFIG.COLORS] || 0xffffff;
           chainAnimPromises.push(this.callbacks.playPowerupAnimation(powerup, color));
-          alreadyActivated.add(powerup.id);
+          // Note: alreadyActivated will be updated by activatePowerup in the next iteration
         }
         await Promise.all(chainAnimPromises);
       }
