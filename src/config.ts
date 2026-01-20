@@ -4,7 +4,7 @@ export const CONFIG = {
     ROWS: 8,
     COLS: 8,
     TILE_SIZE: 80,
-    GAP: 4,
+    GAP: 2, // Reduced gap for tighter tile layout
   },
 
   TILES: {
@@ -28,12 +28,13 @@ export const CONFIG = {
   },
 
   COLORS: {
-    red: 0xff4444,
-    blue: 0x4444ff,
-    green: 0x44ff44,
-    yellow: 0xffff44,
-    purple: 0xaa44ff,
-    orange: 0xffaa44,
+    // Vibrant, saturated colors inspired by Royal Match gems
+    red: 0xe63946,    // Rich ruby red
+    blue: 0x4361ee,   // Brilliant sapphire blue
+    green: 0x2ec4b6,  // Vivid emerald teal-green
+    yellow: 0xffd60a, // Bright golden yellow
+    purple: 0x9d4edd, // Royal amethyst purple
+    orange: 0xf77f00, // Warm tangerine orange
   } as Record<string, number>,
 
   SCREEN: {
@@ -47,11 +48,13 @@ export const CONFIG = {
   },
 
   UI: {
-    HEADER_HEIGHT: 45,
-    OBJECTIVE_BAR_HEIGHT: 40,
-    OBJECTIVE_ICON_SIZE: 32,
-    MOVE_COUNTER_SIZE: 40,
-    PADDING: 0,
+    HEADER_HEIGHT: 60, // Single unified header bar containing all top UI
+    BOOSTER_BAR_HEIGHT: 85, // Height reserved for booster bar at bottom
+    OBJECTIVE_ICON_SIZE: 28,
+    MOVE_COUNTER_SIZE: 36,
+    HERO_BAR_WIDTH: 100, // Width of hero charge bar
+    HERO_BAR_HEIGHT: 24, // Height of hero charge bar
+    PADDING: 12, // Safe padding for edge elements
     COLORS: {
       BACKGROUND: 0x1a1a2e,
       PANEL: 0x2a2a3e,

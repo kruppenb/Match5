@@ -52,11 +52,11 @@ export class HeroPowerSystem {
   // Popup elements
   private popupContainer!: Phaser.GameObjects.Container | null;
 
-  // Bar dimensions
+  // Bar dimensions - compact for inline header display
   private readonly barX: number;
   private readonly barY: number;
-  private readonly barWidth = 180;
-  private readonly barHeight = 32;
+  private readonly barWidth: number;
+  private readonly barHeight: number;
 
   // Flash animation state
   private isFlashing = false;
@@ -72,28 +72,41 @@ export class HeroPowerSystem {
     this.callbacks = callbacks;
     this.state.currentCharge = initialCharge;
 
-    // Position bar at top of screen, below header and objective bar
+    // Use config dimensions for compact inline display
+    this.barWidth = CONFIG.UI.HERO_BAR_WIDTH;
+    this.barHeight = CONFIG.UI.HERO_BAR_HEIGHT;
+
+    // Position will be set by GameScene when calling setPosition
     this.barX = scene.scale.width / 2;
-    this.barY = CONFIG.UI.HEADER_HEIGHT + CONFIG.UI.OBJECTIVE_BAR_HEIGHT * 2 + 8;
+    this.barY = CONFIG.UI.HEADER_HEIGHT / 2;
 
     this.createBarUI();
     this.updateBarVisual();
+  }
+
+  /**
+   * Set the position of the hero bar (called by GameScene for inline positioning)
+   */
+  setPosition(x: number, y: number): void {
+    this.barContainer.setPosition(x, y);
   }
 
   private createBarUI(): void {
     this.barContainer = this.scene.add.container(this.barX, this.barY);
     this.barContainer.setDepth(100);
 
+    const cornerRadius = 6;
+
     // Background shadow
     const shadow = this.scene.add.graphics();
-    shadow.fillStyle(0x000000, 0.4);
-    shadow.fillRoundedRect(-this.barWidth / 2 + 2, 2, this.barWidth, this.barHeight, 10);
+    shadow.fillStyle(0x000000, 0.3);
+    shadow.fillRoundedRect(-this.barWidth / 2 + 1, 1, this.barWidth, this.barHeight, cornerRadius);
     this.barContainer.add(shadow);
 
     // Background
     this.barBg = this.scene.add.graphics();
-    this.barBg.fillStyle(0x1a1a2e, 0.95);
-    this.barBg.fillRoundedRect(-this.barWidth / 2, 0, this.barWidth, this.barHeight, 10);
+    this.barBg.fillStyle(0x2a2a4e, 0.95);
+    this.barBg.fillRoundedRect(-this.barWidth / 2, -this.barHeight / 2, this.barWidth, this.barHeight, cornerRadius);
     this.barContainer.add(this.barBg);
 
     // Fill (will be updated dynamically)
@@ -102,36 +115,36 @@ export class HeroPowerSystem {
 
     // Frame/border
     this.barFrame = this.scene.add.graphics();
-    this.barFrame.lineStyle(2, 0x4a90d9, 0.9);
-    this.barFrame.strokeRoundedRect(-this.barWidth / 2, 0, this.barWidth, this.barHeight, 10);
+    this.barFrame.lineStyle(1.5, 0x4a90d9, 0.9);
+    this.barFrame.strokeRoundedRect(-this.barWidth / 2, -this.barHeight / 2, this.barWidth, this.barHeight, cornerRadius);
     this.barContainer.add(this.barFrame);
 
     // Hero icon on left
-    this.heroIcon = this.scene.add.text(-this.barWidth / 2 + 18, this.barHeight / 2, '⚡', {
-      fontSize: '18px',
+    this.heroIcon = this.scene.add.text(-this.barWidth / 2 + 12, 0, '⚡', {
+      fontSize: '14px',
     }).setOrigin(0.5);
     this.barContainer.add(this.heroIcon);
 
     // Charge percentage text
-    this.chargeText = this.scene.add.text(this.barWidth / 2 - 10, this.barHeight / 2, '0%', {
-      fontSize: '14px',
+    this.chargeText = this.scene.add.text(this.barWidth / 2 - 6, 0, '0%', {
+      fontSize: '11px',
       fontFamily: 'Arial Bold',
       color: '#ffffff',
     }).setOrigin(1, 0.5);
     this.barContainer.add(this.chargeText);
 
     // "READY!" text (hidden until full)
-    this.readyText = this.scene.add.text(0, this.barHeight / 2, 'READY!', {
-      fontSize: '16px',
+    this.readyText = this.scene.add.text(0, 0, 'READY!', {
+      fontSize: '11px',
       fontFamily: 'Arial Black',
       color: '#ffaa00',
       stroke: '#000000',
-      strokeThickness: 3,
+      strokeThickness: 2,
     }).setOrigin(0.5).setAlpha(0);
     this.barContainer.add(this.readyText);
 
     // Make bar interactive when ready
-    const hitArea = this.scene.add.rectangle(0, this.barHeight / 2, this.barWidth, this.barHeight, 0x000000, 0)
+    const hitArea = this.scene.add.rectangle(0, 0, this.barWidth, this.barHeight, 0x000000, 0)
       .setInteractive({ useHandCursor: true });
     this.barContainer.add(hitArea);
 
@@ -144,8 +157,9 @@ export class HeroPowerSystem {
 
   private updateBarVisual(): void {
     const fillPercent = Math.min(this.state.currentCharge / CONFIG.HERO_POWERS.MAX_CHARGE, 1);
-    const fillWidth = (this.barWidth - 6) * fillPercent;
-    const padding = 3;
+    const padding = 2;
+    const fillWidth = (this.barWidth - padding * 2) * fillPercent;
+    const cornerRadius = 4;
 
     this.barFill.clear();
     if (fillPercent > 0) {
@@ -162,20 +176,20 @@ export class HeroPowerSystem {
       this.barFill.fillStyle(color, 1);
       this.barFill.fillRoundedRect(
         -this.barWidth / 2 + padding,
-        padding,
+        -this.barHeight / 2 + padding,
         fillWidth,
         this.barHeight - padding * 2,
-        7
+        cornerRadius
       );
 
       // Shine effect on top
-      this.barFill.fillStyle(0xffffff, 0.2);
+      this.barFill.fillStyle(0xffffff, 0.15);
       this.barFill.fillRoundedRect(
         -this.barWidth / 2 + padding,
-        padding,
+        -this.barHeight / 2 + padding,
         fillWidth,
         (this.barHeight - padding * 2) / 2,
-        { tl: 7, tr: 7, bl: 0, br: 0 }
+        { tl: cornerRadius, tr: cornerRadius, bl: 0, br: 0 }
       );
     }
 
@@ -203,8 +217,8 @@ export class HeroPowerSystem {
 
         // Glow effect on frame
         this.barFrame.clear();
-        this.barFrame.lineStyle(3, 0xffaa00, 1);
-        this.barFrame.strokeRoundedRect(-this.barWidth / 2, 0, this.barWidth, this.barHeight, 10);
+        this.barFrame.lineStyle(2, 0xffaa00, 1);
+        this.barFrame.strokeRoundedRect(-this.barWidth / 2, -this.barHeight / 2, this.barWidth, this.barHeight, 6);
       }
     } else {
       this.chargeText.setAlpha(1);
@@ -213,8 +227,8 @@ export class HeroPowerSystem {
       this.barContainer.setScale(1);
 
       this.barFrame.clear();
-      this.barFrame.lineStyle(2, 0x4a90d9, 0.9);
-      this.barFrame.strokeRoundedRect(-this.barWidth / 2, 0, this.barWidth, this.barHeight, 10);
+      this.barFrame.lineStyle(1.5, 0x4a90d9, 0.9);
+      this.barFrame.strokeRoundedRect(-this.barWidth / 2, -this.barHeight / 2, this.barWidth, this.barHeight, 6);
     }
   }
 
@@ -352,15 +366,15 @@ export class HeroPowerSystem {
 
     // Create flash overlay
     const flashOverlay = this.scene.add.graphics();
-    flashOverlay.fillStyle(0xffffff, 0.6);
-    flashOverlay.fillRoundedRect(-this.barWidth / 2, 0, this.barWidth, this.barHeight, 10);
+    flashOverlay.fillStyle(0xffffff, 0.5);
+    flashOverlay.fillRoundedRect(-this.barWidth / 2, -this.barHeight / 2, this.barWidth, this.barHeight, 6);
     this.barContainer.add(flashOverlay);
 
     // Flash animation
     this.scene.tweens.add({
       targets: flashOverlay,
       alpha: 0,
-      duration: 200,
+      duration: 150,
       ease: 'Quad.easeOut',
       onComplete: () => {
         flashOverlay.destroy();
@@ -372,9 +386,9 @@ export class HeroPowerSystem {
     if (!this.state.isReady) {
       this.scene.tweens.add({
         targets: this.barContainer,
-        scaleX: 1.08,
-        scaleY: 1.08,
-        duration: 100,
+        scaleX: 1.05,
+        scaleY: 1.05,
+        duration: 80,
         yoyo: true,
         ease: 'Quad.easeOut',
       });

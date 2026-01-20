@@ -101,10 +101,10 @@ export class TitleScene extends Phaser.Scene {
     const { width } = this.scale;
     const currencyManager = getCurrencyManager();
     this.barY = 100;
-    const pillWidth = 92;
-    const pillHeight = 36;
-    const gap = 12;
-    const iconOffset = 18; // Distance from left edge to icon center
+    const pillWidth = 105; // Larger pills
+    const pillHeight = 42; // Taller pills
+    const gap = 14;
+    const iconOffset = 22; // Distance from left edge to icon center
 
     // Coins pill
     this.coinsPillX = width / 2 - gap / 2 - pillWidth / 2;
@@ -113,22 +113,22 @@ export class TitleScene extends Phaser.Scene {
     // Coin icon - use generated asset if available
     const coinIconX = this.coinsPillX - pillWidth / 2 + iconOffset;
     if (this.textures.exists('ui_coin')) {
-      this.add.image(coinIconX, this.barY, 'ui_coin').setDisplaySize(24, 24);
+      this.add.image(coinIconX, this.barY, 'ui_coin').setDisplaySize(32, 32); // Larger icon
     } else {
-      // Fallback to programmatic drawing
-      this.add.circle(coinIconX, this.barY, 14, 0xffd700, 0.3);
-      this.add.circle(coinIconX, this.barY, 11, 0xffd700);
-      this.add.circle(coinIconX, this.barY, 7, 0xffec8b);
+      // Fallback to programmatic drawing - larger
+      this.add.circle(coinIconX, this.barY, 18, 0xffd700, 0.3);
+      this.add.circle(coinIconX, this.barY, 14, 0xffd700);
+      this.add.circle(coinIconX, this.barY, 9, 0xffec8b);
       this.add.text(coinIconX, this.barY, '$', {
-        fontSize: '10px',
+        fontSize: '13px',
         fontFamily: 'Arial Black',
         color: '#b8860b',
       }).setOrigin(0.5);
     }
 
     // Coins text - centered in remaining space
-    this.coinsText = this.add.text(this.coinsPillX + 8, this.barY, currencyManager.formatCoins(currencyManager.getCoins()), {
-      fontSize: '16px',
+    this.coinsText = this.add.text(this.coinsPillX + 10, this.barY, currencyManager.formatCoins(currencyManager.getCoins()), {
+      fontSize: '18px', // Larger text
       fontFamily: '"Arial Black", "Helvetica Bold", sans-serif',
       color: '#ffffff',
       stroke: '#000000',
@@ -142,22 +142,22 @@ export class TitleScene extends Phaser.Scene {
     // Diamond icon - use generated asset if available
     const diamondIconX = this.diamondsPillX - pillWidth / 2 + iconOffset;
     if (this.textures.exists('ui_diamond')) {
-      this.add.image(diamondIconX, this.barY, 'ui_diamond').setDisplaySize(24, 24);
+      this.add.image(diamondIconX, this.barY, 'ui_diamond').setDisplaySize(32, 32); // Larger icon
     } else {
-      // Fallback to programmatic drawing
-      this.add.circle(diamondIconX, this.barY, 13, 0x00bfff, 0.25);
+      // Fallback to programmatic drawing - larger
+      this.add.circle(diamondIconX, this.barY, 17, 0x00bfff, 0.25);
       const dg = this.add.graphics();
       dg.fillStyle(0x00bfff, 1);
-      dg.fillTriangle(diamondIconX, this.barY - 9, diamondIconX + 7, this.barY, diamondIconX, this.barY + 9);
-      dg.fillTriangle(diamondIconX, this.barY - 9, diamondIconX - 7, this.barY, diamondIconX, this.barY + 9);
+      dg.fillTriangle(diamondIconX, this.barY - 12, diamondIconX + 9, this.barY, diamondIconX, this.barY + 12);
+      dg.fillTriangle(diamondIconX, this.barY - 12, diamondIconX - 9, this.barY, diamondIconX, this.barY + 12);
       dg.fillStyle(0x87ceeb, 1);
-      dg.fillTriangle(diamondIconX, this.barY - 4, diamondIconX + 3, this.barY, diamondIconX, this.barY + 4);
-      dg.fillTriangle(diamondIconX, this.barY - 4, diamondIconX - 3, this.barY, diamondIconX, this.barY + 4);
+      dg.fillTriangle(diamondIconX, this.barY - 5, diamondIconX + 4, this.barY, diamondIconX, this.barY + 5);
+      dg.fillTriangle(diamondIconX, this.barY - 5, diamondIconX - 4, this.barY, diamondIconX, this.barY + 5);
     }
 
     // Diamonds text - centered in remaining space
-    this.diamondsText = this.add.text(this.diamondsPillX + 8, this.barY, currencyManager.getDiamonds().toString(), {
-      fontSize: '16px',
+    this.diamondsText = this.add.text(this.diamondsPillX + 10, this.barY, currencyManager.getDiamonds().toString(), {
+      fontSize: '18px', // Larger text
       fontFamily: '"Arial Black", "Helvetica Bold", sans-serif',
       color: '#ffffff',
       stroke: '#000000',
@@ -319,8 +319,8 @@ export class TitleScene extends Phaser.Scene {
   private createLeftTabs(): void {
     const { height } = this.scale;
     const tabX = 48;
-    const tabSize = 54;
-    const spacing = 8;
+    const tabSize = 64; // Larger tabs to match gem size
+    const spacing = 10;
 
     // Position tabs on the left side, below the level card
     const levelCardBottom = height / 2 - 120 + 100; // cardY + cardHeight/2
@@ -421,14 +421,14 @@ export class TitleScene extends Phaser.Scene {
       })
       .on('pointerdown', onClick);
 
-    // Icon
-    this.add.text(x, y - 6, icon, {
-      fontSize: '20px',
+    // Icon - larger to match gem size
+    this.add.text(x, y - 8, icon, {
+      fontSize: '28px',
     }).setOrigin(0.5);
 
     // Label below icon
-    this.add.text(x, y + 16, label, {
-      fontSize: '10px',
+    this.add.text(x, y + 20, label, {
+      fontSize: '11px',
       fontFamily: '"Arial Bold", "Helvetica Bold", sans-serif',
       color: '#aabbcc',
     }).setOrigin(0.5);
@@ -486,8 +486,8 @@ export class TitleScene extends Phaser.Scene {
       // Need to create badge - recalculate position
       const { height } = this.scale;
       const tabX = 48;
-      const tabSize = 54;
-      const spacing = 8;
+      const tabSize = 64;
+      const spacing = 10;
       const levelCardBottom = height / 2 - 120 + 100;
       const topBound = levelCardBottom + 30;
       const bottomBound = height - this.getBottomShowcasePadding() - 80;
@@ -506,7 +506,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   private createSettingsButton(x: number, y: number): void {
-    const size = 48;
+    const size = 58; // Larger settings button
     const graphics = this.add.graphics();
 
     graphics.fillStyle(0x1a1a2e, 0.8);

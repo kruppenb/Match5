@@ -194,8 +194,11 @@ export class GameScene extends Phaser.Scene {
     this.boosterManager = new BoosterManager();
 
     // Calculate dynamic tile size to fit grid on screen using actual dimensions
+    // Account for: single unified header (top), booster bar (bottom), and padding
+    const topUIHeight = CONFIG.UI.HEADER_HEIGHT;
+    const bottomUIHeight = CONFIG.UI.BOOSTER_BAR_HEIGHT;
     const availableWidth = this.screenWidth - CONFIG.UI.PADDING * 2;
-    const availableHeight = this.screenHeight - CONFIG.UI.HEADER_HEIGHT - CONFIG.UI.OBJECTIVE_BAR_HEIGHT - CONFIG.UI.PADDING * 2;
+    const availableHeight = this.screenHeight - topUIHeight - bottomUIHeight - CONFIG.UI.PADDING;
 
     const maxTileWidth = availableWidth / this.level.cols;
     const maxTileHeight = availableHeight / this.level.rows;
@@ -205,7 +208,8 @@ export class GameScene extends Phaser.Scene {
     const totalGridWidth = this.level.cols * this.tileSize;
     const totalGridHeight = this.level.rows * this.tileSize;
     this.gridOffsetX = (this.screenWidth - totalGridWidth) / 2;
-    this.gridOffsetY = CONFIG.UI.HEADER_HEIGHT + CONFIG.UI.OBJECTIVE_BAR_HEIGHT + (availableHeight - totalGridHeight) / 2 + CONFIG.UI.PADDING;
+    // Position grid after top UI elements, centered in available space
+    this.gridOffsetY = topUIHeight + (availableHeight - totalGridHeight) / 2 + CONFIG.UI.PADDING / 2;
 
     // Ensure no initial matches
     this.removeInitialMatches();
@@ -476,30 +480,48 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderUI(): void {
-    this.add.text(CONFIG.UI.PADDING, CONFIG.UI.HEADER_HEIGHT / 2, `Level ${this.level.id}`, {
-      fontSize: '20px',
+    // Single unified header background panel
+    const headerBg = this.add.graphics();
+    headerBg.setDepth(5);
+    headerBg.fillStyle(0x1a1a2e, 0.92);
+    headerBg.fillRoundedRect(
+      CONFIG.UI.PADDING / 2,
+      CONFIG.UI.PADDING / 2,
+      this.screenWidth - CONFIG.UI.PADDING,
+      CONFIG.UI.HEADER_HEIGHT - CONFIG.UI.PADDING / 2,
+      12
+    );
+    headerBg.lineStyle(2, 0x4a4a6e, 0.7);
+    headerBg.strokeRoundedRect(
+      CONFIG.UI.PADDING / 2,
+      CONFIG.UI.PADDING / 2,
+      this.screenWidth - CONFIG.UI.PADDING,
+      CONFIG.UI.HEADER_HEIGHT - CONFIG.UI.PADDING / 2,
+      12
+    );
+
+    const headerCenterY = CONFIG.UI.HEADER_HEIGHT / 2;
+
+    // Layout: [Level] [Moves] ... [Objectives] [HeroBar] ... [Menu]
+    // Moves counter comes after level, then objectives and hero bar are centered, menu on right
+
+    // Left side: Level text
+    const levelText = this.add.text(CONFIG.UI.PADDING + 4, headerCenterY, `Lv.${this.level.id}`, {
+      fontSize: '14px',
       fontStyle: 'bold',
       color: '#ffffff',
     }).setOrigin(0, 0.5);
+    levelText.setDepth(10);
 
-    this.moveCounter = new MoveCounter(
-      this,
-      this.screenWidth / 2,
-      CONFIG.UI.HEADER_HEIGHT / 2
-    );
-    this.updateMoveDisplay();
-
-    const labelOffsetX = -CONFIG.UI.MOVE_COUNTER_SIZE / 2 - 8;
-    const labelOffsetY = -6;
-    this.moveCounter.attachLabel('MOVES', labelOffsetX, labelOffsetY, 'left');
-
-    const menuBtn = this.add.text(this.screenWidth - CONFIG.UI.PADDING, CONFIG.UI.HEADER_HEIGHT / 2, 'MENU', {
-      fontSize: '16px',
+    // Right side: Menu button
+    const menuBtn = this.add.text(this.screenWidth - CONFIG.UI.PADDING - 4, headerCenterY, 'MENU', {
+      fontSize: '12px',
       fontStyle: 'bold',
       color: '#ffffff',
       backgroundColor: '#444466',
-      padding: { x: 10, y: 5 },
+      padding: { x: 6, y: 3 },
     }).setOrigin(1, 0.5).setInteractive({ useHandCursor: true });
+    menuBtn.setDepth(10);
     menuBtn.on('pointerdown', () => {
       this.audioManager.playClick();
       this.goToMenu();
@@ -507,24 +529,63 @@ export class GameScene extends Phaser.Scene {
     menuBtn.on('pointerover', () => menuBtn.setAlpha(0.8));
     menuBtn.on('pointerout', () => menuBtn.setAlpha(1));
 
+    // Center the main elements: [Moves] [Objectives] [HeroBar]
+    const objectivesCount = this.gameState.getObjectives().length;
+    const objectiveWidth = CONFIG.UI.OBJECTIVE_ICON_SIZE + 28;
+    const totalObjectivesWidth = objectivesCount * objectiveWidth;
+    const heroBarWidth = CONFIG.UI.HERO_BAR_WIDTH;
+    const gap = 6;
+
+    // Calculate total width of center block: moves + objectives + hero bar
+    const movesBlockWidth = CONFIG.UI.MOVE_COUNTER_SIZE + 45; // counter + "MOVES" label
+    const centerBlockWidth = movesBlockWidth + gap + totalObjectivesWidth + gap + heroBarWidth;
+    const centerBlockStart = (this.screenWidth - centerBlockWidth) / 2;
+
+    // Move counter with MOVES label
+    const moveCounterX = centerBlockStart + 40 + CONFIG.UI.MOVE_COUNTER_SIZE / 2;
+    this.moveCounter = new MoveCounter(
+      this,
+      moveCounterX,
+      headerCenterY
+    );
+    this.updateMoveDisplay();
+    // Add MOVES label to the left of counter
+    const movesLabel = this.add.text(centerBlockStart + 2, headerCenterY, 'MOVES', {
+      fontSize: '9px',
+      fontFamily: 'Arial',
+      color: '#aaaaaa',
+    }).setOrigin(0, 0.5);
+    movesLabel.setDepth(10);
+
+    // Objective display - after moves
+    const objectivesX = centerBlockStart + movesBlockWidth + gap + totalObjectivesWidth / 2;
     this.objectiveDisplay = new ObjectiveDisplay(
       this,
-      this.screenWidth / 2,
-      CONFIG.UI.HEADER_HEIGHT + CONFIG.UI.OBJECTIVE_BAR_HEIGHT / 2,
+      objectivesX,
+      headerCenterY,
       this.gameState.getObjectives()
     );
+
+    // Hero bar position (after objectives)
+    const heroBarX = centerBlockStart + movesBlockWidth + gap + totalObjectivesWidth + gap + heroBarWidth / 2;
 
     this.boosterBar = new BoosterBar(
       this,
       this.screenWidth / 2,
-      this.screenHeight - 65,
+      this.screenHeight - CONFIG.UI.BOOSTER_BAR_HEIGHT / 2,
       this.boosterManager.getInventory(),
       (type) => this.onBoosterSelect(type),
       () => this.onBoosterCancel()
     );
 
     this.endScreen = new EndScreen(this);
+
+    // Initialize hero power system and position it inline
     this.initHeroPowerSystem();
+
+    if (this.heroPowerSystem) {
+      this.heroPowerSystem.setPosition(heroBarX, headerCenterY);
+    }
   }
 
   private initHeroPowerSystem(): void {
@@ -773,20 +834,11 @@ export class GameScene extends Phaser.Scene {
     this.obstacleSprites.forEach(sprite => sprite.destroy());
     this.obstacleSprites.clear();
 
+    // Draw semi-transparent board overlay instead of individual tile backgrounds
+    this.renderBoardOverlay();
+
     this.grid.forEachCell(cell => {
       if (cell.blocked) return;
-
-      const pos = this.cellToScreen(cell.row, cell.col);
-
-      const bg = this.add.graphics();
-      bg.fillStyle(0x2a2a3e, 1);
-      bg.fillRoundedRect(
-        pos.x - this.tileSize / 2 + CONFIG.GRID.GAP / 2,
-        pos.y - this.tileSize / 2 + CONFIG.GRID.GAP / 2,
-        this.tileSize - CONFIG.GRID.GAP,
-        this.tileSize - CONFIG.GRID.GAP,
-        8
-      );
 
       if (cell.obstacle) {
         this.createObstacleSprite(cell);
@@ -798,6 +850,48 @@ export class GameScene extends Phaser.Scene {
         this.createTileSprite(cell.tile);
       }
     });
+  }
+
+  private renderBoardOverlay(): void {
+    // Calculate board bounds
+    const padding = 8;
+    const boardX = this.gridOffsetX - padding;
+    const boardY = this.gridOffsetY - padding;
+    const boardWidth = this.level.cols * this.tileSize + padding * 2;
+    const boardHeight = this.level.rows * this.tileSize + padding * 2;
+
+    // Semi-transparent dark overlay for the board area
+    const overlay = this.add.graphics();
+    overlay.setDepth(-5);
+
+    // Outer border glow (golden/bronze frame effect)
+    overlay.lineStyle(4, 0xd4a574, 0.8);
+    overlay.strokeRoundedRect(boardX - 2, boardY - 2, boardWidth + 4, boardHeight + 4, 16);
+
+    // Inner board background - more opaque for better contrast
+    overlay.fillStyle(0x1a1a2e, 0.85);
+    overlay.fillRoundedRect(boardX, boardY, boardWidth, boardHeight, 14);
+
+    // Inner border highlight
+    overlay.lineStyle(2, 0xf5d99a, 0.4);
+    overlay.strokeRoundedRect(boardX + 2, boardY + 2, boardWidth - 4, boardHeight - 4, 12);
+
+    // Draw subtle cell grid lines for visual guidance
+    const gridLines = this.add.graphics();
+    gridLines.setDepth(-4);
+    gridLines.lineStyle(1, 0xffffff, 0.08);
+
+    // Vertical lines
+    for (let col = 1; col < this.level.cols; col++) {
+      const x = this.gridOffsetX + col * this.tileSize;
+      gridLines.lineBetween(x, this.gridOffsetY, x, this.gridOffsetY + this.level.rows * this.tileSize);
+    }
+
+    // Horizontal lines
+    for (let row = 1; row < this.level.rows; row++) {
+      const y = this.gridOffsetY + row * this.tileSize;
+      gridLines.lineBetween(this.gridOffsetX, y, this.gridOffsetX + this.level.cols * this.tileSize, y);
+    }
   }
 
   private createObstacleSprite(cell: Cell): void {
@@ -875,7 +969,8 @@ export class GameScene extends Phaser.Scene {
     const container = this.add.container(startPos.x, startPos.y);
 
     const color = CONFIG.COLORS[tile.type as keyof typeof CONFIG.COLORS] || 0x888888;
-    const size = this.tileSize - CONFIG.GRID.GAP * 4;
+    // Larger icons: use 90% of tile size instead of subtracting large gap
+    const size = Math.floor(this.tileSize * 0.88);
     const halfSize = size / 2;
 
     const useGemSprite = !tile.isPowerup && this.loadedGemSprites.has(tile.type) && this.textures.exists(`gem_${tile.type}`);

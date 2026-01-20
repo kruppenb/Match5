@@ -14,13 +14,12 @@ export interface CelebrationCallbacks {
 }
 
 /**
- * Handles the victory celebration sequence with fireworks and explosions
+ * Handles the victory celebration sequence with fireworks
  */
 export class CelebrationManager {
   private scene: Phaser.Scene;
   private grid: Grid;
   private particleManager: ParticleManager;
-  private screenShake: ScreenShake;
   private audioManager: AudioManager;
   private hapticFeedback: HapticFeedback;
   private callbacks: CelebrationCallbacks;
@@ -29,7 +28,7 @@ export class CelebrationManager {
     scene: Phaser.Scene,
     grid: Grid,
     particleManager: ParticleManager,
-    screenShake: ScreenShake,
+    _screenShake: ScreenShake, // Kept for API compatibility but unused
     audioManager: AudioManager,
     hapticFeedback: HapticFeedback,
     callbacks: CelebrationCallbacks
@@ -37,7 +36,6 @@ export class CelebrationManager {
     this.scene = scene;
     this.grid = grid;
     this.particleManager = particleManager;
-    this.screenShake = screenShake;
     this.audioManager = audioManager;
     this.hapticFeedback = hapticFeedback;
     this.callbacks = callbacks;
@@ -47,33 +45,29 @@ export class CelebrationManager {
    * Play the full victory celebration sequence
    */
   async playCelebration(remainingMoves: number, score: number, stars: number, bonus: number): Promise<void> {
-    const celebrationDuration = 3000; // 3 seconds total
+    const celebrationDuration = 2500; // 2.5 seconds total
     const startTime = Date.now();
 
     const { width: screenWidth, height: screenHeight } = this.scene.scale;
 
-    // Start continuous fireworks
+    // Start continuous fireworks (slower interval, less intense)
     const fireworkInterval = this.scene.time.addEvent({
-      delay: 200,
+      delay: 400,
       callback: () => {
         const x = 50 + Math.random() * (screenWidth - 100);
         const y = 100 + Math.random() * (screenHeight / 2);
         this.particleManager.emitFirework(x, y);
 
-        if (Math.random() > 0.6) {
+        if (Math.random() > 0.7) {
           this.audioManager.playMatch();
         }
       },
       loop: true,
     });
 
-    // Emit initial burst of confetti and celebration stars
-    this.particleManager.emitConfetti(screenWidth / 2, screenHeight / 3, 80);
-    this.particleManager.emitCelebrationStars(screenWidth / 2, screenHeight / 2, 12);
-
-    // Use remaining moves to blow up tiles on the board
+    // Quietly clear remaining tiles without the intense explosions
     if (remainingMoves > 0) {
-      await this.celebrationExplosions(remainingMoves);
+      await this.quietTileClear(remainingMoves);
     }
 
     // Wait for remaining celebration time
@@ -85,11 +79,11 @@ export class CelebrationManager {
     // Stop fireworks
     fireworkInterval.destroy();
 
-    // Final big firework burst
-    for (let i = 0; i < 5; i++) {
+    // Final firework burst (reduced count)
+    for (let i = 0; i < 3; i++) {
       const x = 80 + Math.random() * (screenWidth - 160);
       const y = 150 + Math.random() * (screenHeight / 3);
-      this.scene.time.delayedCall(i * 100, () => {
+      this.scene.time.delayedCall(i * 150, () => {
         this.particleManager.emitFirework(x, y);
       });
     }
@@ -101,7 +95,10 @@ export class CelebrationManager {
     this.callbacks.onComplete(score, stars, bonus);
   }
 
-  private async celebrationExplosions(movesRemaining: number): Promise<void> {
+  /**
+   * Quietly clear remaining tiles with gentle particle effects (no screen shake or explosions)
+   */
+  private async quietTileClear(movesRemaining: number): Promise<void> {
     // Get all tiles currently on the grid
     const tiles: Tile[] = [];
     for (let row = 0; row < this.grid.rows; row++) {
@@ -115,48 +112,20 @@ export class CelebrationManager {
 
     if (tiles.length === 0) return;
 
-    // Calculate how many explosions we can do (max based on remaining moves, but cap it)
-    const explosionCount = Math.min(movesRemaining, 10, Math.ceil(tiles.length / 3));
-    const delayBetween = 200;
+    // Clear tiles in batches without intense effects
+    const batchSize = Math.ceil(tiles.length / Math.min(movesRemaining, 5));
+    const delayBetween = 150;
 
-    for (let i = 0; i < explosionCount && tiles.length > 0; i++) {
-      // Pick a random tile
-      const randomIdx = Math.floor(Math.random() * tiles.length);
-      const targetTile = tiles[randomIdx];
+    while (tiles.length > 0) {
+      const batch = tiles.splice(0, batchSize);
 
-      // Get position
-      const pos = this.callbacks.cellToScreen(targetTile.row, targetTile.col);
+      // Just animate the tiles disappearing with particles
+      await this.animateCelebrationClear(batch);
 
-      // Create explosion effect
-      this.particleManager.emitExplosion(pos.x, pos.y, 2);
-      this.screenShake.shake(3, 80);
-      this.audioManager.playBomb();
+      // Light haptic feedback only
       this.hapticFeedback.light();
 
-      // Clear tiles in a small radius (like a bomb)
-      const clearRadius = 1;
-      const tilesToClear: Tile[] = [];
-
-      for (let dr = -clearRadius; dr <= clearRadius; dr++) {
-        for (let dc = -clearRadius; dc <= clearRadius; dc++) {
-          const r = targetTile.row + dr;
-          const c = targetTile.col + dc;
-          if (r >= 0 && r < this.grid.rows && c >= 0 && c < this.grid.cols) {
-            const tile = this.grid.getTile(r, c);
-            if (tile) {
-              tilesToClear.push(tile);
-              const idx = tiles.indexOf(tile);
-              if (idx !== -1) tiles.splice(idx, 1);
-            }
-          }
-        }
-      }
-
-      // Animate clearing these tiles
-      await this.animateCelebrationClear(tilesToClear);
-
-      // Small delay before next explosion
-      if (i < explosionCount - 1) {
+      if (tiles.length > 0) {
         await this.delay(delayBetween);
       }
     }

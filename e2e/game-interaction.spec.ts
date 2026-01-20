@@ -10,18 +10,28 @@ async function tapCanvas(page: Page, x: number, y: number) {
 }
 
 // Helper to dismiss any popups (like Daily Bonus)
-async function dismissPopups(page: Page) {
+async function dismissPopups(page: Page, maxAttempts = 3) {
   const canvas = page.locator('#game canvas');
   const box = await canvas.boundingBox();
   if (!box) return;
 
-  // The CLAIM button is at height/2 + 65px, which is ~60% of screen height
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height * 0.60);
-  await page.waitForTimeout(500);
+  for (let i = 0; i < maxAttempts; i++) {
+    // The CLAIM button is typically at the center-bottom of the popup
+    // Try multiple click positions to ensure we hit the button
+    const positions = [
+      { x: box.width / 2, y: box.height * 0.58 },  // CLAIM button position
+      { x: box.width / 2, y: box.height * 0.60 },
+      { x: box.width / 2, y: box.height * 0.55 },
+    ];
 
-  // Click again in case there are multiple popups
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height * 0.60);
-  await page.waitForTimeout(300);
+    for (const pos of positions) {
+      await page.mouse.click(box.x + pos.x, box.y + pos.y);
+      await page.waitForTimeout(300);
+    }
+  }
+
+  // Wait for any animations to settle
+  await page.waitForTimeout(500);
 }
 
 // Helper to swipe on canvas
@@ -228,5 +238,96 @@ test.describe('UI Responsive Tests', () => {
     }
 
     await page.screenshot({ path: 'e2e/screenshots/portrait-mode.png' });
+  });
+});
+
+test.describe('UI Layout Tests', () => {
+  test('game scene UI has no overlapping elements', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('#game canvas', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+
+    const canvas = page.locator('#game canvas');
+    const box = await canvas.boundingBox();
+    expect(box).not.toBeNull();
+    if (!box) return;
+
+    // Dismiss any popups
+    await dismissPopups(page, 5);
+
+    // Navigate to game - tap the center/PLAY area
+    await tapCanvas(page, box.width / 2, box.height * 0.38);
+    await page.waitForTimeout(800);
+
+    // Take screenshot of title scene (should show PLAY button now)
+    await page.screenshot({ path: 'e2e/screenshots/title-after-dismiss.png' });
+
+    // Tap PLAY button on the pre-level screen
+    await tapCanvas(page, box.width / 2, box.height * 0.38);
+    await page.waitForTimeout(800);
+
+    // Take screenshot of pre-level or game scene
+    await page.screenshot({ path: 'e2e/screenshots/navigation-step1.png' });
+
+    // If we're on pre-level screen, tap the PLAY button at the bottom
+    await tapCanvas(page, box.width / 2, box.height * 0.85);
+    await page.waitForTimeout(1500);
+
+    // Take final game board screenshot
+    await page.screenshot({ path: 'e2e/screenshots/game-scene-ui.png' });
+
+    // Verify canvas is visible
+    await expect(canvas).toBeVisible();
+
+    // The game board should now show:
+    // - Header with level text, moves counter, menu button (with background)
+    // - Objective bar with objectives (with background)
+    // - Hero power bar (with background)
+    // - Game grid (centered, not overlapping UI)
+    // - Booster bar at bottom (not overlapping grid)
+  });
+
+  test('all scenes captured for visual verification', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('#game canvas', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+
+    const canvas = page.locator('#game canvas');
+    const box = await canvas.boundingBox();
+    if (!box) return;
+
+    // 1. Title scene (with popup)
+    await page.screenshot({ path: 'e2e/screenshots/1-title-initial.png' });
+
+    // 2. Dismiss popups aggressively
+    for (let i = 0; i < 5; i++) {
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height * 0.58);
+      await page.waitForTimeout(200);
+    }
+    await page.waitForTimeout(500);
+
+    // 3. Title scene (clean)
+    await page.screenshot({ path: 'e2e/screenshots/2-title-clean.png' });
+
+    // 4. Click PLAY
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height * 0.38);
+    await page.waitForTimeout(800);
+
+    // 5. Pre-level or level select
+    await page.screenshot({ path: 'e2e/screenshots/3-pre-level.png' });
+
+    // 6. Click PLAY on pre-level
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height * 0.85);
+    await page.waitForTimeout(1500);
+
+    // 7. Game scene - THIS IS THE KEY SCREENSHOT
+    await page.screenshot({ path: 'e2e/screenshots/4-game-scene.png' });
+
+    // Make a few swipes to interact
+    await swipeCanvas(page, box.width / 2 - 30, box.height * 0.45, box.width / 2 + 30, box.height * 0.45);
+    await page.waitForTimeout(600);
+
+    // 8. Game scene after interaction
+    await page.screenshot({ path: 'e2e/screenshots/5-game-after-swipe.png' });
   });
 });

@@ -12,6 +12,7 @@ export class MoveCounter {
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.scene = scene;
     this.container = scene.add.container(x, y);
+    this.container.setDepth(10);
 
     // Background circle
     this.background = scene.add.graphics();
@@ -90,12 +91,16 @@ export class ObjectiveDisplay {
   constructor(scene: Phaser.Scene, x: number, y: number, objectives: Objective[]) {
     this.scene = scene;
     this.container = scene.add.container(x, y);
+    this.container.setDepth(10);
 
-    const spacing = 100;
-    const startX = -((objectives.length - 1) * spacing) / 2;
+    // Compact horizontal layout: icon followed by count, then next objective
+    const itemWidth = CONFIG.UI.OBJECTIVE_ICON_SIZE + 28; // icon + text
+    const spacing = 8;
+    const totalWidth = objectives.length * itemWidth + (objectives.length - 1) * spacing;
+    const startX = -totalWidth / 2;
 
     objectives.forEach((obj, index) => {
-      const objX = startX + index * spacing;
+      const objX = startX + index * (itemWidth + spacing) + itemWidth / 2;
       const objContainer = this.createObjectiveItem(obj, objX, 0);
       this.objectives.set(this.getKey(obj), objContainer);
     });
@@ -106,18 +111,18 @@ export class ObjectiveDisplay {
   }
 
   private createObjectiveItem(obj: Objective, x: number, y: number): { icon: Phaser.GameObjects.Graphics; text: Phaser.GameObjects.Text } {
-    // Icon
+    // Icon on left
     const icon = this.scene.add.graphics();
     this.drawObjectiveIcon(icon, obj.type);
-    icon.setPosition(x, y);
+    icon.setPosition(x - 14, y);
     this.container.add(icon);
 
-    // Progress text
-    const text = this.scene.add.text(x, y + 28, `${obj.current}/${obj.target}`, {
-      fontSize: '18px',
+    // Progress text to the right of icon (compact format)
+    const text = this.scene.add.text(x + 10, y, `${obj.current}/${obj.target}`, {
+      fontSize: '13px',
       fontFamily: '"Arial Bold", "Helvetica Bold", sans-serif',
       color: '#ffffff',
-    }).setOrigin(0.5);
+    }).setOrigin(0, 0.5);
     this.container.add(text);
 
     return { icon, text };
@@ -430,7 +435,7 @@ export class BoosterBar {
     this.container.setDepth(100);
 
     const boosterTypes: BoosterType[] = ['hammer', 'row_arrow', 'col_arrow', 'shuffle'];
-    const buttonSize = 50;
+    const buttonSize = 65; // Large buttons to match gem size
     const spacing = 10;
     const totalWidth = boosterTypes.length * buttonSize + (boosterTypes.length - 1) * spacing;
     const startX = -totalWidth / 2 + buttonSize / 2;
@@ -454,17 +459,16 @@ export class BoosterBar {
     const spriteKey = config.sprite;
     
     if (spriteKey && this.scene.textures.exists(spriteKey)) {
-      // Use sprite icon
-      const iconSprite = this.scene.add.sprite(0, -2, spriteKey);
-      // Scale sprite to fit within the button (leaving some padding)
-      const iconSize = size * 0.8;
+      // Use sprite icon - scale to nearly fill the button
+      const iconSprite = this.scene.add.sprite(0, -3, spriteKey);
+      const iconSize = size * 0.88; // Large icon to match gems
       const spriteSize = Math.max(iconSprite.width, iconSprite.height);
       iconSprite.setScale(iconSize / spriteSize);
       buttonContainer.add(iconSprite);
     } else {
       // Fallback to emoji
       const icon = this.scene.add.text(0, -5, config.icon, {
-        fontSize: '30px',
+        fontSize: '42px', // Large emoji to match gems
       }).setOrigin(0.5);
       buttonContainer.add(icon);
     }
@@ -541,7 +545,7 @@ export class BoosterBar {
     if (!button) return;
 
     const count = parseInt(button.countText.text, 10);
-    this.drawButtonBackground(button.background, 50, active, count > 0);
+    this.drawButtonBackground(button.background, 65, active, count > 0);
 
     if (active) {
       this.scene.tweens.add({
