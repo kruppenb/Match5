@@ -210,16 +210,6 @@ export class ObstacleRenderer {
     graphics.lineBetween(pos.x - halfSize * 0.6, pos.y - halfSize * 0.3, pos.x + halfSize * 0.6, pos.y - halfSize * 0.3);
     graphics.lineBetween(pos.x - halfSize * 0.6, pos.y + halfSize * 0.3, pos.x + halfSize * 0.6, pos.y + halfSize * 0.3);
 
-    // Layer indicator
-    if (layers > 1) {
-      graphics.fillStyle(0xffffff, 0.3);
-      graphics.fillCircle(pos.x, pos.y, halfSize * 0.25);
-      return this.scene.add.text(pos.x, pos.y, layers.toString(), {
-        fontSize: '14px',
-        fontStyle: 'bold',
-        color: '#ffffff',
-      }).setOrigin(0.5).setDepth(2);
-    }
     return undefined;
   }
 

@@ -6,7 +6,7 @@ export default defineConfig({
   base: process.env.GITHUB_ACTIONS ? '/Match5/' : '/',
   server: {
     host: true,
-    port: 5173,
+    port: 5174,
   },
   build: {
     target: 'esnext',
